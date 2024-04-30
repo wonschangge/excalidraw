@@ -53,12 +53,12 @@ import {
   getLineHeightInPx,
   getBoundTextMaxHeight,
   getBoundTextMaxWidth,
-  getVerticalOffset,
 } from "../element/textElement";
 import { LinearElementEditor } from "../element/linearElementEditor";
 
 import { getContainingFrame } from "../frame";
 import { ShapeCache } from "../scene/ShapeCache";
+import { getVerticalOffset } from "../fonts";
 
 // using a stronger invert (100% vs our regular 93%) and saturate
 // as a temp hack to make images in dark theme look closer to original

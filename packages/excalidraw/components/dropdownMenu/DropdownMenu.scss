@@ -4,7 +4,7 @@
   .dropdown-menu {
     position: absolute;
     top: 100%;
-    margin-top: 0.25rem;
+    margin-top: 0.5rem;
 
     &--mobile {
       left: 0;
@@ -35,7 +35,6 @@
 
     .dropdown-menu-item-base {
       display: flex;
-      padding: 0 0.625rem;
       column-gap: 0.625rem;
       font-size: 0.875rem;
       color: var(--color-on-surface);
@@ -45,21 +44,46 @@
       font-family: inherit;
     }
 
+    &.max-items-8 {
+      // display max 8 items per list, where each has 2rem height, 0.25rem top margin and 1px bottom margin
+      // to limit unespected `scrollIntoView` on top / bottom edge
+      max-height: calc(8 * (2rem + 0.25rem + 1px));
+
+      .dropdown-menu-item-base {
+        display: inline-flex;
+      }
+    }
+
+    &.manual-hover {
+      // disable built-in hover due to keyboard navigation
+      .dropdown-menu-item {
+        &:hover {
+          background-color: transparent;
+        }
+
+        &--hovered {
+          background-color: var(--button-hover-bg) !important;
+        }
+
+        &--selected {
+          background-color: var(--color-primary-light) !important;
+        }
+      }
+    }
+
     .dropdown-menu-item {
+      height: 2rem;
+      margin: 1px;
+      padding: 0 0.5rem;
+      width: calc(100% - 2px);
       background-color: transparent;
       border: 1px solid transparent;
       align-items: center;
-      height: 2rem;
       cursor: pointer;
       border-radius: var(--border-radius-md);
 
       @media screen and (min-width: 1921px) {
         height: 2.25rem;
-      }
-
-      &--selected {
-        background: var(--color-primary-light);
-        --icon-fill-color: var(--color-primary-darker);
       }
 
       &__text {
@@ -81,6 +105,11 @@
           font-size: 0.875rem;
           padding: 0 0.625rem;
         }
+      }
+
+      &--selected {
+        background: var(--color-primary-light);
+        --icon-fill-color: var(--color-primary-darker);
       }
 
       &:hover {

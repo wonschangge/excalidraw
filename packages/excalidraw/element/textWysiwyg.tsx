@@ -135,7 +135,9 @@ export const textWysiwyg = ({
       let maxWidth = updatedTextElement.width;
       let maxHeight = updatedTextElement.height;
       let textElementWidth = updatedTextElement.width;
-      const textElementHeight = updatedTextElement.height;
+      // Set to element height by default since that's
+      // what is going to be used for unbounded text
+      let textElementHeight = updatedTextElement.height;
 
       if (container && updatedTextElement.containerId) {
         if (isArrowElement(container)) {
@@ -230,6 +232,9 @@ export const textWysiwyg = ({
       } else {
         textElementWidth += 0.5;
       }
+
+      // add 5% buffer otherwise it causes wysiwyg to jump
+      textElementHeight *= 1.05;
 
       // Make sure text editor height doesn't go beyond viewport
       const editorMaxHeight =
@@ -579,14 +584,14 @@ export const textWysiwyg = ({
     // in that same tick.
     const target = event?.target;
 
-    const isTargetPickerTrigger =
+    const isPropertiesTrigger =
       target instanceof HTMLElement &&
-      target.classList.contains("active-color");
+      target.classList.contains("properties-trigger");
 
     setTimeout(() => {
       editable.onblur = handleSubmit;
 
-      if (isTargetPickerTrigger) {
+      if (isPropertiesTrigger) {
         const callback = (
           mutationList: MutationRecord[],
           observer: MutationObserver,
@@ -618,7 +623,7 @@ export const textWysiwyg = ({
       }
 
       // case: clicking on the same property → no change → no update → no focus
-      if (!isTargetPickerTrigger) {
+      if (!isPropertiesTrigger) {
         editable.focus();
       }
     });
@@ -626,16 +631,18 @@ export const textWysiwyg = ({
 
   // prevent blur when changing properties from the menu
   const onPointerDown = (event: MouseEvent) => {
-    const isTargetPickerTrigger =
-      event.target instanceof HTMLElement &&
-      event.target.classList.contains("active-color");
+    const target = event?.target;
+
+    const isPropertiesTrigger =
+      target instanceof HTMLElement &&
+      target.classList.contains("properties-trigger");
 
     if (
       ((event.target instanceof HTMLElement ||
         event.target instanceof SVGElement) &&
         event.target.closest(`.${CLASSES.SHAPE_ACTIONS_MENU}`) &&
         !isWritableElement(event.target)) ||
-      isTargetPickerTrigger
+      isPropertiesTrigger
     ) {
       editable.onblur = null;
       window.addEventListener("pointerup", bindBlurEvent);
@@ -664,10 +671,10 @@ export const textWysiwyg = ({
   // handle updates of textElement properties of editing element
   const unbindUpdate = Scene.getScene(element)!.onUpdate(() => {
     updateWysiwygStyle();
-    const isColorPickerActive = !!document.activeElement?.closest(
-      ".color-picker-content",
+    const isPopupOpened = !!document.activeElement?.closest(
+      ".properties-content",
     );
-    if (!isColorPickerActive) {
+    if (!isPopupOpened) {
       editable.focus();
     }
   });

@@ -6,7 +6,6 @@ import type {
   ExcalidrawTextContainer,
   ExcalidrawTextElement,
   ExcalidrawTextElementWithContainer,
-  FontFamilyValues,
   FontString,
   NonDeletedExcalidrawElement,
 } from "./types";
@@ -17,7 +16,6 @@ import {
   BOUND_TEXT_PADDING,
   DEFAULT_FONT_FAMILY,
   DEFAULT_FONT_SIZE,
-  FONT_FAMILY,
   TEXT_ALIGN,
   VERTICAL_ALIGN,
 } from "../constants";
@@ -30,7 +28,7 @@ import {
   resetOriginalContainerCache,
   updateOriginalContainerCache,
 } from "./containerCache";
-import type { ExtractSetType, MakeBrand } from "../utility-types";
+import type { ExtractSetType } from "../utility-types";
 
 export const normalizeText = (text: string) => {
   return (
@@ -319,24 +317,6 @@ export const getLineHeightInPx = (
   lineHeight: ExcalidrawTextElement["lineHeight"],
 ) => {
   return fontSize * lineHeight;
-};
-
-/**
- * Calculates vertical offset for a text with alphabetic baseline.
- */
-export const getVerticalOffset = (
-  fontFamily: ExcalidrawTextElement["fontFamily"],
-  fontSize: ExcalidrawTextElement["fontSize"],
-  lineHeightPx: number,
-) => {
-  const { unitsPerEm, ascender, descender } =
-    FONT_METRICS[fontFamily] || FONT_METRICS[FONT_FAMILY.Helvetica];
-
-  const fontSizeEm = fontSize / unitsPerEm;
-  const lineGap = lineHeightPx - fontSizeEm * ascender + fontSizeEm * descender;
-
-  const verticalOffset = fontSizeEm * ascender + lineGap;
-  return verticalOffset;
 };
 
 // FIXME rename to getApproxMinContainerHeight
@@ -864,79 +844,6 @@ export const isMeasureTextSupported = () => {
     }),
   );
   return width > 0;
-};
-
-/**
- * Unitless line height
- *
- * In previous versions we used `normal` line height, which browsers interpret
- * differently, and based on font-family and font-size.
- *
- * To make line heights consistent across browsers we hardcode the values for
- * each of our fonts based on most common average line-heights.
- * See https://github.com/excalidraw/excalidraw/pull/6360#issuecomment-1477635971
- * where the values come from.
- */
-const DEFAULT_LINE_HEIGHT = {
-  // ~1.25 is the average for Virgil in WebKit and Blink.
-  // Gecko (FF) uses ~1.28.
-  [FONT_FAMILY.Virgil]: 1.25 as ExcalidrawTextElement["lineHeight"],
-  // ~1.15 is the average for Helvetica in WebKit and Blink.
-  [FONT_FAMILY.Helvetica]: 1.15 as ExcalidrawTextElement["lineHeight"],
-  // ~1.2 is the average for Cascadia in WebKit and Blink, and kinda Gecko too
-  [FONT_FAMILY.Cascadia]: 1.2 as ExcalidrawTextElement["lineHeight"],
-};
-
-/** OS/2 sTypoAscender, https://learn.microsoft.com/en-us/typography/opentype/spec/os2#stypoascender */
-type sTypoAscender = number & MakeBrand<"sTypoAscender">;
-
-/** OS/2 sTypoDescender, https://learn.microsoft.com/en-us/typography/opentype/spec/os2#stypodescender */
-type sTypoDescender = number & MakeBrand<"sTypoDescender">;
-
-/** head.unitsPerEm, usually either 1000 or 2048 */
-type unitsPerEm = number & MakeBrand<"unitsPerEm">;
-
-/**
- * Hardcoded metrics for default fonts, read by https://opentype.js.org/font-inspector.html.
- * For custom fonts, read these metrics from OS/2 table and extend this object.
- *
- * WARN: opentype does NOT open WOFF2 correctly, make sure to convert WOFF2 to TTF first.
- */
-export const FONT_METRICS: Record<
-  number,
-  {
-    unitsPerEm: number;
-    ascender: sTypoAscender;
-    descender: sTypoDescender;
-  }
-> = {
-  [FONT_FAMILY.Virgil]: {
-    unitsPerEm: 1000 as unitsPerEm,
-    ascender: 886 as sTypoAscender,
-    descender: -374 as sTypoDescender,
-  },
-  [FONT_FAMILY.Helvetica]: {
-    unitsPerEm: 2048 as unitsPerEm,
-    ascender: 1577 as sTypoAscender,
-    descender: -471 as sTypoDescender,
-  },
-  [FONT_FAMILY.Cascadia]: {
-    unitsPerEm: 2048 as unitsPerEm,
-    ascender: 1977 as sTypoAscender,
-    descender: -480 as sTypoDescender,
-  },
-  [FONT_FAMILY.Assistant]: {
-    unitsPerEm: 1000 as unitsPerEm,
-    ascender: 1021 as sTypoAscender,
-    descender: -287 as sTypoDescender,
-  },
-};
-
-export const getDefaultLineHeight = (fontFamily: FontFamilyValues) => {
-  if (fontFamily in DEFAULT_LINE_HEIGHT) {
-    return DEFAULT_LINE_HEIGHT[fontFamily];
-  }
-  return DEFAULT_LINE_HEIGHT[DEFAULT_FONT_FAMILY];
 };
 
 export const getMinTextElementWidth = (
