@@ -431,6 +431,7 @@ import {
   isPointHittingLinkIcon,
 } from "./hyperlink/helpers";
 import { getShortcutFromShortcutName } from "../actions/shortcuts";
+import { routeArrow } from "../element/routing";
 
 const AppContext = React.createContext<AppClassProperties>(null!);
 const AppPropsContext = React.createContext<AppProps>(null!);
@@ -5308,16 +5309,29 @@ class App extends React.Component<AppProps, AppState> {
         ) {
           setCursor(this.interactiveCanvas, CURSOR_TYPE.POINTER);
         }
-        // update last uncommitted point
-        mutateElement(multiElement, {
-          points: [
-            ...points.slice(0, -1),
+
+        if (isArrowElement(multiElement)) {
+          routeArrow(
+            multiElement,
+            true,
             [
               lastCommittedX + dxFromLastCommitted,
               lastCommittedY + dyFromLastCommitted,
             ],
-          ],
-        });
+            this.scene.getNonDeletedElementsMap(),
+          );
+        } else {
+          // update last uncommitted point
+          mutateElement(multiElement, {
+            points: [
+              ...points.slice(0, -1),
+              [
+                lastCommittedX + dxFromLastCommitted,
+                lastCommittedY + dyFromLastCommitted,
+              ],
+            ],
+          });
+        }
       }
 
       return;
