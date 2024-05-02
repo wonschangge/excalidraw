@@ -5302,7 +5302,10 @@ class App extends React.Component<AppProps, AppState> {
             ));
         }
 
-        if (isPathALoop(points, this.state.zoom.value)) {
+        if (
+          !isArrowElement(multiElement) &&
+          isPathALoop(points, this.state.zoom.value)
+        ) {
           setCursor(this.interactiveCanvas, CURSOR_TYPE.POINTER);
         }
         // update last uncommitted point
