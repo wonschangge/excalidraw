@@ -119,6 +119,7 @@ import {
   updateTextElement,
   redrawTextBoundingBox,
   getElementAbsoluteCoords,
+  getElementBounds,
 } from "../element";
 import {
   bindOrUnbindLinearElement,
@@ -5311,6 +5312,12 @@ class App extends React.Component<AppProps, AppState> {
         }
 
         if (isArrowElement(multiElement)) {
+          // TODO: Move boundingbox cache to state and clear it when arrow creation is finished
+          const elementsMap = this.scene.getNonDeletedElementsMap();
+          const bounds = this.scene
+            .getNonDeletedElements()
+            .filter((e) => e.id !== multiElement.id)
+            .map((element) => getElementBounds(element, elementsMap));
           routeArrow(
             multiElement,
             true,
@@ -5318,7 +5325,7 @@ class App extends React.Component<AppProps, AppState> {
               lastCommittedX + dxFromLastCommitted,
               lastCommittedY + dyFromLastCommitted,
             ],
-            this.scene.getNonDeletedElementsMap(),
+            bounds,
           );
         } else {
           // update last uncommitted point

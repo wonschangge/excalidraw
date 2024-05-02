@@ -1,4 +1,4 @@
-import { NormalizedZoomValue, Point, Zoom } from "./types";
+import { NormalizedZoomValue, Point, Vector, Zoom } from "./types";
 import {
   DEFAULT_ADAPTIVE_RADIUS,
   LINE_CONFIRM_THRESHOLD,
@@ -230,7 +230,12 @@ const orderedColinearOrientation = (p: Point, q: Point, r: Point) => {
 };
 
 // Check is p1q1 intersects with p2q2
-const doSegmentsIntersect = (p1: Point, q1: Point, p2: Point, q2: Point) => {
+export const doSegmentsIntersect = (
+  p1: Point,
+  q1: Point,
+  p2: Point,
+  q2: Point,
+) => {
   const o1 = orderedColinearOrientation(p1, q1, p2);
   const o2 = orderedColinearOrientation(p1, q1, q2);
   const o3 = orderedColinearOrientation(p2, q2, p1);
@@ -522,3 +527,22 @@ export const normalizeAngle = (angle: number): number => {
   return angle;
 };
 
+export const pointToVector = (p: Point, origin: Point = [0, 0]): Vector => [
+  p[0] - origin[0],
+  p[1] - origin[1],
+];
+
+export const dot = (a: Vector, b: Vector): number => a[0] * b[0] + a[1] * b[1];
+
+export const normalize = (vector: Vector): Vector => {
+  const m = magnitude(vector);
+
+  if (m < 0.000005) {
+    return [0, 0];
+  }
+
+  return [vector[0] / m, vector[1] / m];
+};
+
+const magnitude = (vector: Vector) =>
+  Math.sqrt(vector[0] * vector[0] + vector[1] * vector[1]);

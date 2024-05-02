@@ -44,6 +44,8 @@ import { StoreActionType } from "./store";
 
 export type Point = Readonly<RoughPoint>;
 
+export type Vector = Readonly<RoughPoint>;
+
 export type SocketId = string & { _brand: "SocketId" };
 
 export type Collaborator = Readonly<{
