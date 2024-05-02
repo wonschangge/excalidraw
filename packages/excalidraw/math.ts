@@ -511,3 +511,14 @@ export const rangeIntersection = (
 export const isValueInRange = (value: number, min: number, max: number) => {
   return value >= min && value <= max;
 };
+
+export const normalizeAngle = (angle: number): number => {
+  if (angle < 0) {
+    return angle + 2 * Math.PI;
+  }
+  if (angle >= 2 * Math.PI) {
+    return angle - 2 * Math.PI;
+  }
+  return angle;
+};
+

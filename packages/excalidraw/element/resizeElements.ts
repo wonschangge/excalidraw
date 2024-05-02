@@ -1,7 +1,7 @@
 import { MIN_FONT_SIZE, SHIFT_LOCKING_ANGLE } from "../constants";
 import { rescalePoints } from "../points";
 
-import { rotate, centerPoint, rotatePoint } from "../math";
+import { rotate, centerPoint, rotatePoint, normalizeAngle } from "../math";
 import {
   ExcalidrawLinearElement,
   ExcalidrawTextElement,
@@ -48,16 +48,6 @@ import {
 } from "./textElement";
 import { LinearElementEditor } from "./linearElementEditor";
 import { isInGroup } from "../groups";
-
-export const normalizeAngle = (angle: number): number => {
-  if (angle < 0) {
-    return angle + 2 * Math.PI;
-  }
-  if (angle >= 2 * Math.PI) {
-    return angle - 2 * Math.PI;
-  }
-  return angle;
-};
 
 // Returns true when transform (resizing/rotation) happened
 export const transformElements = (
