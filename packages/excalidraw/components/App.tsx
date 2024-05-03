@@ -5316,15 +5316,16 @@ class App extends React.Component<AppProps, AppState> {
           const elementsMap = this.scene.getNonDeletedElementsMap();
           const bounds = this.scene
             .getNonDeletedElements()
-            .filter((e) => e.id !== multiElement.id)
+            .filter((e) => e.id !== multiElement.id) // Arrow doesn't collide with itself
             .map((element) => getElementBounds(element, elementsMap));
           routeArrow(
             multiElement,
             true,
-            [
-              lastCommittedX + dxFromLastCommitted,
-              lastCommittedY + dyFromLastCommitted,
-            ],
+            // [
+            //   lastCommittedX + dxFromLastCommitted,
+            //   lastCommittedY + dyFromLastCommitted,
+            // ],
+            [scenePointerX, scenePointerY],
             bounds,
           );
         } else {

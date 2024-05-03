@@ -2,6 +2,7 @@ import {
   arePointsEqual,
   doSegmentsIntersect,
   dot,
+  isValueInRange,
   normalize,
   pointToVector,
 } from "../math";
@@ -11,6 +12,13 @@ import { mutateElement } from "./mutateElement";
 import { ExcalidrawArrowElement } from "./types";
 
 const PRECISION = 0.000005;
+
+type RoutingKernel = (
+  points: Point[],
+  target: Point,
+  boundingBoxes: Bounds[],
+) => Point;
+type LocalPoint = [number, number];
 
 // ========================================
 // The main idea is to Ray March the arrow
@@ -23,16 +31,17 @@ export const routeArrow = (
   target: Point,
   boundingBoxes: Bounds[],
 ) => {
-  const points = [
-    firstPointIsStart ? arrow.points[0] : arrow.points[arrow.points.length - 1],
-  ];
+  const firstPoint = firstPointIsStart
+    ? (arrow.points[0] as LocalPoint)
+    : (arrow.points[arrow.points.length - 1] as LocalPoint);
+  const points = [toWorldSpace(arrow, firstPoint)];
 
   // Limit max step to avoid infinite loop
   for (let step = 0; step < 5; step++) {
-    const next = kernel(points[step], target, boundingBoxes);
+    const next = kernel(points, target, boundingBoxes);
     if (
-      Math.abs(target[0] - next[0]) < PRECISION &&
-      Math.abs(target[1] - next[1]) < PRECISION
+      arePointsEqual(target, next) ||
+      arePointsEqual(points[points.length - 1], next) // Shouldn't be needed
     ) {
       break;
     }
@@ -40,17 +49,78 @@ export const routeArrow = (
   }
 
   points.push(target);
-  mutateElement(arrow, { points });
+
+  mutateElement(arrow, {
+    points: points.map((point) => toLocalSpace(arrow, point)),
+  });
 };
 
 const kernel = (
+  points: Point[],
+  target: Point,
+  boundingBoxes: Bounds[],
+): Point => {
+  const last = points[points.length - 1];
+  const segmentVector =
+    points.length < 2
+      ? ([1, 0] as Vector) // TODO: Fixed right attachment
+      : normalize(
+          pointToVector(points[points.length - 1], points[points.length - 2]),
+        );
+  const targetVector = normalize(
+    pointToVector(target, points[points.length - 1]),
+  );
+  //console.log(segmentVector, targetVector);
+  const targetDirection = dot(segmentVector, targetVector);
+  const targetNormal = dot(
+    rotateVector(segmentVector, Math.PI / 2),
+    targetVector,
+  );
+
+  switch (true) {
+    case targetDirection > PRECISION && targetNormal > PRECISION:
+      // Right bottom
+      return [target[0], last[1]];
+    case targetDirection > PRECISION && targetNormal < PRECISION:
+      // Right top
+      return [target[0], last[1]];
+    case targetDirection < PRECISION && targetNormal < PRECISION:
+      // Left top
+      return [last[0], target[1]];
+    case targetDirection < PRECISION && targetNormal > PRECISION:
+      // Left bottom
+      return [last[0], target[1]];
+  }
+
+  return target;
+};
+
+const toLocalSpace = (arrow: ExcalidrawArrowElement, p: Point): LocalPoint => [
+  p[0] - arrow.x,
+  p[1] - arrow.y,
+];
+
+const toWorldSpace = (arrow: ExcalidrawArrowElement, p: LocalPoint): Point => [
+  p[0] + arrow.x,
+  p[1] + arrow.y,
+];
+
+const rotateVector = (vector: Vector, rads: number): Vector => [
+  vector[0] * Math.cos(rads) - vector[1] * Math.sin(rads),
+  vector[0] * Math.sin(rads) + vector[1] * Math.cos(rads),
+];
+
+/*
+ * Implement a simplified A* heuristics
+ *
+const avoidanceKernel = (
   origin: Point,
   target: Point,
   boundingBoxes: Bounds[],
 ): Point => {
   const targetUnitVec = normalize(pointToVector(target, origin));
   const rightUnitVec = [1, 0] as Vector;
-  //console.log(targetUnitVec);
+
   if (Math.abs(dot(rightUnitVec, targetUnitVec)) < 0.5) {
     // Horizontal
     const horizontalPoint = [target[0], origin[1]] as Point;
@@ -190,3 +260,5 @@ const naiveRaycastBottom = (
 
   return hits.pop();
 };
+
+*/
