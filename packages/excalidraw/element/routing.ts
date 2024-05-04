@@ -23,7 +23,7 @@ export const routeArrow = (
   const points = [toWorldSpace(arrow, firstPoint)];
 
   // Limit max step to avoid infinite loop
-  for (let step = 0; step < 5; step++) {
+  for (let step = 0; step < 50; step++) {
     const next = kernel(points, target, boundingBoxes);
     if (arePointsEqual(target, next)) {
       break;
@@ -48,32 +48,22 @@ const kernel = (
     points.length < 2
       ? ([1, 0] as Vector) // TODO: Fixed right attachment
       : normalize(pointToVector(last, points[points.length - 2]));
-  const targetVector = normalize(
-    pointToVector(target, points[points.length - 1]),
-  );
+  const targetVector = normalize(pointToVector(target, last));
   const segmentNormal = rotateVector(segmentVector, Math.PI / 2);
   const rightSegmentNormalDot = dot([1, 0], segmentNormal);
   const segmentTargetDot = dot(segmentVector, targetVector);
 
   if (segmentTargetDot === 1) {
-    // Directly "ahead of us"
+    // Quick bailout - Target is directly "ahead of us"
     return target;
   }
 
-  if (segmentTargetDot === -1) {
-    // Directly "behind us" - turn right
-    if (rightSegmentNormalDot === 0) {
-      return [last[0], target[1]];
-    }
-    return [target[0], last[1]];
-  }
-
   if (rightSegmentNormalDot === 0) {
-    // We're right-to-left
+    // Last segment from start is horizontal
     return [last[0], target[1]];
   }
 
-  // We are up-to-down
+  // Last segment from start is vertical
   return [target[0], last[1]];
 };
 
