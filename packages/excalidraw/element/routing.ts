@@ -17,18 +17,23 @@ export const routeArrow = (
   boundingBoxes: Bounds[],
 ) => {
   const firstPoint = arrow.points[0] as LocalPoint;
-  const points = [toWorldSpace(arrow, firstPoint)];
+  const points = [
+    toWorldSpace(arrow, firstPoint),
+    toWorldSpace(arrow, [firstPoint[0] - 40, firstPoint[1]]),
+  ];
+  const endPoints = [[target[0] + 40, target[1]], target] as Point[];
 
   // Limit max step to avoid infinite loop
   for (let step = 0; step < 50; step++) {
-    const next = kernel(points, target, boundingBoxes);
-    if (arePointsEqual(target, next)) {
+    const next = kernel(points, endPoints, boundingBoxes);
+    if (arePointsEqual(endPoints[0], next)) {
       break;
     }
     points.push(next);
   }
 
-  points.push(target);
+  points.push(endPoints[0]);
+  points.push(endPoints[1]);
 
   mutateElement(arrow, {
     points: points.map((point) => toLocalSpace(arrow, point)),
@@ -37,31 +42,36 @@ export const routeArrow = (
 
 const kernel = (
   points: Point[],
-  target: Point,
+  target: Point[],
   boundingBoxes: Bounds[],
 ): Point => {
-  const last = points[points.length - 1];
-  const segmentVector =
+  const start = points[points.length - 1];
+  const end = target[0];
+  const startSegmentVector =
     points.length < 2
-      ? ([1, 0] as Vector) // TODO: Fixed right attachment
-      : normalize(pointToVector(last, points[points.length - 2]));
-  const targetVector = normalize(pointToVector(target, last));
-  const segmentNormal = rotateVector(segmentVector, Math.PI / 2);
+      ? ([1, 0] as Vector) // TODO: Fixed right start attachment
+      : normalize(pointToVector(start, points[points.length - 2]));
+  const endSegmentVector =
+    target.length < 2
+      ? [-1, 0] // TODO: Fixed left end attachment
+      : normalize(pointToVector(target[1], end));
+  const targetVector = normalize(pointToVector(end, start));
+  const segmentNormal = rotateVector(startSegmentVector, Math.PI / 2);
   const rightSegmentNormalDot = dot([1, 0], segmentNormal);
-  const segmentTargetDot = dot(segmentVector, targetVector);
+  const segmentTargetDot = dot(startSegmentVector, targetVector);
 
   if (segmentTargetDot === 1) {
     // Quick bailout - Target is directly "ahead of us"
-    return target;
+    return end;
   }
 
   if (rightSegmentNormalDot === 0) {
     // Last segment from start is horizontal
-    return [last[0], target[1]];
+    return [start[0], end[1]];
   }
 
   // Last segment from start is vertical
-  return [target[0], last[1]];
+  return [end[0], start[1]];
 };
 
 const toLocalSpace = (arrow: ExcalidrawArrowElement, p: Point): LocalPoint => [
