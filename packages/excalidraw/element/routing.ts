@@ -1,23 +1,9 @@
-import {
-  arePointsEqual,
-  doSegmentsIntersect,
-  dot,
-  isValueInRange,
-  normalize,
-  pointToVector,
-} from "../math";
+import { arePointsEqual, dot, normalize, pointToVector } from "../math";
 import { Point, Vector } from "../types";
 import { Bounds } from "./bounds";
 import { mutateElement } from "./mutateElement";
 import { ExcalidrawArrowElement } from "./types";
 
-const PRECISION = 0.000005;
-
-type RoutingKernel = (
-  points: Point[],
-  target: Point,
-  boundingBoxes: Bounds[],
-) => Point;
 type LocalPoint = [number, number];
 
 // ========================================
@@ -39,10 +25,7 @@ export const routeArrow = (
   // Limit max step to avoid infinite loop
   for (let step = 0; step < 5; step++) {
     const next = kernel(points, target, boundingBoxes);
-    if (
-      arePointsEqual(target, next) ||
-      arePointsEqual(points[points.length - 1], next) // Shouldn't be needed
-    ) {
+    if (arePointsEqual(target, next)) {
       break;
     }
     points.push(next);
@@ -64,35 +47,34 @@ const kernel = (
   const segmentVector =
     points.length < 2
       ? ([1, 0] as Vector) // TODO: Fixed right attachment
-      : normalize(
-          pointToVector(points[points.length - 1], points[points.length - 2]),
-        );
+      : normalize(pointToVector(last, points[points.length - 2]));
   const targetVector = normalize(
     pointToVector(target, points[points.length - 1]),
   );
-  //console.log(segmentVector, targetVector);
-  const targetDirection = dot(segmentVector, targetVector);
-  const targetNormal = dot(
-    rotateVector(segmentVector, Math.PI / 2),
-    targetVector,
-  );
+  const segmentNormal = rotateVector(segmentVector, Math.PI / 2);
+  const rightSegmentNormalDot = dot([1, 0], segmentNormal);
+  const segmentTargetDot = dot(segmentVector, targetVector);
 
-  switch (true) {
-    case targetDirection > PRECISION && targetNormal > PRECISION:
-      // Right bottom
-      return [target[0], last[1]];
-    case targetDirection > PRECISION && targetNormal < PRECISION:
-      // Right top
-      return [target[0], last[1]];
-    case targetDirection < PRECISION && targetNormal < PRECISION:
-      // Left top
-      return [last[0], target[1]];
-    case targetDirection < PRECISION && targetNormal > PRECISION:
-      // Left bottom
-      return [last[0], target[1]];
+  if (segmentTargetDot === 1) {
+    // Directly "ahead of us"
+    return target;
   }
 
-  return target;
+  if (segmentTargetDot === -1) {
+    // Directly "behind us" - turn right
+    if (rightSegmentNormalDot === 0) {
+      return [last[0], target[1]];
+    }
+    return [target[0], last[1]];
+  }
+
+  if (rightSegmentNormalDot === 0) {
+    // We're right-to-left
+    return [last[0], target[1]];
+  }
+
+  // We are up-to-down
+  return [target[0], last[1]];
 };
 
 const toLocalSpace = (arrow: ExcalidrawArrowElement, p: Point): LocalPoint => [
@@ -106,9 +88,12 @@ const toWorldSpace = (arrow: ExcalidrawArrowElement, p: LocalPoint): Point => [
 ];
 
 const rotateVector = (vector: Vector, rads: number): Vector => [
-  vector[0] * Math.cos(rads) - vector[1] * Math.sin(rads),
-  vector[0] * Math.sin(rads) + vector[1] * Math.cos(rads),
+  cutoff(vector[0] * Math.cos(rads) - vector[1] * Math.sin(rads)),
+  cutoff(vector[0] * Math.sin(rads) + vector[1] * Math.cos(rads)),
 ];
+
+const cutoff = (num: number): number =>
+  Math.round(num * 1000000000) / 1000000000;
 
 /*
  * Implement a simplified A* heuristics
