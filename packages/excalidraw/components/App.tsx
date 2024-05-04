@@ -5318,16 +5318,7 @@ class App extends React.Component<AppProps, AppState> {
             .getNonDeletedElements()
             .filter((e) => e.id !== multiElement.id) // Arrow doesn't collide with itself
             .map((element) => getElementBounds(element, elementsMap));
-          routeArrow(
-            multiElement,
-            true,
-            // [
-            //   lastCommittedX + dxFromLastCommitted,
-            //   lastCommittedY + dyFromLastCommitted,
-            // ],
-            [scenePointerX, scenePointerY],
-            bounds,
-          );
+          routeArrow(multiElement, [scenePointerX, scenePointerY], bounds);
         } else {
           // update last uncommitted point
           mutateElement(multiElement, {

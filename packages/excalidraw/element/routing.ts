@@ -13,13 +13,10 @@ type LocalPoint = [number, number];
 /// Recalculates the points of the arrow, except the start point
 export const routeArrow = (
   arrow: ExcalidrawArrowElement,
-  firstPointIsStart: boolean,
   target: Point,
   boundingBoxes: Bounds[],
 ) => {
-  const firstPoint = firstPointIsStart
-    ? (arrow.points[0] as LocalPoint)
-    : (arrow.points[arrow.points.length - 1] as LocalPoint);
+  const firstPoint = arrow.points[0] as LocalPoint;
   const points = [toWorldSpace(arrow, firstPoint)];
 
   // Limit max step to avoid infinite loop
