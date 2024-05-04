@@ -51,19 +51,8 @@ const kernel = (
     points.length < 2
       ? ([1, 0] as Vector) // TODO: Fixed right start attachment
       : normalize(pointToVector(start, points[points.length - 2]));
-  const endSegmentVector =
-    target.length < 2
-      ? [-1, 0] // TODO: Fixed left end attachment
-      : normalize(pointToVector(target[1], end));
-  const targetVector = normalize(pointToVector(end, start));
-  const segmentNormal = rotateVector(startSegmentVector, Math.PI / 2);
-  const rightSegmentNormalDot = dot([1, 0], segmentNormal);
-  const segmentTargetDot = dot(startSegmentVector, targetVector);
-
-  if (segmentTargetDot === 1) {
-    // Quick bailout - Target is directly "ahead of us"
-    return end;
-  }
+  const startSegmentNormal = rotateVector(startSegmentVector, Math.PI / 2);
+  const rightSegmentNormalDot = dot([1, 0], startSegmentNormal);
 
   if (rightSegmentNormalDot === 0) {
     // Last segment from start is horizontal
