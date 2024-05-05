@@ -22,9 +22,9 @@ export const routeArrow = (
     toWorldSpace(arrow, [firstPoint[0] - 40, firstPoint[1]]),
   ];
   const endPoints = [[target[0] + 40, target[1]], target] as Point[];
-
+  console.log("----");
   // Limit max step to avoid infinite loop
-  for (let step = 0; step < 50; step++) {
+  for (let step = 0; step < 5; step++) {
     const next = kernel(points, endPoints, boundingBoxes);
     if (arePointsEqual(endPoints[0], next)) {
       break;
@@ -47,20 +47,34 @@ const kernel = (
 ): Point => {
   const start = points[points.length - 1];
   const end = target[0];
-  const startSegmentVector =
+  const startVector =
     points.length < 2
       ? ([1, 0] as Vector) // TODO: Fixed right start attachment
       : normalize(pointToVector(start, points[points.length - 2]));
-  const startSegmentNormal = rotateVector(startSegmentVector, Math.PI / 2);
-  const rightSegmentNormalDot = dot([1, 0], startSegmentNormal);
+  const endVector =
+    target.length < 2
+      ? ([-1, 0] as Vector) // TODO: Fixed left end attachment
+      : normalize(pointToVector(target[1], end));
+  const rightStartNormalDot = dot(
+    [1, 0],
+    rotateVector(startVector, Math.PI / 2),
+  );
 
-  if (rightSegmentNormalDot === 0) {
-    // Last segment from start is horizontal
-    return [start[0], end[1]];
+  const next: Point =
+    rightStartNormalDot === 0
+      ? [start[0], end[1]] // Last segment from start is horizontal
+      : [end[0], start[1]]; // Last segment from start is vertical
+  const nextVector = normalize(pointToVector(next, end));
+  const nextEndDot = dot(nextVector, endVector);
+
+  if (nextEndDot === 1) {
+    // Facing opposite - make a half pass toward the target
+    return rightStartNormalDot === 0
+      ? [start[0], start[1] + (end[1] - start[1]) / 2]
+      : [start[0] + (end[0] - start[0]) / 2, start[1]];
   }
 
-  // Last segment from start is vertical
-  return [end[0], start[1]];
+  return next;
 };
 
 const toLocalSpace = (arrow: ExcalidrawArrowElement, p: Point): LocalPoint => [
