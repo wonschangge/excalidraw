@@ -14,7 +14,7 @@ import { getCommonBoundingBox } from "../element/bounds";
 import {
   bindOrUnbindLinearElements,
   isBindingEnabled,
-} from "../element/binding";
+} from "../element/arrow/binding";
 import { updateFrameMembershipOfSelectedElements } from "../frame";
 import { flipHorizontal, flipVertical } from "../components/icons";
 import { StoreAction } from "../store";

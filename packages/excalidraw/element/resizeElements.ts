@@ -30,7 +30,7 @@ import {
 } from "./typeChecks";
 import { mutateElement } from "./mutateElement";
 import { getFontString } from "../utils";
-import { updateBoundElements } from "./binding";
+import { updateBoundElements } from "./arrow/binding";
 import {
   MaybeTransformHandleType,
   TransformHandleDirection,

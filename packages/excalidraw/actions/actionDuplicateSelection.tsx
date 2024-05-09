@@ -13,7 +13,7 @@ import {
   getElementsInGroup,
 } from "../groups";
 import { AppState } from "../types";
-import { fixBindingsAfterDuplication } from "../element/binding";
+import { fixBindingsAfterDuplication } from "../element/arrow/binding";
 import { ActionResult } from "./types";
 import { GRID_SIZE } from "../constants";
 import {

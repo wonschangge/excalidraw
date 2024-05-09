@@ -41,7 +41,7 @@ import {
   bindOrUnbindLinearElement,
   getHoveredElementForBinding,
   isBindingEnabled,
-} from "./binding";
+} from "./arrow/binding";
 import { tupleToCoors } from "../utils";
 import { isBindingElement } from "./typeChecks";
 import { KEYS, shouldRotateWithDiscreteAngle } from "../keys";

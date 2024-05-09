@@ -6,7 +6,7 @@ import {
   BindingProp,
   bindingProperties,
   updateBoundElements,
-} from "./element/binding";
+} from "./element/arrow/binding";
 import { LinearElementEditor } from "./element/linearElementEditor";
 import {
   ElementUpdate,

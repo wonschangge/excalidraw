@@ -9,7 +9,7 @@ import { AppState } from "../types";
 import { newElementWith } from "../element/mutateElement";
 import { getElementsInGroup } from "../groups";
 import { LinearElementEditor } from "../element/linearElementEditor";
-import { fixBindingsAfterDeletion } from "../element/binding";
+import { fixBindingsAfterDeletion } from "../element/arrow/binding";
 import { isBoundToContainer, isFrameLikeElement } from "../element/typeChecks";
 import { updateActiveTool } from "../utils";
 import { TrashIcon } from "../components/icons";

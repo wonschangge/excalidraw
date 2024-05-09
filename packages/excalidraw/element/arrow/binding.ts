@@ -1,8 +1,8 @@
-import * as GA from "../ga";
-import * as GAPoint from "../gapoints";
-import * as GADirection from "../gadirections";
-import * as GALine from "../galines";
-import * as GATransform from "../gatransforms";
+import * as GA from "../../ga";
+import * as GAPoint from "../../gapoints";
+import * as GADirection from "../../gadirections";
+import * as GALine from "../../galines";
+import * as GATransform from "../../gatransforms";
 
 import {
   ExcalidrawBindableElement,
@@ -22,12 +22,12 @@ import {
   NonDeletedSceneElementsMap,
   ExcalidrawTextElement,
   ExcalidrawArrowElement,
-} from "./types";
+} from "../types";
 
-import { getElementAbsoluteCoords } from "./bounds";
-import { AppClassProperties, AppState, Point } from "../types";
-import { isPointOnShape } from "../../utils/collision";
-import { getElementAtPosition } from "../scene";
+import { getElementAbsoluteCoords } from "../bounds";
+import { AppClassProperties, AppState, Point } from "../../types";
+import { isPointOnShape } from "../../../utils/collision";
+import { getElementAtPosition } from "../../scene";
 import {
   isArrowElement,
   isBindableElement,
@@ -35,13 +35,13 @@ import {
   isBoundToContainer,
   isLinearElement,
   isTextElement,
-} from "./typeChecks";
-import { ElementUpdate, mutateElement } from "./mutateElement";
-import Scene from "../scene/Scene";
-import { LinearElementEditor } from "./linearElementEditor";
-import { arrayToMap, tupleToCoors } from "../utils";
-import { KEYS } from "../keys";
-import { getBoundTextElement, handleBindTextResize } from "./textElement";
+} from "../typeChecks";
+import { ElementUpdate, mutateElement } from "../mutateElement";
+import Scene from "../../scene/Scene";
+import { LinearElementEditor } from "../linearElementEditor";
+import { arrayToMap, tupleToCoors } from "../../utils";
+import { KEYS } from "../../keys";
+import { getBoundTextElement, handleBindTextResize } from "../textElement";
 
 export type SuggestedBinding =
   | NonDeleted<ExcalidrawBindableElement>

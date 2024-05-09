@@ -11,7 +11,7 @@ import { LinearElementEditor } from "../element/linearElementEditor";
 import {
   maybeBindLinearElement,
   bindOrUnbindLinearElement,
-} from "../element/binding";
+} from "../element/arrow/binding";
 import { isBindingElement, isLinearElement } from "../element/typeChecks";
 import { AppState } from "../types";
 import { resetCursor } from "../cursor";

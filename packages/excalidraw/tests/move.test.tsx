@@ -4,7 +4,7 @@ import { Excalidraw } from "../index";
 import * as StaticScene from "../renderer/staticScene";
 import * as InteractiveCanvas from "../renderer/interactiveScene";
 import { reseed } from "../random";
-import { bindOrUnbindLinearElement } from "../element/binding";
+import { bindOrUnbindLinearElement } from "../element/arrow/binding";
 import {
   ExcalidrawLinearElement,
   NonDeleted,

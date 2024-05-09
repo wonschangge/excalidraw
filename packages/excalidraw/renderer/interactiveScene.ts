@@ -37,7 +37,7 @@ import {
   maxBindingGap,
   SuggestedBinding,
   SuggestedPointBinding,
-} from "../element/binding";
+} from "../element/arrow/binding";
 import { LinearElementEditor } from "../element/linearElementEditor";
 import {
   bootstrapCanvas,

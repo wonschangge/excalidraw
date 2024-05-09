@@ -1,4 +1,4 @@
-import { updateBoundElements } from "./binding";
+import { updateBoundElements } from "./arrow/binding";
 import { Bounds, getCommonBounds } from "./bounds";
 import { mutateElement } from "./mutateElement";
 import { getPerfectElementSize } from "./sizeHelpers";

@@ -10,7 +10,7 @@ import {
   newLinearElement,
   redrawTextBoundingBox,
 } from "../element";
-import { bindLinearElement } from "../element/binding";
+import { bindLinearElement } from "../element/arrow/binding";
 import {
   ElementConstructorOpts,
   newFrameElement,

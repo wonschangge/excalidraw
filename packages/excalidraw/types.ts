@@ -25,7 +25,7 @@ import {
 import { Action } from "./actions/types";
 import { Point as RoughPoint } from "roughjs/bin/geometry";
 import { LinearElementEditor } from "./element/linearElementEditor";
-import { SuggestedBinding } from "./element/binding";
+import { SuggestedBinding } from "./element/arrow/binding";
 import { ImportedDataState } from "./data/types";
 import type App from "./components/App";
 import type { throttleRAF } from "./utils";
