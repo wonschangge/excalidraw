@@ -2108,6 +2108,38 @@ export const arrowBarToLeftIcon = createIcon(
   tablerIconProps,
 );
 
+// arrow-up-right
+export const arrowUpRightIcon = createIcon(
+  <g>
+    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+    <path d="M8.464 15.536l9.536 -9.536" />
+    <path d="M18 10v-4h-4" />
+    <path d="M8.414 15.586a2 2 0 1 0 -2.828 2.828a2 2 0 0 0 2.828 -2.828" />
+  </g>,
+  tablerIconProps,
+);
+
+// arrow-guide
+export const arrowGuideIcon = createIcon(
+  <g>
+    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+    <path d="M5 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+    <path d="M7 19h3a2 2 0 0 0 2 -2v-8a2 2 0 0 1 2 -2h7" />
+    <path d="M18 4l3 3l-3 3" />
+  </g>,
+  tablerIconProps,
+);
+
+// custom
+export const arrowRoundIcon = createIcon(
+  <g>
+    <path d="M18 4L21 7L18 10" />
+    <path d="M7.7251 18.0498C8.8126 18.0498 16 18.5 16 15C16 11.5 9 13.0001 9 9.00006C9 5 21 6.99996 21 6.99996" />
+    <path d="M5 20C6.10457 20 7 19.1046 7 18C7 16.8954 6.10457 16 5 16C3.89543 16 3 16.8954 3 18C3 19.1046 3.89543 20 5 20Z" />
+  </g>,
+  tablerIconProps,
+);
+
 export const youtubeIcon = createIcon(
   <g>
     <path stroke="none" d="M0 0h24v24H0z" fill="none" />

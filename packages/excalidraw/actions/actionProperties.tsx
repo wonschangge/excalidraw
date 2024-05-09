@@ -50,6 +50,9 @@ import {
   ArrowheadDiamondIcon,
   ArrowheadDiamondOutlineIcon,
   fontSizeIcon,
+  arrowUpRightIcon,
+  arrowGuideIcon,
+  arrowRoundIcon,
 } from "../components/icons";
 import {
   DEFAULT_FONT_FAMILY,
@@ -70,6 +73,7 @@ import {
   getDefaultLineHeight,
 } from "../element/textElement";
 import {
+  isArrowElement,
   isBoundToContainer,
   isLinearElement,
   isUsingAdaptiveRadius,
@@ -97,6 +101,7 @@ import { hasStrokeColor } from "../scene/comparisons";
 import { arrayToMap, getShortcutKey } from "../utils";
 import { register } from "./register";
 import { StoreAction } from "../store";
+import { calculatePoints } from "../element/arrow/routing";
 
 const FONT_SIZE_RELATIVE_INCREASE_STEP = 0.1;
 
@@ -1070,7 +1075,8 @@ export const actionChangeRoundness = register({
             appState,
             (element) =>
               hasLegacyRoundness ? null : element.roundness ? "round" : "sharp",
-            (element) => element.hasOwnProperty("roundness"),
+            (element) =>
+              !isArrowElement(element) && element.hasOwnProperty("roundness"),
             (hasSelection) =>
               hasSelection ? null : appState.currentItemRoundness,
           )}
@@ -1229,6 +1235,84 @@ export const actionChangeArrowhead = register({
             onChange={(value) => updateData({ position: "end", type: value })}
           />
         </div>
+      </fieldset>
+    );
+  },
+});
+
+export const actionChangeArrowType = register({
+  name: "changeArrowType",
+  label: "Change arrow types",
+  trackEvent: false,
+  perform: (elements, appState, value) => {
+    return {
+      elements: changeProperty(elements, appState, (el) => {
+        if (!isArrowElement(el)) {
+          return el;
+        }
+
+        return newElementWith(el, {
+          roundness:
+            value === "round"
+              ? {
+                  type: ROUNDNESS.PROPORTIONAL_RADIUS,
+                }
+              : null,
+          points:
+            value === "simple"
+              ? [el.points[0], el.points[el.points.length - 1]]
+              : calculatePoints(el, el.points[el.points.length - 1], []),
+        });
+      }),
+      appState: {
+        ...appState,
+        currentItemRoundness: value === "round" ? value : null,
+      },
+      storeAction: StoreAction.CAPTURE,
+    };
+  },
+  PanelComponent: ({ elements, appState, updateData }) => {
+    return (
+      <fieldset>
+        <legend>{t("labels.arrowtypes")}</legend>
+        <ButtonIconSelect
+          group="arrowtypes"
+          options={[
+            {
+              value: "simple",
+              text: t("labels.arrowtype_simple"),
+              icon: arrowUpRightIcon,
+            },
+            {
+              value: "sharp",
+              text: t("labels.arrowtype_sharp"),
+              icon: arrowGuideIcon,
+            },
+            {
+              value: "round",
+              text: t("labels.arrowtype_round"),
+              icon: arrowRoundIcon,
+            },
+          ]}
+          value={getFormValue(
+            elements,
+            appState,
+            (element) => {
+              if (isArrowElement(element)) {
+                return element.points?.length > 2
+                  ? element.roundness
+                    ? "round"
+                    : "sharp"
+                  : "simple";
+              }
+
+              return null;
+            },
+            (element) => isArrowElement(element),
+            (hasSelection) => (hasSelection ? null : "simple"),
+          )}
+          onChange={(value) => updateData(value)}
+        />
       </fieldset>
     );
   },

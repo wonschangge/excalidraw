@@ -45,6 +45,8 @@ export const canChangeRoundness = (type: ElementOrToolType) =>
   type === "diamond" ||
   type === "image";
 
+export const toolIsArrow = (type: ElementOrToolType) => type === "arrow";
+
 export const canHaveArrowheads = (type: ElementOrToolType) => type === "arrow";
 
 export const getElementAtPosition = (
