@@ -432,7 +432,7 @@ import {
   isPointHittingLinkIcon,
 } from "./hyperlink/helpers";
 import { getShortcutFromShortcutName } from "../actions/shortcuts";
-import { routeArrow } from "../element/routing";
+import { routeArrow } from "../element/arrow/routing";
 
 const AppContext = React.createContext<AppClassProperties>(null!);
 const AppPropsContext = React.createContext<AppProps>(null!);

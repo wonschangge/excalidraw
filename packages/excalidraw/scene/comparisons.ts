@@ -40,7 +40,6 @@ export const canChangeRoundness = (type: ElementOrToolType) =>
   type === "rectangle" ||
   type === "iframe" ||
   type === "embeddable" ||
-  type === "arrow" ||
   type === "line" ||
   type === "diamond" ||
   type === "image";
