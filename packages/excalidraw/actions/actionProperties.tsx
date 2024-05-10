@@ -1270,6 +1270,7 @@ export const actionChangeArrowType = register({
                   el.points[el.points.length - 1],
                   getAvoidanceBounds(el),
                 ),
+          elbowed: value !== "simple",
         });
       }),
       appState: {
