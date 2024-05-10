@@ -5305,22 +5305,21 @@ class App extends React.Component<AppProps, AppState> {
             ));
         }
 
-        if (
-          !isArrowElement(multiElement) &&
-          isPathALoop(points, this.state.zoom.value)
-        ) {
-          setCursor(this.interactiveCanvas, CURSOR_TYPE.POINTER);
-        }
-
         if (isArrowElement(multiElement)) {
+          // It's an arrow
           // TODO: Move boundingbox cache to state and clear it when arrow creation is finished
-          const elementsMap = this.scene.getNonDeletedElementsMap();
-          const bounds = this.scene
-            .getNonDeletedElements()
-            .filter((e) => e.id !== multiElement.id) // Arrow doesn't collide with itself
-            .map((element) => getElementBounds(element, elementsMap));
-          routeArrow(multiElement, [scenePointerX, scenePointerY], bounds);
+          // const elementsMap = this.scene.getNonDeletedElementsMap();
+          // const bounds = this.scene
+          //   .getNonDeletedElements()
+          //   .filter((e) => e.id !== multiElement.id) // Arrow doesn't collide with itself
+          //   .map((element) => getElementBounds(element, elementsMap));
+          routeArrow(multiElement, [scenePointerX, scenePointerY], []);
         } else {
+          // It's a line
+          if (isPathALoop(points, this.state.zoom.value)) {
+            setCursor(this.interactiveCanvas, CURSOR_TYPE.POINTER);
+          }
+
           // update last uncommitted point
           mutateElement(multiElement, {
             points: [

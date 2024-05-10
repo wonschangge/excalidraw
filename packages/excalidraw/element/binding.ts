@@ -34,6 +34,7 @@ import {
   isBindingElement,
   isBoundToContainer,
   isLinearElement,
+  isMultiArrowElement,
   isTextElement,
 } from "./typeChecks";
 import { ElementUpdate, mutateElement } from "./mutateElement";
@@ -42,6 +43,7 @@ import { LinearElementEditor } from "./linearElementEditor";
 import { arrayToMap, tupleToCoors } from "../utils";
 import { KEYS } from "../keys";
 import { getBoundTextElement, handleBindTextResize } from "./textElement";
+import { calculatePoints } from "./arrow/routing";
 
 export type SuggestedBinding =
   | NonDeleted<ExcalidrawBindableElement>
@@ -498,7 +500,7 @@ export const updateBoundElements = (
   }
 
   boundElementsVisitor(elementsMap, changedElement, (element) => {
-    if (!isLinearElement(element) || element.isDeleted) {
+    if (!isArrowElement(element) || element.isDeleted) {
       return;
     }
 
@@ -506,6 +508,17 @@ export const updateBoundElements = (
     if (!doesNeedUpdate(element, changedElement)) {
       return;
     }
+
+    // Update multiElement points
+    if (isMultiArrowElement(element)) {
+      const points = calculatePoints(
+        element,
+        element.points[element.points.length - 1],
+        [],
+      );
+      mutateElement(element, { points });
+    }
+
     const bindings = {
       startBinding: maybeCalculateNewGapWhenScaling(
         changedElement,
