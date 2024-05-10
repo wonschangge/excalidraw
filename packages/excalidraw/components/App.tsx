@@ -433,7 +433,7 @@ import {
   isPointHittingLinkIcon,
 } from "./hyperlink/helpers";
 import { getShortcutFromShortcutName } from "../actions/shortcuts";
-import { routeArrow } from "../element/arrow/routing";
+import { getAvoidanceBounds, routeArrow } from "../element/arrow/routing";
 
 const AppContext = React.createContext<AppClassProperties>(null!);
 const AppPropsContext = React.createContext<AppProps>(null!);
@@ -5305,15 +5305,13 @@ class App extends React.Component<AppProps, AppState> {
             ));
         }
 
-        if (isArrowElement(multiElement)) {
-          // It's an arrow
-          // TODO: Move boundingbox cache to state and clear it when arrow creation is finished
-          // const elementsMap = this.scene.getNonDeletedElementsMap();
-          // const bounds = this.scene
-          //   .getNonDeletedElements()
-          //   .filter((e) => e.id !== multiElement.id) // Arrow doesn't collide with itself
-          //   .map((element) => getElementBounds(element, elementsMap));
-          routeArrow(multiElement, [scenePointerX, scenePointerY], []);
+        if (isArrowElement(multiElement) && multiElement.elbowed) {
+          // It's an elbowed arrow
+          routeArrow(
+            multiElement,
+            [scenePointerX, scenePointerY],
+            getAvoidanceBounds(multiElement),
+          );
         } else {
           // It's a line
           if (isPathALoop(points, this.state.zoom.value)) {
@@ -6969,7 +6967,9 @@ class App extends React.Component<AppProps, AppState> {
         elementType === "arrow"
           ? [currentItemStartArrowhead, currentItemEndArrowhead]
           : [null, null];
-
+      console.log(
+        elementType === "arrow" ? this.state.currentArrowElbowed : undefined,
+      );
       const element = newLinearElement({
         type: elementType,
         x: gridX,
@@ -6989,6 +6989,8 @@ class App extends React.Component<AppProps, AppState> {
         endArrowhead,
         locked: false,
         frameId: topLayerFrame ? topLayerFrame.id : null,
+        elbowed:
+          elementType === "arrow" ? this.state.currentArrowElbowed : undefined,
       });
       this.setState((prevState) => {
         const nextSelectedElementIds = {
@@ -7006,13 +7008,6 @@ class App extends React.Component<AppProps, AppState> {
       mutateElement(element, {
         points: [...element.points, [0, 0]],
       });
-      if (elementType === "arrow" && this.state.currentArrowElbowed) {
-        routeArrow(
-          element as ExcalidrawArrowElement,
-          [pointerDownState.origin.x, pointerDownState.origin.y],
-          [],
-        );
-      }
 
       const boundElement = getHoveredElementForBinding(
         pointerDownState.origin,

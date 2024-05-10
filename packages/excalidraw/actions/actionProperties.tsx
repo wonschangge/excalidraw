@@ -1,4 +1,4 @@
-import { AppClassProperties, AppState, Primitive } from "../types";
+import { AppClassProperties, AppState, LocalPoint, Primitive } from "../types";
 import {
   DEFAULT_ELEMENT_BACKGROUND_COLOR_PALETTE,
   DEFAULT_ELEMENT_BACKGROUND_PICKS,
@@ -63,6 +63,7 @@ import {
   VERTICAL_ALIGN,
 } from "../constants";
 import {
+  getElementBounds,
   getNonDeletedElements,
   isTextElement,
   redrawTextBoundingBox,
@@ -80,6 +81,7 @@ import {
 } from "../element/typeChecks";
 import {
   Arrowhead,
+  ExcalidrawArrowElement,
   ExcalidrawElement,
   ExcalidrawLinearElement,
   ExcalidrawTextElement,
@@ -101,7 +103,9 @@ import { hasStrokeColor } from "../scene/comparisons";
 import { arrayToMap, getShortcutKey } from "../utils";
 import { register } from "./register";
 import { StoreAction } from "../store";
-import { calculatePoints } from "../element/arrow/routing";
+import { calculatePoints, getAvoidanceBounds } from "../element/arrow/routing";
+import Scene from "../scene/Scene";
+import { Bounds } from "../element/bounds";
 
 const FONT_SIZE_RELATIVE_INCREASE_STEP = 0.1;
 
@@ -1260,8 +1264,12 @@ export const actionChangeArrowType = register({
               : null,
           points:
             value === "simple"
-              ? [el.points[0], el.points[el.points.length - 1]]
-              : calculatePoints(el, el.points[el.points.length - 1], []),
+              ? el.points
+              : calculatePoints(
+                  el,
+                  el.points[el.points.length - 1],
+                  getAvoidanceBounds(el),
+                ),
         });
       }),
       appState: {
@@ -1300,7 +1308,7 @@ export const actionChangeArrowType = register({
             appState,
             (element) => {
               if (isArrowElement(element)) {
-                return element.points?.length > 2
+                return element.elbowed
                   ? element.roundness
                     ? "round"
                     : "sharp"

@@ -1,8 +1,9 @@
 import { arePointsEqual, dot, normalize, pointToVector } from "../../math";
 import { LocalPoint, Point, Vector } from "../../types";
 import { ExcalidrawArrowElement } from "../types";
-import { Bounds } from "../bounds";
+import { Bounds, getElementBounds } from "../bounds";
 import { mutateElement } from "../mutateElement";
+import Scene from "../../scene/Scene";
 
 // ========================================
 // The main idea is to Ray March the arrow
@@ -102,6 +103,24 @@ const rotateVector = (vector: Vector, rads: number): Vector => [
 
 const cutoff = (num: number): number =>
   Math.round(num * 1000000000) / 1000000000;
+
+export const getAvoidanceBounds = (el: ExcalidrawArrowElement): Bounds[] => {
+  const scene = Scene.getScene(el);
+  if (!scene) {
+    return [];
+  }
+
+  const elementsMap = scene.getNonDeletedElementsMap();
+
+  return scene
+    .getNonDeletedElements()
+    .filter(
+      (element) =>
+        element.id === el.startBinding?.elementId ||
+        element.id === el.endBinding?.elementId,
+    )
+    .map((element) => getElementBounds(element, elementsMap));
+};
 
 /*
  * Implement a simplified A* heuristics

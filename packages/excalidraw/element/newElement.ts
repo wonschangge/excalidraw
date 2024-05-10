@@ -397,6 +397,7 @@ export const newLinearElement = (
     startArrowhead?: Arrowhead | null;
     endArrowhead?: Arrowhead | null;
     points?: ExcalidrawLinearElement["points"];
+    elbowed?: boolean;
   } & ElementConstructorOpts,
 ): NonDeleted<ExcalidrawLinearElement> => {
   return {
@@ -407,6 +408,7 @@ export const newLinearElement = (
     endBinding: null,
     startArrowhead: opts.startArrowhead || null,
     endArrowhead: opts.endArrowhead || null,
+    elbowed: opts.elbowed,
   };
 };
 

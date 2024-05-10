@@ -247,11 +247,13 @@ export type ExcalidrawLinearElement = _ExcalidrawElementBase &
     endBinding: PointBinding | null;
     startArrowhead: Arrowhead | null;
     endArrowhead: Arrowhead | null;
+    elbowed?: boolean;
   }>;
 
 export type ExcalidrawArrowElement = ExcalidrawLinearElement &
   Readonly<{
     type: "arrow";
+    elbowed?: boolean;
   }>;
 
 export type ExcalidrawFreeDrawElement = _ExcalidrawElementBase &

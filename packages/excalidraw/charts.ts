@@ -264,6 +264,7 @@ const chartLines = (
       [0, 0],
       [chartWidth, 0],
     ],
+    elbowed: false,
   });
 
   const yLine = newLinearElement({
@@ -280,6 +281,7 @@ const chartLines = (
       [0, 0],
       [0, -chartHeight],
     ],
+    elbowed: false,
   });
 
   const maxLine = newLinearElement({
@@ -298,6 +300,7 @@ const chartLines = (
       [0, 0],
       [chartWidth, 0],
     ],
+    elbowed: false,
   });
 
   return [xLine, yLine, maxLine];
