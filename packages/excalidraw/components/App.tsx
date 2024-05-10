@@ -184,6 +184,7 @@ import {
   ExcalidrawIframeElement,
   ExcalidrawEmbeddableElement,
   Ordered,
+  ExcalidrawArrowElement,
 } from "../element/types";
 import { getCenter, getDistance } from "../gesture";
 import {
@@ -432,7 +433,8 @@ import {
   isPointHittingLinkIcon,
 } from "./hyperlink/helpers";
 import { getShortcutFromShortcutName } from "../actions/shortcuts";
-import { routeArrow } from "../element/routing";
+import { routeArrow } from "../element/arrow/routing";
+import { calculatePoints } from "../element/arrow/routing";
 
 const AppContext = React.createContext<AppClassProperties>(null!);
 const AppPropsContext = React.createContext<AppProps>(null!);
@@ -7002,9 +7004,18 @@ class App extends React.Component<AppProps, AppState> {
           ),
         };
       });
+
       mutateElement(element, {
         points: [...element.points, [0, 0]],
       });
+      if (elementType === "arrow" && this.state.currentArrowElbowed) {
+        routeArrow(
+          element as ExcalidrawArrowElement,
+          [pointerDownState.origin.x, pointerDownState.origin.y],
+          [],
+        );
+      }
+
       const boundElement = getHoveredElementForBinding(
         pointerDownState.origin,
         this,
