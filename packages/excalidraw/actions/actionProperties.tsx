@@ -1267,6 +1267,7 @@ export const actionChangeArrowType = register({
       appState: {
         ...appState,
         currentItemRoundness: value === "round" ? value : null,
+        currentArrowElbowed: value !== "simple",
       },
       storeAction: StoreAction.CAPTURE,
     };
@@ -1309,7 +1310,14 @@ export const actionChangeArrowType = register({
               return null;
             },
             (element) => isArrowElement(element),
-            (hasSelection) => (hasSelection ? null : "simple"),
+            (hasSelection) =>
+              hasSelection
+                ? null
+                : appState.currentArrowElbowed
+                ? appState.currentItemRoundness
+                  ? "round"
+                  : "sharp"
+                : "simple",
           )}
           onChange={(value) => updateData(value)}
         />

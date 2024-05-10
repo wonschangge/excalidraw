@@ -184,6 +184,7 @@ import {
   ExcalidrawIframeElement,
   ExcalidrawEmbeddableElement,
   Ordered,
+  ExcalidrawArrowElement,
 } from "../element/types";
 import { getCenter, getDistance } from "../gesture";
 import {
@@ -7002,9 +7003,18 @@ class App extends React.Component<AppProps, AppState> {
           ),
         };
       });
+
       mutateElement(element, {
         points: [...element.points, [0, 0]],
       });
+      if (elementType === "arrow" && this.state.currentArrowElbowed) {
+        routeArrow(
+          element as ExcalidrawArrowElement,
+          [pointerDownState.origin.x, pointerDownState.origin.y],
+          [],
+        );
+      }
+
       const boundElement = getHoveredElementForBinding(
         pointerDownState.origin,
         this,
