@@ -15,13 +15,15 @@ import { isTransparent, assertNever } from "../utils";
 import { simplify } from "points-on-curve";
 import { ROUGHNESS } from "../constants";
 import {
+  isArrowElement,
   isEmbeddableElement,
   isIframeElement,
   isIframeLikeElement,
   isLinearElement,
 } from "../element/typeChecks";
 import { canChangeRoundness } from "./comparisons";
-import { EmbedsValidationStatus } from "../types";
+import { EmbedsValidationStatus, LocalPoint } from "../types";
+import { calculatePoints, getAvoidanceBounds } from "../element/arrow/routing";
 
 const getDashArrayDashed = (strokeWidth: number) => [8, 8 + strokeWidth];
 
@@ -398,7 +400,17 @@ export const _generateElementShape = (
 
       // points array can be empty in the beginning, so it is important to add
       // initial position to it
-      const points = element.points.length ? element.points : [[0, 0]];
+      let points = element.points.length
+        ? element.points
+        : ([[0, 0]] as LocalPoint[]);
+
+      if (isArrowElement(element) && element.elbowed) {
+        points = calculatePoints(
+          element,
+          points[points.length - 1],
+          getAvoidanceBounds(element),
+        );
+      }
 
       // curve is always the first element
       // this simplifies finding the curve for an element
