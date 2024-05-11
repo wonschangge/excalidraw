@@ -106,10 +106,6 @@ export const isArrowElement = (
   return element != null && element.type === "arrow";
 };
 
-export const isMultiArrowElement = (
-  element?: ExcalidrawArrowElement | null,
-): boolean => (element?.points.length ?? 0) > 2;
-
 export const isLinearElementType = (
   elementType: ElementOrToolType,
 ): boolean => {

@@ -270,6 +270,7 @@ const restoreElement = (
         points,
         x,
         y,
+        elbowed: element.elbowed,
       });
     }
 

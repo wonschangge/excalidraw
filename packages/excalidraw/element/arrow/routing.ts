@@ -2,29 +2,11 @@ import { arePointsEqual, dot, normalize, pointToVector } from "../../math";
 import { LocalPoint, Point, Vector } from "../../types";
 import { ExcalidrawArrowElement } from "../types";
 import { Bounds, getElementBounds } from "../bounds";
-import { mutateElement } from "../mutateElement";
 import Scene from "../../scene/Scene";
 
 // ========================================
 // The main idea is to Ray March the arrow
 // ========================================
-
-/// Recalculates the points of the arrow, except the start point
-export const routeArrow = (
-  arrow: ExcalidrawArrowElement,
-  target: Point,
-  boundingBoxes: Bounds[],
-) => {
-  const points = calculatePoints(
-    arrow,
-    toLocalSpace(arrow, target),
-    boundingBoxes,
-  );
-
-  mutateElement(arrow, {
-    points,
-  });
-};
 
 export const calculatePoints = (
   arrow: ExcalidrawArrowElement,
@@ -32,11 +14,29 @@ export const calculatePoints = (
   boundingBoxes: Bounds[],
 ): LocalPoint[] => {
   const firstPoint = arrow.points[0] as LocalPoint;
-  const points = [toWorldSpace(arrow, firstPoint)];
-  const endPoints = [toWorldSpace(arrow, target)];
+  const heading = scaleVector(
+    vectorToHeading(pointToVector(target, firstPoint)),
+    40,
+  );
+  const nextToFirstPoint = [
+    firstPoint[0] + heading[0],
+    firstPoint[1] + heading[1],
+  ] as LocalPoint;
+  const points = [
+    toWorldSpace(arrow, firstPoint),
+    toWorldSpace(arrow, nextToFirstPoint),
+  ];
+  const previousToLastPoint = [
+    target[0] - heading[0],
+    target[1] - heading[1],
+  ] as LocalPoint;
+  const endPoints = [
+    toWorldSpace(arrow, previousToLastPoint),
+    toWorldSpace(arrow, target),
+  ];
 
   // Limit max step to avoid infinite loop
-  for (let step = 0; step < 5; step++) {
+  for (let step = 0; step < 50; step++) {
     const next = kernel(points, endPoints, boundingBoxes);
     if (arePointsEqual(endPoints[0], next)) {
       break;
@@ -45,6 +45,7 @@ export const calculatePoints = (
   }
 
   points.push(endPoints[0]);
+  points.push(endPoints[1]);
 
   return points.map((point) => toLocalSpace(arrow, point));
 };
@@ -101,8 +102,33 @@ const rotateVector = (vector: Vector, rads: number): Vector => [
   cutoff(vector[0] * Math.sin(rads) + vector[1] * Math.cos(rads)),
 ];
 
+const scaleVector = (vector: Vector, scalar: number): Vector => [
+  vector[0] * scalar,
+  vector[1] * scalar,
+];
+
+const addVectors = (vec1: Vector, vec2: Vector): Vector => [
+  vec1[0] + vec2[0],
+  vec1[1] + vec2[1],
+];
+
 const cutoff = (num: number): number =>
   Math.round(num * 1000000000) / 1000000000;
+
+const vectorToHeading = (vec: Vector): Vector => {
+  const x = vec[0];
+  const y = vec[1];
+  const absX = Math.abs(x);
+  const absY = Math.abs(y);
+  if (x > absY) {
+    return [1, 0];
+  } else if (x <= -absY) {
+    return [-1, 0];
+  } else if (y > absX) {
+    return [0, 1];
+  }
+  return [0, -1];
+};
 
 export const getAvoidanceBounds = (el: ExcalidrawArrowElement): Bounds[] => {
   const scene = Scene.getScene(el);
@@ -121,6 +147,26 @@ export const getAvoidanceBounds = (el: ExcalidrawArrowElement): Bounds[] => {
     )
     .map((element) => getElementBounds(element, elementsMap));
 };
+
+// enum Quadrant {
+//   NW, // Top Left
+//   NE, // Top Right
+//   SW, // Bottom Left
+//   SE, // Bottom Right
+// }
+
+// const vectorToQuadrant = (vec: Vector): Quadrant => {
+//   if (vec[0] > 0) {
+//     if (vec[1] > 0) {
+//       return Quadrant.SE;
+//     }
+//     return Quadrant.NE;
+//   }
+//   if (vec[1] > 0) {
+//     return Quadrant.SW;
+//   }
+//   return Quadrant.NW;
+// };
 
 /*
  * Implement a simplified A* heuristics

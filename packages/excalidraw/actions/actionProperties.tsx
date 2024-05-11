@@ -81,7 +81,6 @@ import {
 } from "../element/typeChecks";
 import {
   Arrowhead,
-  ExcalidrawArrowElement,
   ExcalidrawElement,
   ExcalidrawLinearElement,
   ExcalidrawTextElement,
@@ -103,9 +102,6 @@ import { hasStrokeColor } from "../scene/comparisons";
 import { arrayToMap, getShortcutKey } from "../utils";
 import { register } from "./register";
 import { StoreAction } from "../store";
-import { calculatePoints, getAvoidanceBounds } from "../element/arrow/routing";
-import Scene from "../scene/Scene";
-import { Bounds } from "../element/bounds";
 
 const FONT_SIZE_RELATIVE_INCREASE_STEP = 0.1;
 

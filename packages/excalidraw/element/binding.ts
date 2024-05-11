@@ -34,7 +34,6 @@ import {
   isBindingElement,
   isBoundToContainer,
   isLinearElement,
-  isMultiArrowElement,
   isTextElement,
 } from "./typeChecks";
 import { ElementUpdate, mutateElement } from "./mutateElement";
@@ -369,6 +368,7 @@ export const bindLinearElement = (
         startOrEnd,
         elementsMap,
       ),
+      focus: 0,
     } as PointBinding,
   });
 
