@@ -368,7 +368,6 @@ export const bindLinearElement = (
         startOrEnd,
         elementsMap,
       ),
-      focus: 0,
     } as PointBinding,
   });
 

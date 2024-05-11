@@ -107,11 +107,6 @@ const scaleVector = (vector: Vector, scalar: number): Vector => [
   vector[1] * scalar,
 ];
 
-const addVectors = (vec1: Vector, vec2: Vector): Vector => [
-  vec1[0] + vec2[0],
-  vec1[1] + vec2[1],
-];
-
 const cutoff = (num: number): number =>
   Math.round(num * 1000000000) / 1000000000;
 
