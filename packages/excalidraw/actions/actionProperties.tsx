@@ -1262,14 +1262,6 @@ export const actionChangeArrowType = register({
                   type: ROUNDNESS.PROPORTIONAL_RADIUS,
                 }
               : null,
-          points:
-            value === "simple"
-              ? el.points
-              : calculatePoints(
-                  el,
-                  el.points[el.points.length - 1],
-                  getAvoidanceBounds(el),
-                ),
           elbowed: value !== "simple",
         });
       }),

@@ -43,7 +43,6 @@ import { LinearElementEditor } from "./linearElementEditor";
 import { arrayToMap, tupleToCoors } from "../utils";
 import { KEYS } from "../keys";
 import { getBoundTextElement, handleBindTextResize } from "./textElement";
-import { calculatePoints } from "./arrow/routing";
 
 export type SuggestedBinding =
   | NonDeleted<ExcalidrawBindableElement>
@@ -507,16 +506,6 @@ export const updateBoundElements = (
     // In case the boundElements are stale
     if (!doesNeedUpdate(element, changedElement)) {
       return;
-    }
-
-    // Update multiElement points
-    if (isMultiArrowElement(element)) {
-      const points = calculatePoints(
-        element,
-        element.points[element.points.length - 1],
-        [],
-      );
-      mutateElement(element, { points });
     }
 
     const bindings = {

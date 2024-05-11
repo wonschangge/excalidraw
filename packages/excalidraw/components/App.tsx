@@ -119,7 +119,6 @@ import {
   updateTextElement,
   redrawTextBoundingBox,
   getElementAbsoluteCoords,
-  getElementBounds,
 } from "../element";
 import {
   bindOrUnbindLinearElement,
@@ -184,7 +183,6 @@ import {
   ExcalidrawIframeElement,
   ExcalidrawEmbeddableElement,
   Ordered,
-  ExcalidrawArrowElement,
 } from "../element/types";
 import { getCenter, getDistance } from "../gesture";
 import {
@@ -433,7 +431,6 @@ import {
   isPointHittingLinkIcon,
 } from "./hyperlink/helpers";
 import { getShortcutFromShortcutName } from "../actions/shortcuts";
-import { getAvoidanceBounds, routeArrow } from "../element/arrow/routing";
 
 const AppContext = React.createContext<AppClassProperties>(null!);
 const AppPropsContext = React.createContext<AppProps>(null!);
@@ -5305,30 +5302,22 @@ class App extends React.Component<AppProps, AppState> {
             ));
         }
 
-        if (isArrowElement(multiElement) && multiElement.elbowed) {
-          // It's an elbowed arrow
-          routeArrow(
-            multiElement,
-            [scenePointerX, scenePointerY],
-            getAvoidanceBounds(multiElement),
-          );
-        } else {
-          // It's a line
-          if (isPathALoop(points, this.state.zoom.value)) {
-            setCursor(this.interactiveCanvas, CURSOR_TYPE.POINTER);
-          }
-
-          // update last uncommitted point
-          mutateElement(multiElement, {
-            points: [
-              ...points.slice(0, -1),
-              [
-                lastCommittedX + dxFromLastCommitted,
-                lastCommittedY + dyFromLastCommitted,
-              ],
-            ],
-          });
+        if (
+          isArrowElement(multiElement) &&
+          isPathALoop(points, this.state.zoom.value)
+        ) {
+          setCursor(this.interactiveCanvas, CURSOR_TYPE.POINTER);
         }
+        // update last uncommitted point
+        mutateElement(multiElement, {
+          points: [
+            ...points.slice(0, -1),
+            [
+              lastCommittedX + dxFromLastCommitted,
+              lastCommittedY + dyFromLastCommitted,
+            ],
+          ],
+        });
       }
 
       return;
@@ -6967,9 +6956,7 @@ class App extends React.Component<AppProps, AppState> {
         elementType === "arrow"
           ? [currentItemStartArrowhead, currentItemEndArrowhead]
           : [null, null];
-      console.log(
-        elementType === "arrow" ? this.state.currentArrowElbowed : undefined,
-      );
+
       const element = newLinearElement({
         type: elementType,
         x: gridX,
@@ -7004,11 +6991,9 @@ class App extends React.Component<AppProps, AppState> {
           ),
         };
       });
-
       mutateElement(element, {
         points: [...element.points, [0, 0]],
       });
-
       const boundElement = getHoveredElementForBinding(
         pointerDownState.origin,
         this,
