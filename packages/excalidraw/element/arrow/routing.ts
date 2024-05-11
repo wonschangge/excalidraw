@@ -8,11 +8,26 @@ import Scene from "../../scene/Scene";
 // The main idea is to Ray March the arrow
 // ========================================
 
+const generatePointPairs = (points: Readonly<Point[]>) => {
+  const [first, ...restOfThePoints] = points;
+  let latest = first;
+
+  return restOfThePoints.map((point) => {
+    const res = [latest, point];
+    latest = point;
+    return res;
+  }) as [Point, Point][];
+};
+
 export const calculatePoints = (
   arrow: ExcalidrawArrowElement,
-  target: LocalPoint,
-  boundingBoxes: Bounds[],
-): LocalPoint[] => {
+): readonly LocalPoint[] => {
+  if (arrow.points.length < 2) {
+    console.error("Arrow has less than 2 points");
+    return arrow.points;
+  }
+
+  const target = arrow.points[arrow.points.length - 1] as LocalPoint;
   const firstPoint = arrow.points[0] as LocalPoint;
   const heading = scaleVector(
     vectorToHeading(pointToVector(target, firstPoint)),
@@ -35,19 +50,43 @@ export const calculatePoints = (
     toWorldSpace(arrow, target),
   ];
 
+  const boundingBoxes = getAvoidanceBounds(arrow).filter(
+    (bb): bb is Bounds => bb !== null,
+  );
+
+  return calculateSegment(points, endPoints, boundingBoxes).map((point) =>
+    toLocalSpace(arrow, point),
+  );
+
+  // const boundingBoxes = getAvoidanceBounds(arrow).filter(
+  //   (bb): bb is Bounds => bb !== null,
+  // );
+  // const points = arrow.points.map((point) => toWorldSpace(arrow, point));
+  // const result = generatePointPairs(points)
+  //   .map(([start, end]) => calculateSegment([start], [end], boundingBoxes))
+  //   .flatMap((points) => points.map((point) => toLocalSpace(arrow, point)));
+
+  // return result;
+};
+
+const calculateSegment = (
+  start: Point[],
+  end: Point[],
+  boundingBoxes: Bounds[],
+): Point[] => {
+  const points = start;
   // Limit max step to avoid infinite loop
   for (let step = 0; step < 50; step++) {
-    const next = kernel(points, endPoints, boundingBoxes);
-    if (arePointsEqual(endPoints[0], next)) {
+    const next = kernel(points, end, boundingBoxes);
+    if (arePointsEqual(end[0], next)) {
       break;
     }
     points.push(next);
   }
 
-  points.push(endPoints[0]);
-  points.push(endPoints[1]);
+  points.concat(end);
 
-  return points.map((point) => toLocalSpace(arrow, point));
+  return points;
 };
 
 const kernel = (
@@ -125,22 +164,33 @@ const vectorToHeading = (vec: Vector): Vector => {
   return [0, -1];
 };
 
-export const getAvoidanceBounds = (el: ExcalidrawArrowElement): Bounds[] => {
+export const getAvoidanceBounds = (
+  el: ExcalidrawArrowElement,
+): (Bounds | null)[] => {
   const scene = Scene.getScene(el);
   if (!scene) {
-    return [];
+    return [null, null];
   }
 
   const elementsMap = scene.getNonDeletedElementsMap();
-
-  return scene
+  const bindings = scene
     .getNonDeletedElements()
     .filter(
       (element) =>
         element.id === el.startBinding?.elementId ||
         element.id === el.endBinding?.elementId,
-    )
-    .map((element) => getElementBounds(element, elementsMap));
+    );
+  bindings.sort((a, b) =>
+    a.id === el.startBinding?.elementId
+      ? -1
+      : b.id === el.endBinding?.elementId
+      ? 1
+      : -1,
+  );
+
+  return bindings.map((element) =>
+    element ? getElementBounds(element, elementsMap) : null,
+  );
 };
 
 // enum Quadrant {

@@ -23,7 +23,7 @@ import {
 } from "../element/typeChecks";
 import { canChangeRoundness } from "./comparisons";
 import { EmbedsValidationStatus, LocalPoint } from "../types";
-import { calculatePoints, getAvoidanceBounds } from "../element/arrow/routing";
+import { calculatePoints } from "../element/arrow/routing";
 
 const getDashArrayDashed = (strokeWidth: number) => [8, 8 + strokeWidth];
 
@@ -405,11 +405,7 @@ export const _generateElementShape = (
         : ([[0, 0]] as LocalPoint[]);
 
       if (isArrowElement(element) && element.elbowed) {
-        points = calculatePoints(
-          element,
-          points[points.length - 1],
-          getAvoidanceBounds(element),
-        );
+        points = calculatePoints(element);
       }
 
       // curve is always the first element
