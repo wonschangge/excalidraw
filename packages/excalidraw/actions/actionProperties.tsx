@@ -52,7 +52,7 @@ import {
   fontSizeIcon,
   arrowUpRightIcon,
   arrowGuideIcon,
-  arrowRoundIcon,
+  arrowCurveRight,
 } from "../components/icons";
 import {
   DEFAULT_FONT_FAMILY,
@@ -63,7 +63,6 @@ import {
   VERTICAL_ALIGN,
 } from "../constants";
 import {
-  getElementBounds,
   getNonDeletedElements,
   isTextElement,
   redrawTextBoundingBox,
@@ -1258,13 +1257,13 @@ export const actionChangeArrowType = register({
                   type: ROUNDNESS.PROPORTIONAL_RADIUS,
                 }
               : null,
-          elbowed: value !== "simple",
+          elbowed: value === "elbowed",
         });
       }),
       appState: {
         ...appState,
         currentItemRoundness: value === "round" ? value : null,
-        currentArrowElbowed: value !== "simple",
+        currentArrowElbowed: value === "elbowed",
       },
       storeAction: StoreAction.CAPTURE,
     };
@@ -1277,19 +1276,19 @@ export const actionChangeArrowType = register({
           group="arrowtypes"
           options={[
             {
-              value: "simple",
-              text: t("labels.arrowtype_simple"),
-              icon: arrowUpRightIcon,
-            },
-            {
               value: "sharp",
               text: t("labels.arrowtype_sharp"),
-              icon: arrowGuideIcon,
+              icon: arrowUpRightIcon,
             },
             {
               value: "round",
               text: t("labels.arrowtype_round"),
-              icon: arrowRoundIcon,
+              icon: arrowCurveRight,
+            },
+            {
+              value: "elbowed",
+              text: t("labels.arrowtype_elbowed"),
+              icon: arrowGuideIcon,
             },
           ]}
           value={getFormValue(
@@ -1298,10 +1297,10 @@ export const actionChangeArrowType = register({
             (element) => {
               if (isArrowElement(element)) {
                 return element.elbowed
-                  ? element.roundness
-                    ? "round"
-                    : "sharp"
-                  : "simple";
+                  ? "elbowed"
+                  : element.roundness
+                  ? "round"
+                  : "sharp";
               }
 
               return null;
@@ -1311,10 +1310,10 @@ export const actionChangeArrowType = register({
               hasSelection
                 ? null
                 : appState.currentArrowElbowed
-                ? appState.currentItemRoundness
-                  ? "round"
-                  : "sharp"
-                : "simple",
+                ? "elbowed"
+                : appState.currentItemRoundness
+                ? "round"
+                : "sharp",
           )}
           onChange={(value) => updateData(value)}
         />
