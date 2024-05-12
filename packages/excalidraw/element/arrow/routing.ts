@@ -23,32 +23,14 @@ export const calculatePoints = (
   arrow: ExcalidrawArrowElement,
 ): readonly LocalPoint[] => {
   if (arrow.points.length < 2) {
-    console.error("Arrow has less than 2 points");
+    // Arrow being created
     return arrow.points;
   }
 
   const target = arrow.points[arrow.points.length - 1] as LocalPoint;
   const firstPoint = arrow.points[0] as LocalPoint;
-  const heading = scaleVector(
-    vectorToHeading(pointToVector(target, firstPoint)),
-    40,
-  );
-  const nextToFirstPoint = [
-    firstPoint[0] + heading[0],
-    firstPoint[1] + heading[1],
-  ] as LocalPoint;
-  const points = [
-    toWorldSpace(arrow, firstPoint),
-    toWorldSpace(arrow, nextToFirstPoint),
-  ];
-  const previousToLastPoint = [
-    target[0] - heading[0],
-    target[1] - heading[1],
-  ] as LocalPoint;
-  const endPoints = [
-    toWorldSpace(arrow, previousToLastPoint),
-    toWorldSpace(arrow, target),
-  ];
+  const points = [toWorldSpace(arrow, firstPoint)];
+  const endPoints = [toWorldSpace(arrow, target)];
 
   const boundingBoxes = getAvoidanceBounds(arrow).filter(
     (bb): bb is Bounds => bb !== null,
@@ -70,23 +52,22 @@ export const calculatePoints = (
 };
 
 const calculateSegment = (
-  start: Point[],
+  start: readonly Point[],
   end: Point[],
   boundingBoxes: Bounds[],
 ): Point[] => {
-  const points = start;
+  const points: Point[] = Array.from(start);
   // Limit max step to avoid infinite loop
   for (let step = 0; step < 50; step++) {
     const next = kernel(points, end, boundingBoxes);
     if (arePointsEqual(end[0], next)) {
       break;
     }
+
     points.push(next);
   }
 
-  points.concat(end);
-
-  return points;
+  return points.concat(end);
 };
 
 const kernel = (
