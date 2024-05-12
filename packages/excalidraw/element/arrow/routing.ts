@@ -29,26 +29,35 @@ export const calculatePoints = (
 
   const target = arrow.points[arrow.points.length - 1] as LocalPoint;
   const firstPoint = arrow.points[0] as LocalPoint;
+
+  const boundingBoxes = getStartEndBounds(arrow);
+  const [startBox, endBox] = boundingBoxes;
+  const startCenter = startBox && getCenter(startBox);
+  const endCenter = endBox && getCenter(endBox);
+
   const points = [toWorldSpace(arrow, firstPoint)];
-  const endPoints = [toWorldSpace(arrow, target)];
+  // if (startHeading) {
+  //   const startDongle = toWorldSpace(
+  //     arrow,
+  //     addVectors(firstPoint, scaleVector(startHeading, 40)),
+  //   );
+  //   points.push(startDongle);
+  // }
+  const endPoints = [];
+  // if (endHeading) {
+  //   const endDongle = toWorldSpace(
+  //     arrow,
+  //     addVectors(target, scaleVector(endHeading, 40)),
+  //   );
+  //   endPoints.push(endDongle);
+  // }
+  endPoints.push(toWorldSpace(arrow, target));
 
-  const boundingBoxes = getAvoidanceBounds(arrow).filter(
-    (bb): bb is Bounds => bb !== null,
-  );
-
-  return calculateSegment(points, endPoints, boundingBoxes).map((point) =>
-    toLocalSpace(arrow, point),
-  );
-
-  // const boundingBoxes = getAvoidanceBounds(arrow).filter(
-  //   (bb): bb is Bounds => bb !== null,
-  // );
-  // const points = arrow.points.map((point) => toWorldSpace(arrow, point));
-  // const result = generatePointPairs(points)
-  //   .map(([start, end]) => calculateSegment([start], [end], boundingBoxes))
-  //   .flatMap((points) => points.map((point) => toLocalSpace(arrow, point)));
-
-  // return result;
+  return calculateSegment(
+    points,
+    endPoints,
+    boundingBoxes.filter((bb): bb is Bounds => bb !== null),
+  ).map((point) => toLocalSpace(arrow, point));
 };
 
 const calculateSegment = (
@@ -107,6 +116,12 @@ const kernel = (
   return next;
 };
 
+const getCenter = (box: Bounds): Point => {
+  const [minX, minY, maxX, maxY] = box;
+
+  return [(minX + maxX) / 2, (minY + maxY) / 2];
+};
+
 const toLocalSpace = (arrow: ExcalidrawArrowElement, p: Point): LocalPoint => [
   p[0] - arrow.x,
   p[1] - arrow.y,
@@ -127,6 +142,11 @@ const scaleVector = (vector: Vector, scalar: number): Vector => [
   vector[1] * scalar,
 ];
 
+const addVectors = (vec1: Vector, vec2: Vector): Vector => [
+  vec1[0] + vec2[0],
+  vec1[1] + vec1[1],
+];
+
 const cutoff = (num: number): number =>
   Math.round(num * 1000000000) / 1000000000;
 
@@ -145,9 +165,30 @@ const vectorToHeading = (vec: Vector): Vector => {
   return [0, -1];
 };
 
-export const getAvoidanceBounds = (
-  el: ExcalidrawArrowElement,
-): (Bounds | null)[] => {
+const getStartEndBounds = (
+  arrow: ExcalidrawArrowElement,
+): [Bounds | null, Bounds | null] => {
+  const scene = Scene.getScene(arrow);
+  if (!scene) {
+    return [null, null];
+  }
+
+  const elementsMap = scene.getNonDeletedElementsMap();
+  const startEndElements = [
+    arrow.startBinding
+      ? elementsMap.get(arrow.startBinding.elementId) ?? null
+      : null,
+    arrow.endBinding
+      ? elementsMap.get(arrow.endBinding.elementId) ?? null
+      : null,
+  ];
+
+  return startEndElements.map(
+    (el) => el && getElementBounds(el, elementsMap),
+  ) as [Bounds | null, Bounds | null];
+};
+
+const getAvoidanceBounds = (el: ExcalidrawArrowElement): (Bounds | null)[] => {
   const scene = Scene.getScene(el);
   if (!scene) {
     return [null, null];
