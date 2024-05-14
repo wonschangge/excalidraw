@@ -4,30 +4,21 @@ import {
   dot,
   normalize,
   pointToVector,
+  rotatePoint,
 } from "../../math";
 import { LocalPoint, Point, Vector } from "../../types";
 import {
+  ElementsMap,
   ExcalidrawArrowElement,
   ExcalidrawElement,
   NonDeletedExcalidrawElement,
 } from "../types";
-import { Bounds, getElementBounds, getElementLineSegments } from "../bounds";
+import { Bounds, getElementAbsoluteCoords, getElementBounds } from "../bounds";
 import Scene from "../../scene/Scene";
 
 // ========================================
 // The main idea is to Ray March the arrow
 // ========================================
-
-const generatePointPairs = (points: Readonly<Point[]>) => {
-  const [first, ...restOfThePoints] = points;
-  let latest = first;
-
-  return restOfThePoints.map((point) => {
-    const res = [latest, point];
-    latest = point;
-    return res;
-  }) as [Point, Point][];
-};
 
 export const calculatePoints = (
   arrow: ExcalidrawArrowElement,
@@ -56,18 +47,18 @@ export const calculatePoints = (
 
   const points = [toWorldSpace(arrow, firstPoint)];
   if (startHeading) {
-    const startDongle = toWorldSpace(
-      arrow,
-      addVectors(firstPoint, scaleVector(startHeading, -40)),
+    const localStartDongle = addVectors(
+      firstPoint,
+      scaleVector(startHeading, -40),
     );
+    const startDongle = toWorldSpace(arrow, localStartDongle);
     points.push(startDongle);
   }
+
   const endPoints = [];
   if (endHeading) {
-    const endDongle = toWorldSpace(
-      arrow,
-      addVectors(target, scaleVector(endHeading, -40)),
-    );
+    const localStartDongle = addVectors(target, scaleVector(endHeading, -40));
+    const endDongle = toWorldSpace(arrow, localStartDongle);
     endPoints.push(endDongle);
   }
   endPoints.push(toWorldSpace(arrow, target));
@@ -146,9 +137,9 @@ const toLocalSpace = (arrow: ExcalidrawArrowElement, p: Point): LocalPoint => [
   p[1] - arrow.y,
 ];
 
-const toWorldSpace = (arrow: ExcalidrawArrowElement, p: LocalPoint): Point => [
-  p[0] + arrow.x,
-  p[1] + arrow.y,
+const toWorldSpace = (element: ExcalidrawElement, p: LocalPoint): Point => [
+  p[0] + element.x,
+  p[1] + element.y,
 ];
 
 const rotateVector = (vector: Vector, rads: number): Vector => [
@@ -163,7 +154,7 @@ const scaleVector = (vector: Vector, scalar: number): Vector => [
 
 const addVectors = (vec1: Vector, vec2: Vector): Vector => [
   vec1[0] + vec2[0],
-  vec1[1] + vec1[1],
+  vec1[1] + vec2[1],
 ];
 
 const cutoff = (num: number): number =>
@@ -237,11 +228,19 @@ const getStartEndLineSegments = (arrow: ExcalidrawArrowElement) => {
 
   const [startElement, endElement] = getStartEndElements(arrow);
   const startLineSegments =
-    startElement && getElementLineSegments(startElement, elementsMap);
-  const endLineSegments =
-    endElement && getElementLineSegments(endElement, elementsMap);
+    startElement && estimateShape(startElement, elementsMap);
+  const endLineSegments = endElement && estimateShape(endElement, elementsMap);
 
-  return [startLineSegments, endLineSegments];
+  return [
+    startLineSegments?.map((segment) => [
+      [segment[0][0] - startElement!.x, segment[0][1] - startElement!.y],
+      [segment[1][0] - startElement!.x, segment[1][1] - startElement!.y],
+    ]),
+    endLineSegments?.map((segment) => [
+      [segment[0][0] - startElement!.x, segment[0][1] - startElement!.y],
+      [segment[1][0] - startElement!.x, segment[1][1] - startElement!.y],
+    ]),
+  ];
 };
 
 const getClosestLineSegment = (segments: [Point, Point][], p: Point) => {
@@ -315,6 +314,76 @@ const getNormalVectorForSegment = (
 
 const getHeadingForBindDongle = (normal: Vector) => vectorToHeading(normal);
 
+type Segment = [Point, Point];
+
+const estimateShape = (
+  element: ExcalidrawElement,
+  elementsMap: ElementsMap,
+): Segment[] => {
+  const [x1, y1, x2, y2, cx, cy] = getElementAbsoluteCoords(
+    element,
+    elementsMap,
+  );
+
+  switch (element.type) {
+    case "rectangle":
+    case "iframe":
+    case "embeddable":
+    case "image":
+      return [
+        [
+          rotatePoint([x1, y1], [cx, cy], -element.angle),
+          rotatePoint([x2, y1], [cx, cy], -element.angle),
+        ],
+        [
+          rotatePoint([x2, y1], [cx, cy], -element.angle),
+          rotatePoint([x2, y2], [cx, cy], -element.angle),
+        ],
+        [
+          rotatePoint([x2, y2], [cx, cy], -element.angle),
+          rotatePoint([x1, y2], [cx, cy], -element.angle),
+        ],
+        [
+          rotatePoint([x1, y2], [cx, cy], -element.angle),
+          rotatePoint([x1, y1], [cx, cy], -element.angle),
+        ],
+      ];
+    case "diamond":
+    case "ellipse":
+      const N = rotatePoint(
+        [x1 + (x2 - x1) / 2, y1],
+        [cx, cy],
+        -element.angle,
+      ) as Point;
+      const W = rotatePoint(
+        [x1, y1 + (y2 - y1) / 2],
+        [cx, cy],
+        -element.angle,
+      ) as Point;
+      const E = rotatePoint(
+        [x2, y1 + (y2 - y1) / 2],
+        [cx, cy],
+        -element.angle,
+      ) as Point;
+      const S = rotatePoint(
+        [x1 + (x2 - x1) / 2, y2],
+        [cx, cy],
+        -element.angle,
+      ) as Point;
+      const segments = [
+        [W, N] as Segment,
+        [N, E] as Segment,
+        [E, S] as Segment,
+        [S, W] as Segment,
+      ];
+
+      return segments;
+    default:
+      console.error(`Not supported shape: ${element.type}`);
+      return [];
+  }
+};
+
 const getAvoidanceBounds = (el: ExcalidrawArrowElement): (Bounds | null)[] => {
   const scene = Scene.getScene(el);
   if (!scene) {
@@ -340,6 +409,17 @@ const getAvoidanceBounds = (el: ExcalidrawArrowElement): (Bounds | null)[] => {
   return bindings.map((element) =>
     element ? getElementBounds(element, elementsMap) : null,
   );
+};
+
+const generatePointPairs = (points: Readonly<Point[]>) => {
+  const [first, ...restOfThePoints] = points;
+  let latest = first;
+
+  return restOfThePoints.map((point) => {
+    const res = [latest, point];
+    latest = point;
+    return res;
+  }) as [Point, Point][];
 };
 
 // enum Quadrant {
