@@ -16,6 +16,8 @@ import {
 import { Bounds, getElementAbsoluteCoords, getElementBounds } from "../bounds";
 import Scene from "../../scene/Scene";
 
+type Segment = [Point, Point];
+
 // ========================================
 // The main idea is to Ray March the arrow
 // ========================================
@@ -43,8 +45,8 @@ export const calculatePoints = (
   const endNormal =
     endClosestSegment && getNormalVectorForSegment(endClosestSegment, target);
 
-  const startHeading = startNormal && getHeadingForBindDongle(startNormal);
-  const endHeading = endNormal && getHeadingForBindDongle(endNormal);
+  const startHeading = startNormal && vectorToHeading(startNormal);
+  const endHeading = endNormal && vectorToHeading(endNormal);
 
   const points = [firstPoint];
   if (startHeading) {
@@ -355,10 +357,6 @@ const getNormalVectorForSegment = (segment: [Point, Point], p: Point): Vector =>
   // is always PI/2 rads rotation
   rotateVector(pointToVector(segment[0], segment[1]), Math.PI / 2);
 
-const getHeadingForBindDongle = (normal: Vector) => vectorToHeading(normal);
-
-type Segment = [Point, Point];
-
 const estimateShape = (
   element: ExcalidrawElement,
   elementsMap: ElementsMap,
@@ -375,20 +373,20 @@ const estimateShape = (
     case "image":
       return [
         [
-          rotatePoint([x1, y1], [cx, cy], -element.angle),
-          rotatePoint([x2, y1], [cx, cy], -element.angle),
+          rotatePoint([x1, y1], [cx, cy], element.angle),
+          rotatePoint([x2, y1], [cx, cy], element.angle),
         ],
         [
-          rotatePoint([x2, y1], [cx, cy], -element.angle),
-          rotatePoint([x2, y2], [cx, cy], -element.angle),
+          rotatePoint([x2, y1], [cx, cy], element.angle),
+          rotatePoint([x2, y2], [cx, cy], element.angle),
         ],
         [
-          rotatePoint([x2, y2], [cx, cy], -element.angle),
-          rotatePoint([x1, y2], [cx, cy], -element.angle),
+          rotatePoint([x2, y2], [cx, cy], element.angle),
+          rotatePoint([x1, y2], [cx, cy], element.angle),
         ],
         [
-          rotatePoint([x1, y2], [cx, cy], -element.angle),
-          rotatePoint([x1, y1], [cx, cy], -element.angle),
+          rotatePoint([x1, y2], [cx, cy], element.angle),
+          rotatePoint([x1, y1], [cx, cy], element.angle),
         ],
       ];
     case "diamond":
@@ -396,22 +394,22 @@ const estimateShape = (
       const N = rotatePoint(
         [x1 + (x2 - x1) / 2, y1],
         [cx, cy],
-        -element.angle,
+        element.angle,
       ) as Point;
       const W = rotatePoint(
         [x1, y1 + (y2 - y1) / 2],
         [cx, cy],
-        -element.angle,
+        element.angle,
       ) as Point;
       const E = rotatePoint(
         [x2, y1 + (y2 - y1) / 2],
         [cx, cy],
-        -element.angle,
+        element.angle,
       ) as Point;
       const S = rotatePoint(
         [x1 + (x2 - x1) / 2, y2],
         [cx, cy],
-        -element.angle,
+        element.angle,
       ) as Point;
       const segments = [
         [W, N] as Segment,
