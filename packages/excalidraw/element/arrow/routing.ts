@@ -28,22 +28,20 @@ export const calculatePoints = (
     return arrow.points;
   }
 
+  window.v.lines = [];
+
   const target = toWorldSpace(arrow, arrow.points[arrow.points.length - 1]);
   const firstPoint = toWorldSpace(arrow, arrow.points[0]);
 
   const boundingBoxes = getStartEndBounds(arrow);
-  const [startElement, endElement] = getStartEndElements(arrow);
   const [startClosestSegment, endClosestSegment] =
     getClosestStartEndLineSegments(arrow, firstPoint, target);
 
   const startNormal =
     startClosestSegment &&
-    startElement &&
-    getNormalVectorForSegment(startElement, startClosestSegment, firstPoint);
+    getNormalVectorForSegment(startClosestSegment, firstPoint);
   const endNormal =
-    endClosestSegment &&
-    endElement &&
-    getNormalVectorForSegment(endElement, endClosestSegment, target);
+    endClosestSegment && getNormalVectorForSegment(endClosestSegment, target);
 
   const startHeading = startNormal && getHeadingForBindDongle(startNormal);
   const endHeading = endNormal && getHeadingForBindDongle(endNormal);
@@ -52,12 +50,24 @@ export const calculatePoints = (
   if (startHeading) {
     const startDongle = addVectors(firstPoint, scaleVector(startHeading, 40));
     points.push(startDongle);
+
+    if (startNormal) {
+      const [cx, cy] = getCenter(boundingBoxes[0]!);
+      const [nx, ny] = scaleVector(normalize(startNormal), 60);
+      window.v.lines.push([[cx, cy], [cx + nx, cy + ny], "cyan"]);
+    }
   }
 
   const endPoints = [];
   if (endHeading) {
     const endDongle = addVectors(target, scaleVector(endHeading, 40));
     endPoints.push(endDongle);
+
+    if (endNormal) {
+      const [cx, cy] = getCenter(boundingBoxes[1]!);
+      const [nx, ny] = scaleVector(normalize(endNormal), 60);
+      window.v.lines.push([[cx, cy], [cx + nx, cy + ny], "cyan"]);
+    }
   }
   endPoints.push(target);
 
@@ -241,6 +251,13 @@ const getStartEndLineSegments = (
   const endLineSegments: Segment[] | null =
     endElement && estimateShape(endElement, elementsMap);
 
+  startLineSegments?.forEach((segment) =>
+    window.v.lines.push([segment[0], segment[1], "green"]),
+  );
+  endLineSegments?.forEach((segment) =>
+    window.v.lines.push([segment[0], segment[1], "green"]),
+  );
+
   return [startLineSegments, endLineSegments] as [
     Segment[] | null,
     Segment[] | null,
@@ -315,56 +332,28 @@ const getClosestStartEndLineSegments = (
   const endClosestLineSegment =
     endLineSegments && getClosestLineSegment(endLineSegments, endPoint);
 
+  startClosestLineSegment &&
+    window.v.lines.push([
+      startClosestLineSegment[0],
+      startClosestLineSegment[1],
+      "red",
+    ]);
+  endClosestLineSegment &&
+    window.v.lines.push([
+      endClosestLineSegment[0],
+      endClosestLineSegment[1],
+      "red",
+    ]);
+
   return [startClosestLineSegment, endClosestLineSegment];
 };
 
-const getNormalVectorCandidatesForSegment = (
-  segment: [Point, Point],
-): [Vector, Vector] => [
-  rotateVector(pointToVector(segment[0], segment[1]), Math.PI / 2),
-  rotateVector(pointToVector(segment[0], segment[1]), -1 * (Math.PI / 2)),
-];
-
 // Arrow end/start points to the center of the start/end shape = Target Vector
 // Target Vector DOT Normal < 0 means the Normal POINTS OUTSIDE, because it's a convex shape
-const getNormalVectorForSegment = (
-  element: ExcalidrawBindableElement,
-  segment: [Point, Point],
-  p: Point,
-): Vector => {
-  const scene = Scene.getScene(element);
-  if (!scene) {
-    console.error("No scene can be retrieved for arrow");
-    return [0, 0];
-  }
-
-  const elementsMap = scene.getNonDeletedElementsMap();
-
-  const [n1, n2] = getNormalVectorCandidatesForSegment(segment);
-
-  if (element!.type === "ellipse") {
-    window.segments = [
-      segment,
-      [
-        [
-          (segment![0][0] + segment![1][0]) / 2,
-          (segment![0][1] + segment![1][1]) / 2,
-        ],
-        [
-          (segment![0][0] + segment![1][0]) / 2 + 40 * n1![0],
-          (segment![0][1] + segment![1][1]) / 2 + 40 * n1![1],
-        ],
-      ] as Segment,
-    ].map((s) => s.map((p) => toLocalSpace(element, p)));
-  }
-
-  const center = getCenter(getElementBounds(element, elementsMap));
-  const centerToPointVector = pointToVector(p, center);
-  if (dot(centerToPointVector, n1) >= 0) {
-    return n1;
-  }
-  return n2;
-};
+const getNormalVectorForSegment = (segment: [Point, Point], p: Point): Vector =>
+  // Because of the winding order and convex shapes, the normal
+  // is always PI/2 rads rotation
+  rotateVector(pointToVector(segment[0], segment[1]), Math.PI / 2);
 
 const getHeadingForBindDongle = (normal: Vector) => vectorToHeading(normal);
 
