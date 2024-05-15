@@ -568,6 +568,44 @@ const renderTransformHandles = (
   });
 };
 
+const renderVisualDebug = (
+  context: CanvasRenderingContext2D,
+  appState: InteractiveCanvasAppState,
+) => {
+  if (!window.v?.enabled) {
+    return;
+  }
+
+  context.save();
+  context.translate(
+    appState.scrollX * appState.zoom.value,
+    appState.scrollY * appState.zoom.value,
+  );
+  window.v?.lines.forEach((line) => {
+    context.strokeStyle = line[2];
+    context.beginPath();
+    context.moveTo(
+      line[0][0] * appState.zoom.value,
+      line[0][1] * appState.zoom.value,
+    );
+    context.lineTo(
+      line[1][0] * appState.zoom.value,
+      line[1][1] * appState.zoom.value,
+    );
+    context.stroke();
+  });
+
+  // Render scene [0, 0]
+  context.strokeStyle = "#888";
+  context.beginPath();
+  context.moveTo(-10 * appState.zoom.value, -10 * appState.zoom.value);
+  context.lineTo(10 * appState.zoom.value, 10 * appState.zoom.value);
+  context.moveTo(10 * appState.zoom.value, -10 * appState.zoom.value);
+  context.lineTo(-10 * appState.zoom.value, 10 * appState.zoom.value);
+  context.stroke();
+  context.restore();
+};
+
 const _renderInteractiveScene = ({
   canvas,
   elementsMap,
@@ -901,6 +939,9 @@ const _renderInteractiveScene = ({
     });
     context.restore();
   }
+
+  // Render visual debug markers
+  renderVisualDebug(context, appState);
 
   return {
     scrollBars,

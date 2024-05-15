@@ -45,6 +45,8 @@ export const STORAGE_KEYS = {
 
   IDB_LIBRARY: "excalidraw-library",
 
+  DEBUG: "excalidraw-debug",
+
   // do not use apart from migrations
   __LEGACY_LOCAL_STORAGE_LIBRARY: "excalidraw-library",
 } as const;

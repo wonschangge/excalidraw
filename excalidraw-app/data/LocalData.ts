@@ -74,6 +74,12 @@ const saveDataStateToLocalStorage = (
       STORAGE_KEYS.LOCAL_STORAGE_APP_STATE,
       JSON.stringify(clearAppStateForLocalStorage(appState)),
     );
+    if (import.meta.env.DEV) {
+      localStorage.setItem(
+        STORAGE_KEYS.DEBUG,
+        JSON.stringify({ enabled: window.v.enabled }),
+      );
+    }
     updateBrowserStateVersion(STORAGE_KEYS.VERSION_DATA_STATE);
   } catch (error: any) {
     // Unable to access window.localStorage

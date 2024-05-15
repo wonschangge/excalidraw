@@ -40,6 +40,13 @@ export const importFromLocalStorage = () => {
   try {
     savedElements = localStorage.getItem(STORAGE_KEYS.LOCAL_STORAGE_ELEMENTS);
     savedState = localStorage.getItem(STORAGE_KEYS.LOCAL_STORAGE_APP_STATE);
+    if (import.meta.env.DEV) {
+      const debugSettings = localStorage.getItem(STORAGE_KEYS.DEBUG);
+      if (debugSettings) {
+        const debug = JSON.parse(debugSettings);
+        window.v.enabled = debug.enabled ?? false;
+      }
+    }
   } catch (error: any) {
     // Unable to access localStorage
     console.error(error);

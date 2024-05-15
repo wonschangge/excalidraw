@@ -9885,6 +9885,10 @@ declare global {
       history: History;
       store: Store;
     };
+    v: {
+      enabled: boolean;
+      lines: [readonly [number, number], readonly [number, number], string][];
+    };
   }
 }
 
@@ -9905,6 +9909,14 @@ export const createTestHook = () => {
         },
       },
     });
+
+    // Visual Debugging
+    window.v =
+      window.v ||
+      ({
+        enabled: false,
+        lines: [],
+      } as Window["v"]);
   }
 };
 
