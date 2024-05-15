@@ -544,5 +544,5 @@ export const normalize = (vector: Vector): Vector => {
   return [vector[0] / m, vector[1] / m];
 };
 
-const magnitude = (vector: Vector) =>
+export const magnitude = (vector: Vector) =>
   Math.sqrt(vector[0] * vector[0] + vector[1] * vector[1]);

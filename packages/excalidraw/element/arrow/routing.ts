@@ -1,6 +1,5 @@
 import {
   arePointsEqual,
-  distance2d,
   dot,
   normalize,
   pointToVector,
@@ -10,8 +9,9 @@ import { LocalPoint, Point, Vector } from "../../types";
 import {
   ElementsMap,
   ExcalidrawArrowElement,
+  ExcalidrawBindableElement,
   ExcalidrawElement,
-  NonDeletedExcalidrawElement,
+  NonDeletedSceneElementsMap,
 } from "../types";
 import { Bounds, getElementAbsoluteCoords, getElementBounds } from "../bounds";
 import Scene from "../../scene/Scene";
@@ -28,40 +28,38 @@ export const calculatePoints = (
     return arrow.points;
   }
 
-  const target = arrow.points[arrow.points.length - 1] as LocalPoint;
-  const firstPoint = arrow.points[0] as LocalPoint;
+  const target = toWorldSpace(arrow, arrow.points[arrow.points.length - 1]);
+  const firstPoint = toWorldSpace(arrow, arrow.points[0]);
 
   const boundingBoxes = getStartEndBounds(arrow);
-
+  const [startElement, endElement] = getStartEndElements(arrow);
   const [startClosestSegment, endClosestSegment] =
     getClosestStartEndLineSegments(arrow, firstPoint, target);
+
   const startNormal =
     startClosestSegment &&
-    getNormalVectorForSegment(arrow, startClosestSegment, firstPoint);
+    startElement &&
+    getNormalVectorForSegment(startElement, startClosestSegment, firstPoint);
   const endNormal =
     endClosestSegment &&
-    getNormalVectorForSegment(arrow, endClosestSegment, target);
+    endElement &&
+    getNormalVectorForSegment(endElement, endClosestSegment, target);
 
   const startHeading = startNormal && getHeadingForBindDongle(startNormal);
   const endHeading = endNormal && getHeadingForBindDongle(endNormal);
 
-  const points = [toWorldSpace(arrow, firstPoint)];
+  const points = [firstPoint];
   if (startHeading) {
-    const localStartDongle = addVectors(
-      firstPoint,
-      scaleVector(startHeading, -40),
-    );
-    const startDongle = toWorldSpace(arrow, localStartDongle);
+    const startDongle = addVectors(firstPoint, scaleVector(startHeading, 40));
     points.push(startDongle);
   }
 
   const endPoints = [];
   if (endHeading) {
-    const localStartDongle = addVectors(target, scaleVector(endHeading, -40));
-    const endDongle = toWorldSpace(arrow, localStartDongle);
+    const endDongle = addVectors(target, scaleVector(endHeading, 40));
     endPoints.push(endDongle);
   }
-  endPoints.push(toWorldSpace(arrow, target));
+  endPoints.push(target);
 
   return calculateSegment(
     points,
@@ -132,7 +130,7 @@ const getCenter = (box: Bounds): Point => {
   return [(minX + maxX) / 2, (minY + maxY) / 2];
 };
 
-const toLocalSpace = (arrow: ExcalidrawArrowElement, p: Point): LocalPoint => [
+const toLocalSpace = (arrow: ExcalidrawElement, p: Point): LocalPoint => [
   p[0] - arrow.x,
   p[1] - arrow.y,
 ];
@@ -175,15 +173,46 @@ const vectorToHeading = (vec: Vector): Vector => {
   return [0, -1];
 };
 
-const getStartEndBounds = (
+const getElementsMap = (
   arrow: ExcalidrawArrowElement,
-): [Bounds | null, Bounds | null] => {
+): NonDeletedSceneElementsMap | null => {
   const scene = Scene.getScene(arrow);
   if (!scene) {
+    return null;
+  }
+
+  return scene.getNonDeletedElementsMap();
+};
+
+const getStartEndElements = (
+  arrow: ExcalidrawArrowElement,
+): [ExcalidrawBindableElement | null, ExcalidrawBindableElement | null] => {
+  const elementsMap = getElementsMap(arrow);
+  if (!elementsMap) {
     return [null, null];
   }
 
-  const elementsMap = scene.getNonDeletedElementsMap();
+  return [
+    arrow.startBinding
+      ? (elementsMap.get(
+          arrow.startBinding.elementId,
+        ) as ExcalidrawBindableElement) ?? null
+      : null,
+    arrow.endBinding
+      ? (elementsMap.get(
+          arrow.endBinding.elementId,
+        ) as ExcalidrawBindableElement) ?? null
+      : null,
+  ];
+};
+
+const getStartEndBounds = (
+  arrow: ExcalidrawArrowElement,
+): [Bounds | null, Bounds | null] => {
+  const elementsMap = getElementsMap(arrow);
+  if (!elementsMap) {
+    return [null, null];
+  }
   const startEndElements = [
     arrow.startBinding
       ? elementsMap.get(arrow.startBinding.elementId) ?? null
@@ -198,73 +227,81 @@ const getStartEndBounds = (
   ) as [Bounds | null, Bounds | null];
 };
 
-const getStartEndElements = (
+const getStartEndLineSegments = (
   arrow: ExcalidrawArrowElement,
-): [NonDeletedExcalidrawElement | null, NonDeletedExcalidrawElement | null] => {
-  const scene = Scene.getScene(arrow);
-  if (!scene) {
+): [Segment[] | null, Segment[] | null] => {
+  const elementsMap = getElementsMap(arrow);
+  if (!elementsMap) {
     return [null, null];
   }
-
-  const elementsMap = scene.getNonDeletedElementsMap();
-
-  const startElement = arrow.startBinding
-    ? elementsMap.get(arrow.startBinding.elementId) ?? null
-    : null;
-  const endElement = arrow.endBinding
-    ? elementsMap.get(arrow.endBinding.elementId) ?? null
-    : null;
-
-  return [startElement, endElement];
-};
-
-const getStartEndLineSegments = (arrow: ExcalidrawArrowElement) => {
-  const scene = Scene.getScene(arrow);
-  if (!scene) {
-    return [null, null];
-  }
-
-  const elementsMap = scene.getNonDeletedElementsMap();
 
   const [startElement, endElement] = getStartEndElements(arrow);
-  const startLineSegments =
+  const startLineSegments: Segment[] | null =
     startElement && estimateShape(startElement, elementsMap);
-  const endLineSegments = endElement && estimateShape(endElement, elementsMap);
+  const endLineSegments: Segment[] | null =
+    endElement && estimateShape(endElement, elementsMap);
 
-  return [
-    startLineSegments?.map((segment) => [
-      [segment[0][0] - startElement!.x, segment[0][1] - startElement!.y],
-      [segment[1][0] - startElement!.x, segment[1][1] - startElement!.y],
-    ]),
-    endLineSegments?.map((segment) => [
-      [segment[0][0] - startElement!.x, segment[0][1] - startElement!.y],
-      [segment[1][0] - startElement!.x, segment[1][1] - startElement!.y],
-    ]),
+  return [startLineSegments, endLineSegments] as [
+    Segment[] | null,
+    Segment[] | null,
   ];
 };
 
-const getClosestLineSegment = (segments: [Point, Point][], p: Point) => {
+const getClosestLineSegment = (
+  segments: Segment[],
+  p: Point,
+): Segment | null => {
   if (segments.length === 0) {
     return null;
   }
 
-  const [px, py] = p;
-
   const distances = segments.map((segment, idx) => {
-    const [x1, y1] = segment[0];
-    const [x2, y2] = segment[1];
+    const distance = distanceOfPointFromSegment(p, segment);
 
-    // Get the closest point of the segment
-    const dx = Math.min(x1 - px, x2 - px);
-    const dy = Math.min(y1 - py, y2 - py);
-
-    return { distance: distance2d(dx, dy, px, py), idx };
+    return { distance, idx };
   });
 
   distances.sort((a, b) => a.distance - b.distance);
 
   return segments[distances[0].idx];
 };
+
+const distanceOfPointFromSegment = (p: Point, segment: Segment): number => {
+  const [p1, p2] = segment;
+
+  // NOTE: sqrt is expensive, so if the exact distance is not needed
+  // using the square of the distance can be more efficient
+  const pointToPointDistanceSquared = (a: Point, b: Point) => {
+    const i = a[0] - b[0];
+    const j = a[1] - b[1];
+
+    return i * i + j * j;
+  };
+
+  const segmentLengthSquared = pointToPointDistanceSquared(p1, p2);
+  if (segmentLengthSquared === 0) {
+    return pointToPointDistanceSquared(p, p1);
+  }
+
+  const t = clamp(
+    ((p[0] - p1[0]) * (p2[0] - p1[0]) + (p[1] - p1[1]) * (p2[1] - p1[1])) /
+      segmentLengthSquared,
+    0,
+    1,
+  );
+  return pointToPointDistanceSquared(p, [
+    p1[0] + t * (p2[0] - p1[0]),
+    p1[1] + t * (p2[1] - p1[1]),
+  ]);
+
+  // const numerator = Math.abs((x2 - x1) * (y0 - y1) - (x0 - x1) * (y2 - y1));
+  // const denominator = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+
+  // return numerator / denominator;
+};
+
+const clamp = (value: number, min: number, max: number) =>
+  Math.max(min, Math.min(max, value));
 
 const getClosestStartEndLineSegments = (
   arrow: ExcalidrawArrowElement,
@@ -291,19 +328,36 @@ const getNormalVectorCandidatesForSegment = (
 // Arrow end/start points to the center of the start/end shape = Target Vector
 // Target Vector DOT Normal < 0 means the Normal POINTS OUTSIDE, because it's a convex shape
 const getNormalVectorForSegment = (
-  element: ExcalidrawElement,
+  element: ExcalidrawBindableElement,
   segment: [Point, Point],
   p: Point,
 ): Vector => {
   const scene = Scene.getScene(element);
   if (!scene) {
-    console.error("No scene can be retrieved for element");
+    console.error("No scene can be retrieved for arrow");
     return [0, 0];
   }
 
   const elementsMap = scene.getNonDeletedElementsMap();
 
   const [n1, n2] = getNormalVectorCandidatesForSegment(segment);
+
+  if (element!.type === "ellipse") {
+    window.segments = [
+      segment,
+      [
+        [
+          (segment![0][0] + segment![1][0]) / 2,
+          (segment![0][1] + segment![1][1]) / 2,
+        ],
+        [
+          (segment![0][0] + segment![1][0]) / 2 + 40 * n1![0],
+          (segment![0][1] + segment![1][1]) / 2 + 40 * n1![1],
+        ],
+      ] as Segment,
+    ].map((s) => s.map((p) => toLocalSpace(element, p)));
+  }
+
   const center = getCenter(getElementBounds(element, elementsMap));
   const centerToPointVector = pointToVector(p, center);
   if (dot(centerToPointVector, n1) >= 0) {
