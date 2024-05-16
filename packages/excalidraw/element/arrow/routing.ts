@@ -27,11 +27,7 @@ import { Bounds, getElementAbsoluteCoords, getElementBounds } from "../bounds";
 import Scene from "../../scene/Scene";
 import { debugDrawClear, debugDrawNormal, debugDrawSegments } from "./debug";
 
-// ========================================
-// The main idea is to Ray March the arrow
-// ========================================
-
-export const calculatePoints = (
+export const calculateElbowArrowJointPoints = (
   arrow: ExcalidrawArrowElement,
 ): readonly LocalPoint[] => {
   if (arrow.points.length < 2) {
@@ -44,31 +40,36 @@ export const calculatePoints = (
   const target = toWorldSpace(arrow, arrow.points[arrow.points.length - 1]);
   const firstPoint = toWorldSpace(arrow, arrow.points[0]);
 
-  const [startClosestSegment, endClosestSegment] =
-    getClosestStartEndLineSegments(arrow, firstPoint, target);
+  const [startHeading, endHeading] = getNormalVectorsForStartEndElements(
+    arrow,
+    firstPoint,
+    target,
+  );
+  console.log(startHeading);
+  // const [startClosestSegment, endClosestSegment] =
+  //   getClosestStartEndLineSegments(arrow, firstPoint, target);
 
-  const startNormal =
-    startClosestSegment &&
-    getNormalVectorForSegment(startClosestSegment, firstPoint);
-  const endNormal =
-    endClosestSegment && getNormalVectorForSegment(endClosestSegment, target);
+  // const startNormal =
+  //   startClosestSegment && getNormalVectorForSegment(startClosestSegment);
+  // const endNormal =
+  //   endClosestSegment && getNormalVectorForSegment(endClosestSegment);
 
-  // TODO: These headings can be memoized by the binding shape coords
-  const startHeading = startNormal && vectorToHeading(startNormal);
-  const endHeading = endNormal && vectorToHeading(endNormal);
+  // // TODO: These headings can be memoized by the binding shape coords
+  // const startHeading = startNormal && vectorToHeading(startNormal);
+  // const endHeading = endNormal && vectorToHeading(endNormal);
 
   const points = [firstPoint];
   if (startHeading) {
     const startDongle = addVectors(firstPoint, scaleVector(startHeading, 40));
     points.push(startDongle);
-    debugDrawNormal(startNormal, startClosestSegment);
+    //debugDrawNormal(startNormal, startClosestSegment);
   }
 
   const endPoints = [];
   if (endHeading) {
     const endDongle = addVectors(target, scaleVector(endHeading, 40));
     endPoints.push(endDongle);
-    debugDrawNormal(endNormal, endClosestSegment);
+    //debugDrawNormal(endNormal, endClosestSegment);
   }
   endPoints.push(target);
 
@@ -77,6 +78,83 @@ export const calculatePoints = (
     endPoints,
     getStartEndBounds(arrow).filter((bb): bb is Bounds => bb !== null),
   ).map((point) => toLocalSpace(arrow, point));
+};
+
+const getNormalVectorsForStartEndElements = (
+  arrow: ExcalidrawArrowElement,
+  startPoint: Point,
+  endPoint: Point,
+) => {
+  const [startSegments, endSegments] = getStartEndLineSegments(arrow);
+
+  const startVectors = startSegments
+    ?.map(segmentMidpoint)
+    .map((midpoint) => normalize(pointToVector(startPoint, midpoint)));
+  const endVectors = endSegments
+    ?.map(segmentMidpoint)
+    .map((midpoint) => normalize(pointToVector(startPoint, midpoint)));
+
+  const startNormals = startSegments
+    ?.map((segment) => {
+      debugDrawNormal(getNormalVectorForSegment(segment), segment);
+
+      return segment;
+    })
+    .map(getNormalVectorForSegment);
+  const endNormals = endSegments
+    ?.map((segment) => {
+      debugDrawNormal(getNormalVectorForSegment(segment), segment);
+
+      return segment;
+    })
+    .map(getNormalVectorForSegment);
+
+  const startDots =
+    startVectors &&
+    startNormals &&
+    merge(startVectors, startNormals).map(([o, n]) => dotProduct(n, o));
+  const endDots =
+    endVectors &&
+    endNormals &&
+    merge(endVectors, endNormals).map(([o, n]) => dotProduct(n, o));
+
+  const startHeading =
+    startDots &&
+    startNormals &&
+    merge(startDots, startNormals).reduce(
+      (selection, [dot, normal]: [number, Vector]) =>
+        dot >= 0 && dot > selection[0] ? [dot, normal] : selection,
+    );
+  const endHeading =
+    endDots &&
+    endNormals &&
+    merge(endDots, endNormals).reduce(
+      (selection, [dot, normal]: [number, Vector]) =>
+        dot >= 0 && dot > selection[0] ? [dot, normal] : selection,
+    );
+
+  return [
+    startHeading && vectorToHeading(startHeading[1]),
+    endHeading && vectorToHeading(endHeading[1]),
+  ];
+};
+
+const segmentMidpoint = (segment: Segment): Point => [
+  (segment[0][0] + segment[1][0]) / 2,
+  (segment[0][1] + segment[1][1]) / 2,
+];
+
+const merge = <A, B>(a: A[], b: B[]) => {
+  let _a;
+  let _b;
+  const result = [];
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    _a = a[i] ?? _a;
+    _b = b[i] ?? _b;
+    result.push([_a, _b]);
+  }
+
+  return result as [A, B][];
 };
 
 const calculateSegment = (
@@ -273,7 +351,7 @@ const getClosestStartEndLineSegments = (
   return [startClosestLineSegment, endClosestLineSegment];
 };
 
-const getNormalVectorForSegment = (segment: [Point, Point], p: Point): Vector =>
+const getNormalVectorForSegment = (segment: [Point, Point]): Vector =>
   // Because of the winding order and convex shapes,
   // the normal is always PI/2 rads rotation
   normalize(rotateVector(pointToVector(segment[0], segment[1]), Math.PI / 2));
