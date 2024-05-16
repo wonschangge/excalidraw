@@ -46,6 +46,8 @@ export type Point = Readonly<RoughPoint>;
 
 export type LocalPoint = Readonly<RoughPoint>;
 
+export type Segment = [Point, Point];
+
 export type Vector = Readonly<RoughPoint>;
 
 export type SocketId = string & { _brand: "SocketId" };

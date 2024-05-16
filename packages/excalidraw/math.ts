@@ -147,6 +147,13 @@ export const getPointOnAPath = (point: Point, path: Point[]) => {
   return null;
 };
 
+export const distanceSqared = (a: Point, b: Point) => {
+  const i = a[0] - b[0];
+  const j = a[1] - b[1];
+
+  return i * i + j * j;
+};
+
 export const distance2d = (x1: number, y1: number, x2: number, y2: number) => {
   const xd = x2 - x1;
   const yd = y2 - y1;
@@ -532,17 +539,62 @@ export const pointToVector = (p: Point, origin: Point = [0, 0]): Vector => [
   p[1] - origin[1],
 ];
 
-export const dot = (a: Vector, b: Vector): number => a[0] * b[0] + a[1] * b[1];
+export const dotProduct = (a: Vector, b: Vector): number =>
+  a[0] * b[0] + a[1] * b[1];
 
 export const normalize = (vector: Vector): Vector => {
   const m = magnitude(vector);
-
-  if (m < 0.000005) {
-    return [0, 0];
-  }
 
   return [vector[0] / m, vector[1] / m];
 };
 
 export const magnitude = (vector: Vector) =>
   Math.sqrt(vector[0] * vector[0] + vector[1] * vector[1]);
+
+export const toLocalSpace = (arrow: ExcalidrawElement, p: Point): Point => [
+  p[0] - arrow.x,
+  p[1] - arrow.y,
+];
+
+export const toWorldSpace = (element: ExcalidrawElement, p: Point): Point => [
+  p[0] + element.x,
+  p[1] + element.y,
+];
+
+export const rotateVector = (vector: Vector, rads: number): Vector => [
+  rounding(vector[0] * Math.cos(rads) - vector[1] * Math.sin(rads), 3),
+  rounding(vector[0] * Math.sin(rads) + vector[1] * Math.cos(rads), 3),
+];
+
+export const scaleVector = (vector: Vector, scalar: number): Vector => [
+  vector[0] * scalar,
+  vector[1] * scalar,
+];
+
+export const addVectors = (vec1: Vector, vec2: Vector): Vector => [
+  vec1[0] + vec2[0],
+  vec1[1] + vec2[1],
+];
+
+export const rounding = (num: number, precision: number): number => {
+  const pow = Math.pow(10, precision);
+
+  return Math.round(num * pow) / pow;
+};
+
+export const vectorToHeading = (vec: Vector): Vector => {
+  const [x, y] = vec;
+  const absX = Math.abs(x);
+  const absY = Math.abs(y);
+  if (x > absY) {
+    return [1, 0];
+  } else if (x <= -absY) {
+    return [-1, 0];
+  } else if (y > absX) {
+    return [0, 1];
+  }
+  return [0, -1];
+};
+
+export const clamp = (value: number, min: number, max: number) =>
+  Math.max(min, Math.min(max, value));
