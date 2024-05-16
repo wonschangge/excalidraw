@@ -292,6 +292,7 @@ const estimateShape = (
     case "iframe":
     case "embeddable":
     case "image":
+    case "ellipse":
       return [
         [
           rotatePoint([x1, y1], [cx, cy], element.angle),
@@ -311,7 +312,6 @@ const estimateShape = (
         ],
       ];
     case "diamond":
-    case "ellipse":
       const N = rotatePoint(
         [x1 + (x2 - x1) / 2, y1],
         [cx, cy],
