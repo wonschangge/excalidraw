@@ -594,7 +594,9 @@ export const getArrowheadPoints = (
   // This value is selected by minimizing a minimum size with the last segment of the arrowhead
   const lengthMultiplier =
     arrowhead === "diamond" || arrowhead === "diamond_outline" ? 0.25 : 0.5;
-  const minSize = Math.min(size, length * lengthMultiplier);
+  const minSize = element.elbowed
+    ? 40 * lengthMultiplier // TODO: Make it come from the arrow state ideally
+    : Math.min(size, length * lengthMultiplier);
   const xs = x2 - nx * minSize;
   const ys = y2 - ny * minSize;
 
