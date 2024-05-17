@@ -1,16 +1,15 @@
 import {
   addVectors,
   arePointsEqual,
-  clamp,
-  distanceSqared,
-  doSegmentsIntersect,
+  crossProduct,
+  distanceSq,
   dotProduct,
   normalize,
   pointToVector,
   rotatePoint,
   rotateVector,
-  rounding,
   scaleVector,
+  subtractVectors,
   toLocalSpace,
   toWorldSpace,
   vectorToHeading,
@@ -25,7 +24,12 @@ import {
 } from "../types";
 import { Bounds, getElementAbsoluteCoords, getElementBounds } from "../bounds";
 import Scene from "../../scene/Scene";
-import { debugDrawClear, debugDrawNormal, debugDrawSegments } from "./debug";
+import {
+  debugDrawClear,
+  debugDrawNormal,
+  debugDrawPoint,
+  debugDrawSegments,
+} from "./debug";
 
 export const calculateElbowArrowJointPoints = (
   arrow: ExcalidrawArrowElement,
@@ -45,18 +49,6 @@ export const calculateElbowArrowJointPoints = (
     firstPoint,
     target,
   );
-  console.log(startHeading);
-  // const [startClosestSegment, endClosestSegment] =
-  //   getClosestStartEndLineSegments(arrow, firstPoint, target);
-
-  // const startNormal =
-  //   startClosestSegment && getNormalVectorForSegment(startClosestSegment);
-  // const endNormal =
-  //   endClosestSegment && getNormalVectorForSegment(endClosestSegment);
-
-  // // TODO: These headings can be memoized by the binding shape coords
-  // const startHeading = startNormal && vectorToHeading(startNormal);
-  // const endHeading = endNormal && vectorToHeading(endNormal);
 
   const points = [firstPoint];
   if (startHeading) {
@@ -80,83 +72,6 @@ export const calculateElbowArrowJointPoints = (
   ).map((point) => toLocalSpace(arrow, point));
 };
 
-const getNormalVectorsForStartEndElements = (
-  arrow: ExcalidrawArrowElement,
-  startPoint: Point,
-  endPoint: Point,
-) => {
-  const [startSegments, endSegments] = getStartEndLineSegments(arrow);
-
-  const startVectors = startSegments
-    ?.map(segmentMidpoint)
-    .map((midpoint) => normalize(pointToVector(startPoint, midpoint)));
-  const endVectors = endSegments
-    ?.map(segmentMidpoint)
-    .map((midpoint) => normalize(pointToVector(startPoint, midpoint)));
-
-  const startNormals = startSegments
-    ?.map((segment) => {
-      debugDrawNormal(getNormalVectorForSegment(segment), segment);
-
-      return segment;
-    })
-    .map(getNormalVectorForSegment);
-  const endNormals = endSegments
-    ?.map((segment) => {
-      debugDrawNormal(getNormalVectorForSegment(segment), segment);
-
-      return segment;
-    })
-    .map(getNormalVectorForSegment);
-
-  const startDots =
-    startVectors &&
-    startNormals &&
-    merge(startVectors, startNormals).map(([o, n]) => dotProduct(n, o));
-  const endDots =
-    endVectors &&
-    endNormals &&
-    merge(endVectors, endNormals).map(([o, n]) => dotProduct(n, o));
-
-  const startHeading =
-    startDots &&
-    startNormals &&
-    merge(startDots, startNormals).reduce(
-      (selection, [dot, normal]: [number, Vector]) =>
-        dot >= 0 && dot > selection[0] ? [dot, normal] : selection,
-    );
-  const endHeading =
-    endDots &&
-    endNormals &&
-    merge(endDots, endNormals).reduce(
-      (selection, [dot, normal]: [number, Vector]) =>
-        dot >= 0 && dot > selection[0] ? [dot, normal] : selection,
-    );
-
-  return [
-    startHeading && vectorToHeading(startHeading[1]),
-    endHeading && vectorToHeading(endHeading[1]),
-  ];
-};
-
-const segmentMidpoint = (segment: Segment): Point => [
-  (segment[0][0] + segment[1][0]) / 2,
-  (segment[0][1] + segment[1][1]) / 2,
-];
-
-const merge = <A, B>(a: A[], b: B[]) => {
-  let _a;
-  let _b;
-  const result = [];
-  for (let i = 0; i < Math.max(a.length, b.length); i++) {
-    _a = a[i] ?? _a;
-    _b = b[i] ?? _b;
-    result.push([_a, _b]);
-  }
-
-  return result as [A, B][];
-};
-
 const calculateSegment = (
   start: readonly Point[],
   end: Point[],
@@ -166,6 +81,7 @@ const calculateSegment = (
   // Limit max step to avoid infinite loop
   for (let step = 0; step < 50; step++) {
     const next = kernel(points, end, boundingBoxes);
+    //const next = avoidanceKernel(points, end, boundingBoxes);
     if (arePointsEqual(end[0], next)) {
       break;
     }
@@ -174,6 +90,36 @@ const calculateSegment = (
   }
 
   return points.concat(end);
+};
+
+const avoidanceKernel = (
+  points: Point[],
+  target: Point[],
+  boundingBoxes: Bounds[],
+): Point => {
+  const start = points[points.length - 1];
+  const end = target[0];
+  const startVector =
+    points.length < 2
+      ? ([1, 0] as Vector) // TODO: Fixed right start attachment
+      : normalize(pointToVector(start, points[points.length - 2]));
+  const endVector =
+    target.length < 2
+      ? ([-1, 0] as Vector) // TODO: Fixed left end attachment
+      : normalize(pointToVector(target[1], end));
+  const startNormal = rotateVector(startVector, Math.PI / 2);
+  const startEndDot = dotProduct(startVector, endVector);
+  const startNormalEndDot = dotProduct(startNormal, endVector);
+  const rightStartNormalDot = dotProduct([1, 0], startNormal);
+
+  console.log(intersectionDistance(start, end, boundingBoxes));
+  return end;
+
+  // 1.a If start and end are colinear and pointing
+  //     to the same direction, just jump to the end.
+  if (startEndDot === 1) {
+    const touchPoint = intersectionDistance(start, end, boundingBoxes);
+  }
 };
 
 const kernel = (
@@ -222,6 +168,83 @@ const getElementsMap = (
   }
 
   return scene.getNonDeletedElementsMap();
+};
+
+const getNormalVectorsForStartEndElements = (
+  arrow: ExcalidrawArrowElement,
+  startPoint: Point,
+  endPoint: Point,
+) => {
+  const [startSegments, endSegments] = getStartEndLineSegments(arrow);
+
+  const startVectors = startSegments
+    ?.map(segmentMidpoint)
+    .map((midpoint) => normalize(pointToVector(startPoint, midpoint)));
+  const endVectors = endSegments
+    ?.map(segmentMidpoint)
+    .map((midpoint) => normalize(pointToVector(startPoint, midpoint)));
+
+  const startNormals = startSegments
+    ?.map((segment) => {
+      debugDrawNormal(getNormalVectorForSegment(segment), segment);
+
+      return segment;
+    })
+    .map(getNormalVectorForSegment);
+  const endNormals = endSegments
+    ?.map((segment) => {
+      debugDrawNormal(getNormalVectorForSegment(segment), segment);
+
+      return segment;
+    })
+    .map(getNormalVectorForSegment);
+
+  const startDots =
+    startVectors &&
+    startNormals &&
+    merge(startVectors, startNormals).map(([o, n]) => dotProduct(n, o));
+  const endDots =
+    endVectors &&
+    endNormals &&
+    merge(endVectors, endNormals).map(([o, n]) => dotProduct(n, o));
+
+  const startClosestNormal =
+    startDots &&
+    startNormals &&
+    merge(startDots, startNormals).reduce(
+      (selection, [dot, normal]: [number, Vector]) =>
+        dot >= 0 && dot > selection[0] ? [dot, normal] : selection,
+    )[1];
+  const endClosestNormal =
+    endDots &&
+    endNormals &&
+    merge(endDots, endNormals).reduce(
+      (selection, [dot, normal]: [number, Vector]) =>
+        dot >= 0 && dot > selection[0] ? [dot, normal] : selection,
+    )[1];
+
+  return [
+    startClosestNormal && vectorToHeading(startClosestNormal),
+    endClosestNormal && vectorToHeading(endClosestNormal),
+  ];
+};
+
+const segmentMidpoint = (segment: Segment): Point => [
+  (segment[0][0] + segment[1][0]) / 2,
+  (segment[0][1] + segment[1][1]) / 2,
+];
+
+const merge = <A, B>(a: A[], b: B[]) => {
+  let _a;
+  let _b;
+  const result = [];
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    _a = a[i] ?? _a;
+    _b = b[i] ?? _b;
+    result.push([_a, _b]);
+  }
+
+  return result as [A, B][];
 };
 
 const getStartEndElements = (
@@ -288,67 +311,6 @@ const getStartEndLineSegments = (
     Segment[] | null,
     Segment[] | null,
   ];
-};
-
-const getClosestLineSegment = (
-  segments: Segment[],
-  p: Point,
-): Segment | null => {
-  if (segments.length === 0) {
-    return null;
-  }
-
-  const idx = segments
-    .map((segment) => distanceOfPointFromSegment(p, segment))
-    .reduce(
-      (idxOfSmallest, distance, idx, distances) =>
-        distances[idxOfSmallest] > distance ? idx : idxOfSmallest,
-      0,
-    );
-
-  return segments[idx];
-};
-
-const distanceOfPointFromSegment = (p: Point, segment: Segment): number => {
-  const [p1, p2] = segment;
-
-  const segmentLengthSquared = distanceSqared(p1, p2);
-  if (segmentLengthSquared === 0) {
-    return distanceSqared(p, p1);
-  }
-
-  const t = clamp(
-    ((p[0] - p1[0]) * (p2[0] - p1[0]) + (p[1] - p1[1]) * (p2[1] - p1[1])) /
-      segmentLengthSquared,
-    0,
-    1,
-  );
-
-  return rounding(
-    distanceSqared(p, [
-      p1[0] + t * (p2[0] - p1[0]),
-      p1[1] + t * (p2[1] - p1[1]),
-    ]),
-    3, // Avoids jumpy arows with small shapes due to float resolution issues
-  );
-};
-
-const getClosestStartEndLineSegments = (
-  arrow: ExcalidrawArrowElement,
-  startPoint: Point,
-  endPoint: Point,
-) => {
-  const [startLineSegments, endLineSegments] = getStartEndLineSegments(arrow);
-
-  const startClosestLineSegment =
-    startLineSegments && getClosestLineSegment(startLineSegments, startPoint);
-  const endClosestLineSegment =
-    endLineSegments && getClosestLineSegment(endLineSegments, endPoint);
-
-  debugDrawSegments(startClosestLineSegment, "red");
-  debugDrawSegments(endClosestLineSegment, "red");
-
-  return [startClosestLineSegment, endClosestLineSegment];
 };
 
 const getNormalVectorForSegment = (segment: [Point, Point]): Vector =>
@@ -424,89 +386,7 @@ const estimateShape = (
   }
 };
 
-/*
-const generatePointPairs = (points: Readonly<Point[]>) => {
-  const [first, ...restOfThePoints] = points;
-  let latest = first;
-
-  return restOfThePoints.map((point) => {
-    const res = [latest, point];
-    latest = point;
-    return res;
-  }) as [Point, Point][];
-};
-*/
-
-/*
- * Implement a simplified A* heuristics
- *
-const avoidanceKernel = (
-  origin: Point,
-  target: Point,
-  boundingBoxes: Bounds[],
-): Point => {
-  const targetUnitVec = normalize(pointToVector(target, origin));
-  const rightUnitVec = [1, 0] as Vector;
-
-  if (Math.abs(dot(rightUnitVec, targetUnitVec)) < 0.5) {
-    // Horizontal
-    const horizontalPoint = [target[0], origin[1]] as Point;
-    const horizontalObstacle = naiveRaycast(
-      origin,
-      horizontalPoint,
-      boundingBoxes,
-    );
-    if (horizontalObstacle) {
-      const verticalPoint = [origin[0], target[1]] as Point;
-      const verticalObstacle = naiveRaycast(
-        origin,
-        verticalPoint,
-        boundingBoxes,
-      );
-      if (horizontalObstacle && verticalObstacle) {
-        // TODO: We don't consider going around in the opposite direction yet
-        const y =
-          origin[1] > verticalObstacle[1]
-            ? verticalObstacle[1] - 10 // Bumped into top
-            : verticalObstacle[3] + 10; // Bumped into bottom
-        return [verticalPoint[0], y];
-      }
-
-      return verticalPoint;
-    }
-
-    return horizontalPoint;
-  }
-
-  // Vertical
-  const verticalPoint = [origin[0], target[1]] as Point;
-  const verticalObstacle = naiveRaycast(origin, verticalPoint, boundingBoxes);
-  if (verticalObstacle) {
-    const horizontalPoint = [target[0], origin[1]] as Point;
-    const horizontalObstacle = naiveRaycast(
-      origin,
-      horizontalPoint,
-      boundingBoxes,
-    );
-    if (verticalObstacle && horizontalObstacle) {
-      // TODO: We don't consider going around in the opposite direction yet
-      const x =
-        origin[0] > horizontalObstacle[0]
-          ? horizontalObstacle[0] + 10 // Bumped into left
-          : horizontalObstacle[2] - 10; // Bumped into right
-      return [x, horizontalPoint[1]];
-    }
-
-    return horizontalPoint;
-  }
-
-  return verticalPoint;
-};
-
-
-*/
-
-const naiveRaycast = (
+const intersectionDistance = (
   origin: Point,
   target: Point,
   boundingBoxes: Bounds[],
@@ -520,70 +400,195 @@ const naiveRaycast = (
 
   switch (true) {
     case target[0] < origin[0]:
-      return naiveRaycastLeft(origin, target, boundingBoxes);
+      return Math.sqrt(intersectionDistanceLeft(origin, target, boundingBoxes));
     case target[0] >= origin[0]:
-      return naiveRaycastRight(origin, target, boundingBoxes);
+      return Math.sqrt(
+        intersectionDistanceRight(origin, target, boundingBoxes),
+      );
     case target[1] < origin[1]:
-      return naiveRaycastTop(origin, target, boundingBoxes);
+      return Math.sqrt(intersectionDistanceTop(origin, target, boundingBoxes));
     case target[1] >= origin[1]:
-      return naiveRaycastBottom(origin, target, boundingBoxes);
+      return Math.sqrt(
+        intersectionDistanceBottom(origin, target, boundingBoxes),
+      );
     default:
-      return [];
+      return Infinity;
   }
 };
 
 // Check right sides of bounding boxes against a left pointing ray
-const naiveRaycastLeft = (
+const intersectionDistanceLeft = (
   origin: Point,
   target: Point,
   boundingBoxes: Bounds[],
 ) => {
-  const hits = boundingBoxes.filter((box) =>
-    doSegmentsIntersect(origin, target, [box[2], box[1]], [box[2], box[3]]),
-  );
-  hits.sort((a, b) => a[2] - b[2]);
-
-  return hits.pop();
+  return boundingBoxes
+    .map(
+      (box) =>
+        directedSegmentsIntersectionPointWithObtuseAngle(
+          [origin, target],
+          [
+            [box[2], box[1]],
+            [box[2], box[3]],
+          ],
+        ) ?? ([Infinity, Infinity] as Point),
+    )
+    .map((p) => {
+      debugDrawPoint(p);
+      return p;
+    })
+    .reduce((acc, value) => {
+      const dist = distanceSq(origin, value);
+      return dist < acc ? dist : acc;
+    }, Infinity);
 };
-
 // Check left sides of bounding boxes against a right pointing ray
-const naiveRaycastRight = (
+const intersectionDistanceRight = (
   origin: Point,
   target: Point,
   boundingBoxes: Bounds[],
-) => {
-  const hits = boundingBoxes.filter((box) =>
-    doSegmentsIntersect(origin, target, [box[0], box[1]], [box[0], box[3]]),
-  );
-  hits.sort((a, b) => a[0] - b[0]);
-
-  return hits.pop();
-};
+) =>
+  boundingBoxes
+    .map(
+      (box) =>
+        directedSegmentsIntersectionPointWithObtuseAngle(
+          [origin, target],
+          [
+            [box[0], box[1]],
+            [box[0], box[3]],
+          ],
+        ) ?? ([Infinity, Infinity] as Point),
+    )
+    .reduce((acc, value) => {
+      const dist = distanceSq(origin, value);
+      return dist < acc ? dist : acc;
+    }, Infinity);
 
 // Check bottom sides of bounding boxes against a top pointing ray
-const naiveRaycastTop = (
+const intersectionDistanceTop = (
   origin: Point,
   target: Point,
   boundingBoxes: Bounds[],
-) => {
-  const hits = boundingBoxes.filter((box) =>
-    doSegmentsIntersect(origin, target, [box[0], box[3]], [box[2], box[3]]),
-  );
-  hits.sort((a, b) => a[3] - b[3]);
-
-  return hits.pop();
-};
+) =>
+  boundingBoxes
+    .map(
+      (box) =>
+        directedSegmentsIntersectionPointWithObtuseAngle(
+          [origin, target],
+          [
+            [box[0], box[3]],
+            [box[2], box[3]],
+          ],
+        ) ?? ([Infinity, Infinity] as Point),
+    )
+    .reduce((acc, value) => {
+      const dist = distanceSq(origin, value);
+      return dist < acc ? dist : acc;
+    }, Infinity);
 
 // Check top sides of bounding boxes against a bottom pointing ray
-const naiveRaycastBottom = (
+const intersectionDistanceBottom = (
   origin: Point,
   target: Point,
   boundingBoxes: Bounds[],
-) => {
-  const hits = boundingBoxes.filter((box) =>
-    doSegmentsIntersect(origin, target, [box[0], box[1]], [box[2], box[1]]),
-  );
-  hits.sort((a, b) => a[1] - b[1]);
+) =>
+  boundingBoxes
+    .map(
+      (box) =>
+        directedSegmentsIntersectionPointWithObtuseAngle(
+          [origin, target],
+          [
+            [box[0], box[1]],
+            [box[2], box[1]],
+          ],
+        ) ?? ([Infinity, Infinity] as Point),
+    )
+    .reduce((acc, value) => {
+      const dist = distanceSq(origin, value);
+      return dist < acc ? dist : acc;
+    }, Infinity);
 
-  return hits.pop();
+const arePointsEpsilonClose = (a: Point, b: Point) =>
+  a[0] - b[0] < 0.0005 && a[1] - b[1] < 0.0005;
+
+const segmentsIntersectAt = (
+  a: Readonly<Segment>,
+  b: Readonly<Segment>,
+): Point | null => {
+  const r = subtractVectors(a[1], a[0]);
+  const s = subtractVectors(b[1], b[0]);
+  const denominator = crossProduct(r, s);
+
+  if (denominator === 0) {
+    return null;
+  }
+
+  const u = crossProduct(subtractVectors(a[0], b[0]), r) / denominator;
+  const t = crossProduct(subtractVectors(a[0], b[0]), s) / denominator;
+
+  if (
+    arePointsEpsilonClose(
+      addVectors(a[0], scaleVector(r, t)),
+      addVectors(b[0], scaleVector(r, u)),
+    )
+  ) {
+    debugDrawSegments(b, "red");
+    return addVectors(a[0], scaleVector(normalize(r), t));
+  }
+
+  return null;
 };
+
+const directedSegmentsIntersectionPointWithObtuseAngle = (
+  a: Readonly<Segment>,
+  b: Readonly<Segment>,
+): Point | null => {
+  const aVector = pointToVector(a[1], a[0]);
+  const bVector = pointToVector(b[1], b[0]);
+
+  if (dotProduct(aVector, bVector) < 0) {
+    return segmentsIntersectAt(a, b);
+  }
+
+  return null;
+};
+
+/*
+const getClosestStartEndLineSegments = (
+  arrow: ExcalidrawArrowElement,
+  startPoint: Point,
+  endPoint: Point,
+) => {
+  const [startLineSegments, endLineSegments] = getStartEndLineSegments(arrow);
+
+  const startClosestLineSegment =
+    startLineSegments && getClosestLineSegment(startLineSegments, startPoint);
+  const endClosestLineSegment =
+    endLineSegments && getClosestLineSegment(endLineSegments, endPoint);
+
+  debugDrawSegments(startClosestLineSegment, "red");
+  debugDrawSegments(endClosestLineSegment, "red");
+
+  return [startClosestLineSegment, endClosestLineSegment];
+};
+
+const getClosestLineSegment = (
+  segments: Segment[],
+  p: Point,
+): Segment | null => {
+  if (segments.length === 0) {
+    return null;
+  }
+
+  const idx = segments
+    .map((segment) => distanceOfPointFromSegment(p, segment))
+    .reduce(
+      (idxOfSmallest, distance, idx, distances) =>
+        distances[idxOfSmallest] > distance ? idx : idxOfSmallest,
+      0,
+    );
+
+  return segments[idx];
+};
+
+ */

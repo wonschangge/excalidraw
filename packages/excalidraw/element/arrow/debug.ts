@@ -1,5 +1,5 @@
 import { normalize, scaleVector } from "../../math";
-import { Segment, Vector } from "../../types";
+import { Point, Segment, Vector } from "../../types";
 
 export function debugDrawClear() {
   if (import.meta.env.DEV) {
@@ -23,7 +23,7 @@ export function debugDrawNormal(
 }
 
 export function debugDrawSegments(
-  segments?: Segment | Segment[] | null,
+  segments?: Readonly<Segment> | Readonly<Segment>[] | null,
   color: string = "green",
 ) {
   if (import.meta.env.DEV) {
@@ -37,5 +37,22 @@ export function debugDrawSegments(
   }
 }
 
-const isSegment = (candidate: Segment | Segment[]): candidate is Segment =>
+const isSegment = (
+  candidate: Readonly<Segment> | Readonly<Segment>[],
+): candidate is Readonly<Segment> =>
   candidate.length > 0 ? !Array.isArray(candidate[0][0]) : true;
+
+export function debugDrawPoint(p: Point, color: string = "#FF1493") {
+  if (import.meta.env.DEV) {
+    window.v.lines.push([
+      [p[0] - 10, p[1] - 10],
+      [p[0] + 10, p[1] + 10],
+      color,
+    ]);
+    window.v.lines.push([
+      [p[0] - 10, p[1] + 10],
+      [p[0] + 10, p[1] - 10],
+      color,
+    ]);
+  }
+}

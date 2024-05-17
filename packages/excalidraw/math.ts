@@ -147,7 +147,7 @@ export const getPointOnAPath = (point: Point, path: Point[]) => {
   return null;
 };
 
-export const distanceSqared = (a: Point, b: Point) => {
+export const distanceSq = (a: Point, b: Point) => {
   const i = a[0] - b[0];
   const j = a[1] - b[1];
 
@@ -542,6 +542,9 @@ export const pointToVector = (p: Point, origin: Point = [0, 0]): Vector => [
 export const dotProduct = (a: Vector, b: Vector): number =>
   a[0] * b[0] + a[1] * b[1];
 
+export const crossProduct = (a: Vector, b: Vector): number =>
+  a[0] * b[1] - a[1] * b[0];
+
 export const normalize = (vector: Vector): Vector => {
   const m = magnitude(vector);
 
@@ -576,6 +579,11 @@ export const addVectors = (vec1: Vector, vec2: Vector): Vector => [
   vec1[1] + vec2[1],
 ];
 
+export const subtractVectors = (vec1: Vector, vec2: Vector): Vector => [
+  vec1[0] - vec2[0],
+  vec1[1] - vec2[1],
+];
+
 export const rounding = (num: number, precision: number): number => {
   const pow = Math.pow(10, precision);
 
@@ -598,3 +606,27 @@ export const vectorToHeading = (vec: Vector): Vector => {
 
 export const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
+
+export const distanceOfPointFromSegment = (
+  p: Point,
+  segment: [Point, Point],
+): number => {
+  const [p1, p2] = segment;
+
+  const segmentLengthSquared = distanceSq(p1, p2);
+  if (segmentLengthSquared === 0) {
+    return distanceSq(p, p1);
+  }
+
+  const t = clamp(
+    ((p[0] - p1[0]) * (p2[0] - p1[0]) + (p[1] - p1[1]) * (p2[1] - p1[1])) /
+      segmentLengthSquared,
+    0,
+    1,
+  );
+
+  return distanceSq(p, [
+    p1[0] + t * (p2[0] - p1[0]),
+    p1[1] + t * (p2[1] - p1[1]),
+  ]);
+};

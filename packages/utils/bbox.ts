@@ -1,4 +1,5 @@
 import { Bounds } from "../excalidraw/element/bounds";
+import { crossProduct } from "../excalidraw/math";
 import { Point } from "../excalidraw/types";
 
 export type LineSegment = [Point, Point];
@@ -10,10 +11,6 @@ export function getBBox(line: LineSegment): Bounds {
     Math.max(line[0][0], line[1][0]),
     Math.max(line[0][1], line[1][1]),
   ];
-}
-
-export function crossProduct(a: Point, b: Point) {
-  return a[0] * b[1] - b[0] * a[1];
 }
 
 export function doBBoxesIntersect(a: Bounds, b: Bounds) {
