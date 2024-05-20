@@ -1,4 +1,9 @@
-import { rangeIntersection, rangesOverlap, rotate } from "./math";
+import {
+  rangeIntersection,
+  rangesOverlap,
+  rotate,
+  segmentsIntersectAt,
+} from "./math";
 
 describe("rotate", () => {
   it("should rotate over (x2, y2) and return the rotated coordinates for (x1, y1)", () => {
@@ -51,5 +56,121 @@ describe("range intersection", () => {
 
   it("should not intersect", () => {
     expect(rangeIntersection([1, 4], [5, 7])).toEqual(null);
+  });
+});
+
+// describe("point inside bounding box distance", () => {
+//   it("should be inside the bbox", () => {
+//     expect(
+//       distanceOfDirectedAxisAlignedSegmentEndPointFromBoundingBox(
+//         [
+//           [150, 150],
+//           [150, 190],
+//         ],
+//         [100, 100, 200, 200],
+//       ),
+//     ).toEqual(10);
+//     expect(
+//       distanceOfDirectedAxisAlignedSegmentEndPointFromBoundingBox(
+//         [
+//           [150, 150],
+//           [190, 150],
+//         ],
+//         [100, 100, 200, 200],
+//       ),
+//     ).toEqual(10);
+//     expect(
+//       distanceOfDirectedAxisAlignedSegmentEndPointFromBoundingBox(
+//         [
+//           [150, 150],
+//           [150, 110],
+//         ],
+//         [100, 100, 200, 200],
+//       ),
+//     ).toEqual(-10);
+//     expect(
+//       distanceOfDirectedAxisAlignedSegmentEndPointFromBoundingBox(
+//         [
+//           [150, 150],
+//           [110, 150],
+//         ],
+//         [100, 100, 200, 200],
+//       ),
+//     ).toEqual(-10);
+//     expect(
+//       distanceOfDirectedAxisAlignedSegmentEndPointFromBoundingBox(
+//         [
+//           [50, 150],
+//           [110, 150],
+//         ],
+//         [100, 100, 200, 200],
+//       ),
+//     ).toEqual(90); // Directed segment, so NOT closest bounding box side!
+//   });
+//   it("should not be inside the bbox", () => {
+//     expect(
+//       distanceOfDirectedAxisAlignedSegmentEndPointFromBoundingBox(
+//         [
+//           [0, 0],
+//           [0, 110],
+//         ],
+//         [-100, -100, 100, 100],
+//       ),
+//     ).toBe(null);
+//   });
+// });
+
+describe("segment intersection", () => {
+  it("should intersect", () => {
+    expect(
+      segmentsIntersectAt(
+        [
+          [0, 0],
+          [200, 0],
+        ],
+        [
+          [100, 100],
+          [100, -100],
+        ],
+      ),
+    ).toEqual([100, 0]);
+    expect(
+      segmentsIntersectAt(
+        [
+          [-100, -100],
+          [100, 100],
+        ],
+        [
+          [100, -100],
+          [-100, 100],
+        ],
+      ),
+    ).toEqual([0, 0]);
+  });
+  it("should not intersect", () => {
+    expect(
+      segmentsIntersectAt(
+        [
+          [-100, -100],
+          [100, -100],
+        ],
+        [
+          [-100, 100],
+          [100, 100],
+        ],
+      ),
+    ).toBe(null);
+    expect(
+      segmentsIntersectAt(
+        [
+          [-100, -100],
+          [100, -100],
+        ],
+        [
+          [-100, -100],
+          [100, -100],
+        ],
+      ),
+    ).toBe(null);
   });
 });

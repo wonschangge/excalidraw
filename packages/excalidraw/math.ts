@@ -1,4 +1,4 @@
-import { NormalizedZoomValue, Point, Vector, Zoom } from "./types";
+import { NormalizedZoomValue, Point, Segment, Vector, Zoom } from "./types";
 import {
   DEFAULT_ADAPTIVE_RADIUS,
   LINE_CONFIRM_THRESHOLD,
@@ -10,7 +10,7 @@ import {
   ExcalidrawLinearElement,
   NonDeleted,
 } from "./element/types";
-import { getCurvePathOps } from "./element/bounds";
+import { Bounds, getCurvePathOps } from "./element/bounds";
 import { Mutable } from "./utility-types";
 import { ShapeCache } from "./scene/ShapeCache";
 
@@ -590,24 +590,46 @@ export const rounding = (num: number, precision: number): number => {
   return Math.round(num * pow) / pow;
 };
 
+const UP: Vector = [0, -1];
+const RIGHT: Vector = [1, 0];
+const DOWN: Vector = [0, 1];
+const LEFT: Vector = [-1, 0];
+
 export const vectorToHeading = (vec: Vector): Vector => {
   const [x, y] = vec;
   const absX = Math.abs(x);
   const absY = Math.abs(y);
   if (x > absY) {
-    return [1, 0];
+    return RIGHT;
   } else if (x <= -absY) {
-    return [-1, 0];
+    return LEFT;
   } else if (y > absX) {
-    return [0, 1];
+    return DOWN;
   }
-  return [0, -1];
+  return UP;
+};
+
+export const scaleUp = (p: Point, mid: Point) =>
+  addVectors(scaleVector(subtractVectors(p, mid), 2), mid);
+
+const triangleSign = (p1: Point, p2: Point, p3: Point): number =>
+  (p1[0] - p3[0]) * (p2[1] - p3[1]) - (p2[0] - p3[0]) * (p1[1] - p3[1]);
+
+export const PointInTriangle = (pt: Point, v1: Point, v2: Point, v3: Point) => {
+  const d1 = triangleSign(pt, v1, v2);
+  const d2 = triangleSign(pt, v2, v3);
+  const d3 = triangleSign(pt, v3, v1);
+
+  const has_neg = d1 < 0 || d2 < 0 || d3 < 0;
+  const has_pos = d1 > 0 || d2 > 0 || d3 > 0;
+
+  return !(has_neg && has_pos);
 };
 
 export const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
 
-export const distanceOfPointFromSegment = (
+export const distanceSqOfPointFromSegment = (
   p: Point,
   segment: [Point, Point],
 ): number => {
@@ -629,4 +651,62 @@ export const distanceOfPointFromSegment = (
     p1[0] + t * (p2[0] - p1[0]),
     p1[1] + t * (p2[1] - p1[1]),
   ]);
+};
+
+export const isPointInsideBoundingBox = (p: Point, bounds: Bounds): boolean =>
+  p[0] > bounds[0] && p[0] < bounds[2] && p[1] > bounds[1] && p[1] < bounds[3];
+
+// export const distanceOfDirectedAxisAlignedSegmentEndPointFromBoundingBox = (
+//   segment: Segment,
+//   bounds: Bounds,
+// ): number | null => {
+//   const p = segment[1];
+
+//   if (isPointInsideBoundingBox(p, bounds)) {
+//     console.log(vectorToHeading(pointToVector(p, segment[0])));
+//     switch (vectorToHeading(pointToVector(p, segment[0]))) {
+//       case UP:
+//         return bounds[1] - p[1];
+//       case RIGHT:
+//         return bounds[2] - p[0];
+//       case DOWN:
+//         return bounds[3] - p[1];
+//       case LEFT:
+//         return bounds[0] - p[0];
+//     }
+//   }
+
+//   return null;
+// };
+
+export const arePointsEpsilonClose = (a: Point, b: Point) =>
+  a[0] - b[0] < 0.0005 && a[1] - b[1] < 0.0005;
+
+export const segmentsIntersectAt = (
+  a: Readonly<Segment>,
+  b: Readonly<Segment>,
+): Point | null => {
+  const r = subtractVectors(a[1], a[0]);
+  const s = subtractVectors(b[1], b[0]);
+  const denominator = crossProduct(r, s);
+
+  if (denominator === 0) {
+    return null;
+  }
+
+  const i = subtractVectors(b[0], a[0]);
+  const u = crossProduct(i, r) / denominator;
+  const t = crossProduct(i, s) / denominator;
+
+  if (u === 0) {
+    return null;
+  }
+
+  const p = addVectors(a[0], scaleVector(r, t));
+
+  if (arePointsEpsilonClose(p, addVectors(b[0], scaleVector(s, u)))) {
+    return p;
+  }
+
+  return null;
 };
