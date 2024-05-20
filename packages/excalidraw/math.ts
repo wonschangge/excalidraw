@@ -656,29 +656,6 @@ export const distanceSqOfPointFromSegment = (
 export const isPointInsideBoundingBox = (p: Point, bounds: Bounds): boolean =>
   p[0] > bounds[0] && p[0] < bounds[2] && p[1] > bounds[1] && p[1] < bounds[3];
 
-// export const distanceOfDirectedAxisAlignedSegmentEndPointFromBoundingBox = (
-//   segment: Segment,
-//   bounds: Bounds,
-// ): number | null => {
-//   const p = segment[1];
-
-//   if (isPointInsideBoundingBox(p, bounds)) {
-//     console.log(vectorToHeading(pointToVector(p, segment[0])));
-//     switch (vectorToHeading(pointToVector(p, segment[0]))) {
-//       case UP:
-//         return bounds[1] - p[1];
-//       case RIGHT:
-//         return bounds[2] - p[0];
-//       case DOWN:
-//         return bounds[3] - p[1];
-//       case LEFT:
-//         return bounds[0] - p[0];
-//     }
-//   }
-
-//   return null;
-// };
-
 export const arePointsEpsilonClose = (a: Point, b: Point) =>
   a[0] - b[0] < 0.0005 && a[1] - b[1] < 0.0005;
 
@@ -704,7 +681,7 @@ export const segmentsIntersectAt = (
 
   const p = addVectors(a[0], scaleVector(r, t));
 
-  if (arePointsEpsilonClose(p, addVectors(b[0], scaleVector(s, u)))) {
+  if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
     return p;
   }
 

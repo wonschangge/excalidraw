@@ -1,11 +1,7 @@
-import { CaptureConsole } from "@sentry/integrations";
 import {
   PointInTriangle,
   addVectors,
   arePointsEqual,
-  distance2d,
-  distanceSq,
-  distanceSqOfPointFromSegment,
   dotProduct,
   isPointInsideBoundingBox,
   normalize,
@@ -42,9 +38,12 @@ export const calculateElbowArrowJointPoints = (
 
   const target = toWorldSpace(arrow, arrow.points[arrow.points.length - 1]);
   const firstPoint = toWorldSpace(arrow, arrow.points[arrow.points.length - 2]);
-  const avoidBounds = getStartEndBounds(arrow).filter(
-    (bb): bb is Bounds => bb !== null,
-  );
+  const avoidBounds = getStartEndBounds(arrow)
+    .filter((bb): bb is Bounds => bb !== null)
+    .map((bb) => {
+      debugDrawSegments(bboxToSegments(bb)!);
+      return bb;
+    });
 
   const [startHeading, endHeading] = getNormalVectorsForStartEndElements(
     arrow,
@@ -69,7 +68,7 @@ export const calculateElbowArrowJointPoints = (
   if (endHeading) {
     const dongle = extendSegmentToBoundingBoxEdge(
       [addVectors(target, endHeading), target],
-      true,
+      false,
       avoidBounds,
     );
     endPoints.push(addVectors(dongle, scaleVector(endHeading, 20)));
@@ -92,7 +91,7 @@ const calculateSegment = (
   const points: Point[] = Array.from(start);
   // Limit max step to avoid infinite loop
   for (let step = 0; step < 50; step++) {
-    const next = kernel(points, end);
+    const next = kernel(points, end, boundingBoxes);
     //const next = avoidanceKernel(points, end, boundingBoxes);
     if (arePointsEqual(end[0], next)) {
       break;
@@ -107,7 +106,7 @@ const extendSegmentToBoundingBoxEdge = (
   segment: Segment,
   segmentIsStart: boolean,
   boundingBoxes: Bounds[],
-) => {
+): Point => {
   const [start, end] = segment;
   const vector = pointToVector(end, start);
   const normal = rotateVector(vector, Math.PI / 2);
@@ -137,33 +136,22 @@ const extendSegmentToBoundingBoxEdge = (
             start,
             addVectors(start, [
               0,
-              rightSegmentNormalDot > 0 ? minDist : -minDist,
+              rightSegmentNormalDot > 0 ? -minDist : minDist,
             ]),
           ]
       : segmentIsHorizontal
-      ? [
-          end,
-          subtractVectors(end, [rightSegmentDot > 0 ? -minDist : minDist, 0]),
-        ]
+      ? [end, addVectors(end, [rightSegmentDot > 0 ? -minDist : minDist, 0])]
       : [
           end,
-          subtractVectors(end, [
-            0,
-            rightSegmentNormalDot > 0 ? minDist : -minDist,
-          ]),
+          addVectors(end, [0, rightSegmentNormalDot > 0 ? minDist : -minDist]),
         ];
 
-    const dists = containing
+    return containing
       .map(bboxToSegments) // TODO: This could be calcualted once in createRoute
       .flatMap((segments) =>
         segments!.map((segment) => segmentsIntersectAt(candidate, segment)),
       )
-      .filter((x) => x !== null);
-    const dongle = dists.sort(
-      (a, b) => distanceSq(a!, start) - distanceSq(b!, start),
-    )[0]!;
-
-    return segmentIsStart ? dongle : dongle;
+      .filter((x) => x !== null)[0]!;
   }
 
   return segmentIsStart ? segment[0] : segment[1];
@@ -265,7 +253,11 @@ const extendSegmentToBoundingBoxEdge = (
 //   //     to the same direction, just jump to the end.
 // };
 
-const kernel = (points: Point[], target: Point[]): Point => {
+const kernel = (
+  points: Point[],
+  target: Point[],
+  boundingBoxes: Bounds[],
+): Point => {
   const start = points[points.length - 1];
   const end = target[0];
   const startVector =
@@ -280,7 +272,7 @@ const kernel = (points: Point[], target: Point[]): Point => {
   const startNormal = rotateVector(startVector, Math.PI / 2);
   const rightStartNormalDot = dotProduct([1, 0], startNormal);
   const startNormalEndDot = dotProduct(startNormal, endVector);
-  console.log(startNormalEndDot);
+
   const next: Point =
     rightStartNormalDot === 0 // Last segment from start is horizontal
       ? startNormalEndDot === 1
@@ -289,6 +281,14 @@ const kernel = (points: Point[], target: Point[]): Point => {
       : startNormalEndDot === 1
       ? [start[0], end[1]]
       : [end[0], start[1]];
+
+  const intersections = boundingBoxes
+    .map(bboxToSegments)
+    .flatMap((segments) =>
+      segments!.map((segment) => segmentsIntersectAt([start, next], segment)),
+    )
+    .filter((x) => x != null);
+  intersections.forEach((i) => debugDrawPoint(i!));
 
   return next;
 };
