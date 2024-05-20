@@ -2,6 +2,7 @@ import {
   PointInTriangle,
   addVectors,
   arePointsEqual,
+  distanceSq,
   dotProduct,
   isPointInsideBoundingBox,
   normalize,
@@ -10,7 +11,6 @@ import {
   scaleUp,
   scaleVector,
   segmentsIntersectAt,
-  subtractVectors,
   toLocalSpace,
   toWorldSpace,
   vectorToHeading,
@@ -38,12 +38,13 @@ export const calculateElbowArrowJointPoints = (
 
   const target = toWorldSpace(arrow, arrow.points[arrow.points.length - 1]);
   const firstPoint = toWorldSpace(arrow, arrow.points[arrow.points.length - 2]);
-  const avoidBounds = getStartEndBounds(arrow)
-    .filter((bb): bb is Bounds => bb !== null)
-    .map((bb) => {
-      debugDrawSegments(bboxToSegments(bb)!);
-      return bb;
-    });
+  const avoidBounds = getStartEndBounds(arrow).filter(
+    (bb): bb is Bounds => bb !== null,
+  );
+  // .map((bb) => {
+  //   debugDrawSegments(bboxToSegments(bb)!);
+  //   return bb;
+  // });
 
   const [startHeading, endHeading] = getNormalVectorsForStartEndElements(
     arrow,
@@ -157,102 +158,6 @@ const extendSegmentToBoundingBoxEdge = (
   return segmentIsStart ? segment[0] : segment[1];
 };
 
-// const avoidanceKernel = (
-//   points: Point[],
-//   target: Point[],
-//   boundingBoxes: Bounds[],
-// ): Point => {
-//   const start = points[points.length - 1];
-//   const startHead = points[points.length - 2];
-//   const end = target[0];
-//   const startVector =
-//     points.length < 2
-//       ? ([1, 0] as Vector) // TODO: Fixed right start attachment
-//       : normalize(pointToVector(start, startHead));
-//   const endVector =
-//     target.length < 2
-//       ? ([-1, 0] as Vector) // TODO: Fixed left end attachment
-//       : normalize(pointToVector(target[1], end));
-//   const startNormal = rotateVector(startVector, Math.PI / 2);
-//   const endNormal = rotateVector(endVector, Math.PI / 2);
-//   const startEndDot = dotProduct(startVector, endVector);
-//   const startNormalEndDot = dotProduct(startNormal, endVector);
-//   const rightStartNormalDot = dotProduct([1, 0], startNormal);
-//   const rightEndNormalDot = dotProduct([1, 0], endNormal);
-//   const rightStartDot = dotProduct([1, 0], startVector);
-
-//   const boundingBoxesContainingStart = boundingBoxes
-//     .filter((bBox) => isPointInsideBoundingBox(start, bBox))
-//     .map((bbox) => {
-//       debugDrawSegments(bboxToSegments(bbox), "green");
-//       return bbox;
-//     });
-
-//   // If this is > 1 it means the arrow is in an overlapping shape
-//   if (boundingBoxesContainingStart.length > 0) {
-//     if (rightStartNormalDot === 0) {
-//       // Start vector is horizontal
-//       const minDist = boundingBoxesContainingStart
-//         .map((bbox) => bbox[2] - bbox[0])
-//         .reduce((largest, value) => (value > largest ? value : largest), 0);
-//       const candidate = [
-//         start,
-//         addVectors(start, [rightStartDot > 0 ? minDist : -minDist, 0]),
-//       ] as Segment;
-//       const dists = boundingBoxesContainingStart
-//         .map(bboxToSegments) // TODO: This could be calcualted once in createRoute
-//         .flatMap((segments) =>
-//           segments.map((segment) => segmentsIntersectAt(candidate, segment)),
-//         )
-//         .filter((x) => x !== null);
-//       return dists.sort(
-//         (a, b) => distanceSq(a!, start) - distanceSq(b!, start),
-//       )[0]!;
-//     }
-//     // Start vector is vertical
-//     const minDist = boundingBoxesContainingStart
-//       .map((bbox) => bbox[3] - bbox[1])
-//       .reduce((largest, value) => (value > largest ? value : largest), 0);
-//     const candidate = [
-//       start,
-//       addVectors(start, [0, rightStartDot > 0 ? minDist : -minDist]),
-//     ] as Segment;
-//     const dists = boundingBoxesContainingStart
-//       .map(bboxToSegments) // TODO: This could be calcualted once in createRoute
-//       .flatMap((segments) =>
-//         segments.map((segment) => segmentsIntersectAt(candidate, segment)),
-//       )
-//       .filter((x) => x !== null);
-//     return dists.sort(
-//       (a, b) => distanceSq(a!, start) - distanceSq(b!, start),
-//     )[0]!;
-//   }
-
-//   const next = kernel(points, target, []);
-
-//   const boundingBoxesContainingNext = boundingBoxes
-//     .filter((bBox) => isPointInsideBoundingBox(next, bBox))
-//     .map((bbox) => {
-//       debugDrawSegments(bboxToSegments(bbox), "red");
-//       return bbox;
-//     });
-
-//   if (boundingBoxesContainingNext.length > 0) {
-//     //const nextEndDot = dotProduct(pointToVector(next, startHead), endNormal);
-//     if (rightEndNormalDot === 0) {
-//       // End vector is horizontal
-//       const minDist = boundingBoxesContainingNext
-//         .map((bbox) => bbox[2] - bbox[0])
-//         .reduce((largest, value) => (value > largest ? value : largest), 0);
-//     }
-//   }
-
-//   return kernel(points, target, []);
-
-//   // 1.a If start and end are colinear and pointing
-//   //     to the same direction, just jump to the end.
-// };
-
 const kernel = (
   points: Point[],
   target: Point[],
@@ -288,9 +193,12 @@ const kernel = (
       segments!.map((segment) => segmentsIntersectAt([start, next], segment)),
     )
     .filter((x) => x != null);
-  intersections.forEach((i) => debugDrawPoint(i!));
 
-  return next;
+  const intersection = intersections.sort(
+    (a, b) => distanceSq(start, a!) - distanceSq(start, b!),
+  )[0];
+
+  return intersection ? intersection : next;
 };
 
 const getElementsMap = (
