@@ -32,7 +32,10 @@ export const calculateElbowArrowJointPoints = (
   }
 
   const target = toWorldSpace(arrow, arrow.points[arrow.points.length - 1]);
-  const firstPoint = toWorldSpace(arrow, arrow.points[arrow.points.length - 2]);
+  const firstPoint = toWorldSpace(
+    arrow,
+    arrow.points[0], //arrow.points.length - 2
+  );
   const avoidBounds = getStartEndBounds(arrow).filter(
     (bb): bb is Bounds => bb !== null,
   );
@@ -177,9 +180,6 @@ const kernel = (
       : normalize(pointToVector(target[1], end));
   const startNormal = rotateVector(startVector, Math.PI / 2);
   const rightStartNormalDot = dotProduct([1, 0], startNormal);
-  //const endNormal = rotateVector(endVector, Math.PI / 2);
-  //const rightEndNormalDot = dotProduct([1, 0], endNormal);
-  //const startNormalEndDot = dotProduct(startNormal, endVector);
 
   let next: Point =
     rightStartNormalDot === 0 // Last segment from start is horizontal
@@ -190,8 +190,6 @@ const kernel = (
 
   const nextEndVector = normalize(pointToVector(end, next));
   const nextEndDot = dotProduct(nextEndVector, endVector);
-  // const nextStartVector = normalize(pointToVector(start, next));
-  // const nextStartDot = dotProduct(nextStartVector, startVector);
   const alignedButNotRightThere =
     (end[0] - next[0] === 0) !== (end[1] - next[1] === 0);
 
