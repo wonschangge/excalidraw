@@ -22,6 +22,7 @@ import { ExcalidrawArrowElement, NonDeletedSceneElementsMap } from "../types";
 import { debugDrawClear, debugDrawPoint, debugDrawSegments } from "./debug";
 
 const STEP_COUNT_LIMIT = 50;
+const MIN_SELF_BOX_OFFSET = 30; // This will break self-avoidance for MIN_SELF_BOX_OFFSET close elements
 
 export const calculateElbowArrowJointPoints = (
   arrow: ExcalidrawArrowElement,
@@ -55,10 +56,14 @@ export const calculateElbowArrowJointPoints = (
       true,
       avoidBounds,
     );
-    points.push(addVectors(dongle, scaleVector(startHeading, 30)));
+    points.push(
+      addVectors(dongle, scaleVector(startHeading, MIN_SELF_BOX_OFFSET)),
+    );
   } else {
     const heading = vectorToHeading(pointToVector(firstPoint, target));
-    points.push(addVectors(firstPoint, scaleVector(heading, 30)));
+    points.push(
+      addVectors(firstPoint, scaleVector(heading, MIN_SELF_BOX_OFFSET)),
+    );
   }
 
   const endPoints = [];
@@ -68,10 +73,14 @@ export const calculateElbowArrowJointPoints = (
       false,
       avoidBounds,
     );
-    endPoints.push(addVectors(dongle, scaleVector(endHeading, 30)));
+    endPoints.push(
+      addVectors(dongle, scaleVector(endHeading, MIN_SELF_BOX_OFFSET)),
+    );
   } else {
     const heading = vectorToHeading(pointToVector(target, firstPoint));
-    endPoints.push(addVectors(target, scaleVector(heading, -30)));
+    endPoints.push(
+      addVectors(target, scaleVector(heading, -MIN_SELF_BOX_OFFSET)),
+    );
   }
   endPoints.push(target);
 
