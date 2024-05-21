@@ -95,7 +95,7 @@ describe("library", () => {
     const arrow = API.createElement({
       id: "arrow1",
       type: "arrow",
-      endBinding: { elementId: "rectangle1", focus: -1, gap: 0 },
+      endBinding: { elementId: "rectangle1", focus: -1, gap: 0, ratio: [0, 0] },
     });
 
     await API.drop(

@@ -121,6 +121,7 @@ describe("duplicating multiple elements", () => {
         elementId: "rectangle1",
         focus: 0.2,
         gap: 7,
+        ratio: [0, 0],
       },
     });
 
@@ -131,6 +132,7 @@ describe("duplicating multiple elements", () => {
         elementId: "rectangle1",
         focus: 0.2,
         gap: 7,
+        ratio: [0, 0],
       },
       boundElements: [{ id: "text2", type: "text" }],
     });
@@ -247,6 +249,7 @@ describe("duplicating multiple elements", () => {
         elementId: "rectangle1",
         focus: 0.2,
         gap: 7,
+        ratio: [0, 0],
       },
     });
 
@@ -263,11 +266,13 @@ describe("duplicating multiple elements", () => {
         elementId: "rectangle1",
         focus: 0.2,
         gap: 7,
+        ratio: [0, 0],
       },
       endBinding: {
         elementId: "rectangle-not-exists",
         focus: 0.2,
         gap: 7,
+        ratio: [0, 0],
       },
     });
 
@@ -278,11 +283,13 @@ describe("duplicating multiple elements", () => {
         elementId: "rectangle-not-exists",
         focus: 0.2,
         gap: 7,
+        ratio: [0, 0],
       },
       endBinding: {
         elementId: "rectangle1",
         focus: 0.2,
         gap: 7,
+        ratio: [0, 0],
       },
     });
 

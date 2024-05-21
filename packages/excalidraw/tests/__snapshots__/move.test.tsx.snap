@@ -186,11 +186,16 @@ exports[`move element > rectangles with binding arrow 7`] = `
   "backgroundColor": "transparent",
   "boundElements": null,
   "customData": undefined,
+  "elbowed": false,
   "endArrowhead": "arrow",
   "endBinding": {
     "elementId": "id1",
     "focus": -0.46666666666666673,
     "gap": 10,
+    "ratio": [
+      -1,
+      -1,
+    ],
   },
   "fillStyle": "solid",
   "frameId": null,
@@ -223,6 +228,10 @@ exports[`move element > rectangles with binding arrow 7`] = `
     "elementId": "id0",
     "focus": -0.6000000000000001,
     "gap": 10,
+    "ratio": [
+      -1,
+      -1,
+    ],
   },
   "strokeColor": "#1e1e1e",
   "strokeStyle": "solid",

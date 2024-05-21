@@ -11,6 +11,7 @@ exports[`exportToSvg > with default arguments 1`] = `
   },
   "collaborators": Map {},
   "contextMenu": null,
+  "currentArrowElbowed": false,
   "currentChartType": "bar",
   "currentItemBackgroundColor": "transparent",
   "currentItemEndArrowhead": "arrow",

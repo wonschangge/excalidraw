@@ -64,6 +64,7 @@ describe("element binding", () => {
       elementId: rect.id,
       focus: expect.toBeNonNaNNumber(),
       gap: expect.toBeNonNaNNumber(),
+      ratio: expect.toBeNonNaNNumber(),
     });
 
     // Move the end point to the overlapping binding position
@@ -76,11 +77,13 @@ describe("element binding", () => {
       elementId: rect.id,
       focus: expect.toBeNonNaNNumber(),
       gap: expect.toBeNonNaNNumber(),
+      ratio: expect.toBeNonNaNNumber(),
     });
     expect(arrow.endBinding).toEqual({
       elementId: rect.id,
       focus: expect.toBeNonNaNNumber(),
       gap: expect.toBeNonNaNNumber(),
+      ratio: expect.toBeNonNaNNumber(),
     });
   });
 
@@ -318,11 +321,13 @@ describe("element binding", () => {
         elementId: "rectangle1",
         focus: 0.2,
         gap: 7,
+        ratio: [0, 0],
       },
       endBinding: {
         elementId: "text1",
         focus: 0.2,
         gap: 7,
+        ratio: [0, 0],
       },
     });
 
@@ -337,11 +342,13 @@ describe("element binding", () => {
         elementId: "text1",
         focus: 0.2,
         gap: 7,
+        ratio: [0, 0],
       },
       endBinding: {
         elementId: "rectangle1",
         focus: 0.2,
         gap: 7,
+        ratio: [0, 0],
       },
     });
 
