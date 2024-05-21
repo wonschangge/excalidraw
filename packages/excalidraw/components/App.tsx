@@ -6904,6 +6904,17 @@ class App extends React.Component<AppProps, AppState> {
 
       const { x: rx, y: ry, lastCommittedPoint } = multiElement;
 
+      if (multiElement.points.length > 1 && multiElement.elbowed) {
+        // Elbowed arrows cannot be created by putting down points
+        // only the start and end points can be defined
+        mutateElement(multiElement, {
+          lastCommittedPoint:
+            multiElement.points[multiElement.points.length - 1],
+        });
+        this.actionManager.executeAction(actionFinalize);
+        return;
+      }
+
       // clicking inside commit zone → finalize arrow
       if (
         multiElement.points.length > 1 &&
