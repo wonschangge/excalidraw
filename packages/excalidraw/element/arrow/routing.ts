@@ -19,12 +19,9 @@ import Scene from "../../scene/Scene";
 import { LocalPoint, Point, Segment, Vector } from "../../types";
 import { Bounds, getElementBounds } from "../bounds";
 import { ExcalidrawArrowElement, NonDeletedSceneElementsMap } from "../types";
-import {
-  debugDrawClear,
-  debugDrawNormal,
-  debugDrawPoint,
-  debugDrawSegments,
-} from "./debug";
+import { debugDrawClear, debugDrawPoint, debugDrawSegments } from "./debug";
+
+const STEP_COUNT_LIMIT = 50;
 
 export const calculateElbowArrowJointPoints = (
   arrow: ExcalidrawArrowElement,
@@ -33,18 +30,17 @@ export const calculateElbowArrowJointPoints = (
     // Arrow being created
     return arrow.points;
   }
-  console.log("-----");
+
   debugDrawClear();
 
   const target = toWorldSpace(arrow, arrow.points[arrow.points.length - 1]);
   const firstPoint = toWorldSpace(arrow, arrow.points[arrow.points.length - 2]);
-  const avoidBounds = getStartEndBounds(arrow).filter(
-    (bb): bb is Bounds => bb !== null,
-  );
-  // .map((bb) => {
-  //   debugDrawSegments(bboxToSegments(bb)!);
-  //   return bb;
-  // });
+  const avoidBounds = getStartEndBounds(arrow)
+    .filter((bb): bb is Bounds => bb !== null)
+    .map((bb) => {
+      debugDrawSegments(bboxToSegments(bb)!);
+      return bb;
+    });
 
   const [startHeading, endHeading] = getNormalVectorsForStartEndElements(
     arrow,
@@ -59,10 +55,10 @@ export const calculateElbowArrowJointPoints = (
       true,
       avoidBounds,
     );
-    points.push(addVectors(dongle, scaleVector(startHeading, 20)));
+    points.push(addVectors(dongle, scaleVector(startHeading, 30)));
   } else {
     const heading = vectorToHeading(pointToVector(firstPoint, target));
-    points.push(addVectors(firstPoint, scaleVector(heading, 20)));
+    points.push(addVectors(firstPoint, scaleVector(heading, 30)));
   }
 
   const endPoints = [];
@@ -72,10 +68,10 @@ export const calculateElbowArrowJointPoints = (
       false,
       avoidBounds,
     );
-    endPoints.push(addVectors(dongle, scaleVector(endHeading, 20)));
+    endPoints.push(addVectors(dongle, scaleVector(endHeading, 30)));
   } else {
     const heading = vectorToHeading(pointToVector(target, firstPoint));
-    endPoints.push(addVectors(target, scaleVector(heading, -20)));
+    endPoints.push(addVectors(target, scaleVector(heading, -30)));
   }
   endPoints.push(target);
 
@@ -91,14 +87,18 @@ const calculateSegment = (
 ): Point[] => {
   const points: Point[] = Array.from(start);
   // Limit max step to avoid infinite loop
-  for (let step = 0; step < 50; step++) {
+  for (let step = 0; step < STEP_COUNT_LIMIT; step++) {
     const next = kernel(points, end, boundingBoxes);
-    //const next = avoidanceKernel(points, end, boundingBoxes);
     if (arePointsEqual(end[0], next)) {
       break;
     }
     points.push(next);
   }
+
+  if (points.length > STEP_COUNT_LIMIT) {
+    console.error("Elbow arrow routing step count limit reached", points);
+  }
+  points.forEach((point) => debugDrawPoint(point, "orange", true));
 
   return points.concat(end);
 };
@@ -169,36 +169,68 @@ const kernel = (
     points.length < 2
       ? ([0, 0] as Vector) // TODO: Fixed right start attachment
       : normalize(pointToVector(start, points[points.length - 2]));
-  //  console.log(points.length);
   const endVector =
     target.length < 2
       ? ([0, 0] as Vector) // TODO: Fixed left end attachment
       : normalize(pointToVector(target[1], end));
   const startNormal = rotateVector(startVector, Math.PI / 2);
   const rightStartNormalDot = dotProduct([1, 0], startNormal);
-  const startNormalEndDot = dotProduct(startNormal, endVector);
+  //const endNormal = rotateVector(endVector, Math.PI / 2);
+  //const rightEndNormalDot = dotProduct([1, 0], endNormal);
+  //const startNormalEndDot = dotProduct(startNormal, endVector);
 
-  const next: Point =
+  let next: Point =
     rightStartNormalDot === 0 // Last segment from start is horizontal
-      ? startNormalEndDot === 1
-        ? [end[0], start[1]]
-        : [start[0], end[1]]
-      : startNormalEndDot === 1
-      ? [start[0], end[1]]
-      : [end[0], start[1]];
+      ? [start[0], end[1]] // Turn up/down all the way to end
+      : [end[0], start[1]]; // Turn left/right all the way to end
 
+  next = resolveIntersections(start, next, boundingBoxes, startVector);
+
+  const nextEndVector = normalize(pointToVector(end, next));
+  const nextEndDot = dotProduct(nextEndVector, endVector);
+  // const nextStartVector = normalize(pointToVector(start, next));
+  // const nextStartDot = dotProduct(nextStartVector, startVector);
+  const alignedButNotRightThere =
+    (end[0] - next[0] === 0) !== (end[1] - next[1] === 0);
+
+  if (nextEndDot === -1 && alignedButNotRightThere) {
+    debugDrawPoint(next);
+    next =
+      rightStartNormalDot === 0
+        ? [start[0], end[1] + 40]
+        : [end[0] + 40, start[1]];
+  }
+
+  return next;
+};
+
+const resolveIntersections = (
+  start: Point,
+  next: Point,
+  boundingBoxes: Bounds[],
+  startVector: Vector,
+) => {
   const intersections = boundingBoxes
     .map(bboxToSegments)
     .flatMap((segments) =>
       segments!.map((segment) => segmentsIntersectAt([start, next], segment)),
     )
-    .filter((x) => x != null);
+    .filter((x) => x != null)
+    .map((p) => {
+      debugDrawPoint(p!, "yellow");
+      return p;
+    });
 
   const intersection = intersections.sort(
     (a, b) => distanceSq(start, a!) - distanceSq(start, b!),
   )[0];
 
-  return intersection ? intersection : next;
+  return intersection && !arePointsEqual(intersection, start)
+    ? addVectors(
+        start,
+        scaleVector(startVector, Math.sqrt(distanceSq(start, intersection))),
+      )
+    : next;
 };
 
 const getElementsMap = (

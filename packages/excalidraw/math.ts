@@ -657,7 +657,7 @@ export const isPointInsideBoundingBox = (p: Point, bounds: Bounds): boolean =>
   p[0] > bounds[0] && p[0] < bounds[2] && p[1] > bounds[1] && p[1] < bounds[3];
 
 export const arePointsEpsilonClose = (a: Point, b: Point) =>
-  a[0] - b[0] < 0.0005 && a[1] - b[1] < 0.0005;
+  a[0] - b[0] < 0.000005 && a[1] - b[1] < 0.000005;
 
 export const segmentsIntersectAt = (
   a: Readonly<Segment>,

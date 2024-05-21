@@ -42,16 +42,23 @@ const isSegment = (
 ): candidate is Readonly<Segment> =>
   candidate.length > 0 ? !Array.isArray(candidate[0][0]) : true;
 
-export function debugDrawPoint(p: Point, color: string = "#FF1493") {
+export function debugDrawPoint(
+  p: Point,
+  color: string = "#FF1493",
+  fuzzy = false,
+) {
   if (import.meta.env.DEV) {
+    const xOffset = fuzzy ? Math.random() * 3 : 0;
+    const yOffset = fuzzy ? Math.random() * 3 : 0;
+
     window.v.lines.push([
-      [p[0] - 10, p[1] - 10],
-      [p[0] + 10, p[1] + 10],
+      [p[0] + xOffset - 10, p[1] + yOffset - 10],
+      [p[0] + xOffset + 10, p[1] + yOffset + 10],
       color,
     ]);
     window.v.lines.push([
-      [p[0] - 10, p[1] + 10],
-      [p[0] + 10, p[1] - 10],
+      [p[0] + xOffset - 10, p[1] + yOffset + 10],
+      [p[0] + xOffset + 10, p[1] + yOffset - 10],
       color,
     ]);
   }
