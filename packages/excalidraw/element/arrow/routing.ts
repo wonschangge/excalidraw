@@ -5,6 +5,7 @@ import {
   areSegmentsColinear,
   distanceSq,
   dotProduct,
+  getIntersectingRectangle,
   isPointInsideBoundingBox,
   normalize,
   pointToVector,
@@ -48,7 +49,6 @@ export const calculateElbowArrowJointPoints = (
     return arrow.points;
   }
 
-  console.log("---");
   debugDrawClear();
 
   const target = toWorldSpace(arrow, arrow.points[arrow.points.length - 1]);
@@ -59,6 +59,11 @@ export const calculateElbowArrowJointPoints = (
   const avoidBounds = getStartEndBounds(arrow).filter(
     (bb): bb is Bounds => bb !== null,
   );
+
+  const isBBoxesIntersect =
+    avoidBounds[0] &&
+    avoidBounds[1] &&
+    getIntersectingRectangle(avoidBounds[0], avoidBounds[1]);
 
   const [startHeading, endHeading] = getHeadingForStartEndElements(
     arrow,
@@ -91,9 +96,11 @@ export const calculateElbowArrowJointPoints = (
   }
   endPoints.push(target);
 
-  return calculateSegment(points, endPoints, avoidBounds).map((point) =>
-    toLocalSpace(arrow, point),
-  );
+  return calculateSegment(
+    points,
+    endPoints,
+    isBBoxesIntersect ? [] : avoidBounds,
+  ).map((point) => toLocalSpace(arrow, point));
 };
 
 const calculateSegment = (
@@ -265,8 +272,6 @@ const resolveIntersections = (
   next: Point,
   boundingBoxes: Bounds[],
 ): Point => {
-  debugDrawClear();
-  debugDrawPoint(next);
   const start = points[points.length - 1];
   const [offsetLeft, offsetRight] = getHitOffset(start, next, boundingBoxes);
 
@@ -304,17 +309,16 @@ const resolveIntersections = (
         ? null
         : nextRightCandidate;
 
-    nextLeft && debugDrawPoint(nextLeft, "red");
-    nextRight && debugDrawPoint(nextRight, "green");
+    // nextLeft && debugDrawPoint(nextLeft, "red");
+    // nextRight && debugDrawPoint(nextRight, "green");
 
     if (offsetLeft > offsetRight) {
-      //console.log("LEFT", nextLeft, nextRight);
       return nextLeft ? nextLeft : nextRight ? nextRight : next;
     }
-    //console.log("RIGHT", nextLeft, nextRight);
+
     return nextRight ? nextRight : nextLeft ? nextLeft : next;
   }
-  debugDrawPoint(next, "blue");
+  // debugDrawPoint(next, "blue");
   return next;
 };
 

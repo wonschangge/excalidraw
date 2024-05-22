@@ -699,3 +699,34 @@ export const areSegmentsColinear = (
 
   return srCross === 0 && qpCross === 0;
 };
+
+/**
+ * Returns intersecting part of two rectangles
+ * @param  {object}  r1 4 coordinates in form of {x1, y1, x2, y2} object
+ * @param  {object}  r2 4 coordinates in form of {x1, y1, x2, y2} object
+ * @return {boolean}    False if there's no intersecting part
+ * @return {object}     4 coordinates in form of {x1, y1, x2, y2} object
+ */
+export const getIntersectingRectangle = (r1: Bounds, r2: Bounds) => {
+  const [b1, b2] = [r1, r2].map((r) => {
+    return {
+      x: [r[0], r[2]].sort((a, b) => a - b),
+      y: [r[1], r[3]].sort((a, b) => a - b),
+    };
+  });
+
+  const noIntersect =
+    b2.x[0] > b1.x[1] ||
+    b2.x[1] < b1.x[0] ||
+    b2.y[0] > b1.y[1] ||
+    b2.y[1] < b1.y[0];
+
+  return noIntersect
+    ? false
+    : {
+        x1: Math.max(b1.x[0], b2.x[0]), // _[0] is the lesser,
+        y1: Math.max(b1.y[0], b2.y[0]), // _[1] is the greater
+        x2: Math.min(b1.x[1], b2.x[1]),
+        y2: Math.min(b1.y[1], b2.y[1]),
+      };
+};
