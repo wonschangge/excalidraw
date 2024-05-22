@@ -1,5 +1,6 @@
 import { normalize, scaleVector } from "../../math";
 import { Point, Segment, Vector } from "../../types";
+import { BoundingBox, Bounds } from "../bounds";
 
 export function debugDrawClear() {
   if (import.meta.env.DEV) {
@@ -63,3 +64,45 @@ export function debugDrawPoint(
     ]);
   }
 }
+
+export const debugDrawBoundingBox = (bbox: BoundingBox) => {
+  debugDrawSegments([
+    [
+      [bbox.minX, bbox.minY],
+      [bbox.maxX, bbox.minY],
+    ],
+    [
+      [bbox.maxX, bbox.minY],
+      [bbox.maxX, bbox.maxY],
+    ],
+    [
+      [bbox.maxX, bbox.maxY],
+      [bbox.minX, bbox.maxY],
+    ],
+    [
+      [bbox.minX, bbox.maxY],
+      [bbox.minX, bbox.minY],
+    ],
+  ]);
+};
+
+export const debugDrawBounds = (bbox: Bounds) => {
+  debugDrawSegments([
+    [
+      [bbox[0], bbox[1]],
+      [bbox[2], bbox[1]],
+    ],
+    [
+      [bbox[2], bbox[1]],
+      [bbox[2], bbox[3]],
+    ],
+    [
+      [bbox[2], bbox[3]],
+      [bbox[0], bbox[3]],
+    ],
+    [
+      [bbox[0], bbox[3]],
+      [bbox[0], bbox[1]],
+    ],
+  ]);
+};

@@ -609,8 +609,8 @@ export const vectorToHeading = (vec: Vector): Vector => {
   return UP;
 };
 
-export const scaleUp = (p: Point, mid: Point) =>
-  addVectors(scaleVector(subtractVectors(p, mid), 2), mid);
+export const scaleUp = (p: Point, mid: Point, multiplier: number) =>
+  addVectors(scaleVector(subtractVectors(p, mid), multiplier), mid);
 
 const triangleSign = (p1: Point, p2: Point, p3: Point): number =>
   (p1[0] - p3[0]) * (p2[1] - p3[1]) - (p2[0] - p3[0]) * (p1[1] - p3[1]);
@@ -686,4 +686,16 @@ export const segmentsIntersectAt = (
   }
 
   return null;
+};
+
+export const areSegmentsColinear = (
+  a: Readonly<Segment>,
+  b: Readonly<Segment>,
+) => {
+  const r = subtractVectors(a[1], a[0]);
+  const s = subtractVectors(b[1], b[0]);
+  const srCross = crossProduct(r, s);
+  const qpCross = crossProduct(subtractVectors(b[0], a[0]), r);
+
+  return srCross === 0 && qpCross === 0;
 };
