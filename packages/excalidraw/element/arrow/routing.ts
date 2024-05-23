@@ -5,7 +5,7 @@ import {
   areSegmentsColinear,
   distanceSq,
   dotProduct,
-  getIntersectingRectangle,
+  doBoundsIntersect,
   isPointInsideBoundingBox,
   normalize,
   pointToVector,
@@ -32,7 +32,7 @@ import {
   debugDrawSegments,
 } from "./debug";
 
-const STEP_COUNT_LIMIT = 50;
+const STEP_COUNT_LIMIT = 10;
 const MIN_SELF_BOX_OFFSET = 10;
 
 type Heading = [1, 0] | [-1, 0] | [0, 1] | [0, -1];
@@ -52,18 +52,7 @@ export const calculateElbowArrowJointPoints = (
   debugDrawClear();
 
   const target = toWorldSpace(arrow, arrow.points[arrow.points.length - 1]);
-  const firstPoint = toWorldSpace(
-    arrow,
-    arrow.points[0], //arrow.points.length - 2
-  );
-  const avoidBounds = getStartEndBounds(arrow).filter(
-    (bb): bb is Bounds => bb !== null,
-  );
-
-  const isBBoxesIntersect =
-    avoidBounds[0] &&
-    avoidBounds[1] &&
-    getIntersectingRectangle(avoidBounds[0], avoidBounds[1]);
+  const firstPoint = toWorldSpace(arrow, arrow.points[0]);
 
   const [startHeading, endHeading] = getHeadingForStartEndElements(
     arrow,
@@ -71,35 +60,49 @@ export const calculateElbowArrowJointPoints = (
     target,
   );
 
-  const points = [firstPoint];
-  if (startHeading) {
-    const dongle = extendSegmentToBoundingBoxEdge(
-      [firstPoint, addVectors(firstPoint, startHeading)],
-      true,
-      avoidBounds,
-    );
-    points.push(dongle);
-  } else {
-    points.push(firstPoint);
-  }
+  let avoidBounds = getStartEndBounds(arrow).filter(
+    (bb): bb is Bounds => bb !== null,
+  );
 
-  const endPoints = [];
-  if (endHeading) {
-    const dongle = extendSegmentToBoundingBoxEdge(
-      [addVectors(target, endHeading), target],
-      false,
-      avoidBounds,
-    );
-    endPoints.push(dongle);
-  } else {
-    endPoints.push(target);
-  }
-  endPoints.push(target);
+  const doBBoxesIntersect =
+    avoidBounds[0] &&
+    avoidBounds[1] &&
+    doBoundsIntersect(avoidBounds[0], avoidBounds[1]);
+
+  const points = [
+    firstPoint,
+    startHeading
+      ? extendSegmentToBoundingBoxEdge(
+          [firstPoint, addVectors(firstPoint, startHeading)],
+          true,
+          avoidBounds,
+        )
+      : firstPoint,
+  ];
+
+  const endPoints = [
+    endHeading
+      ? extendSegmentToBoundingBoxEdge(
+          [addVectors(target, endHeading), target],
+          false,
+          avoidBounds,
+        )
+      : target,
+    target,
+  ];
+
+  avoidBounds = avoidBounds.filter(
+    (bbox) =>
+      !(
+        isPointInsideBoundingBox(points[1], bbox) ||
+        isPointInsideBoundingBox(endPoints[0], bbox)
+      ),
+  );
 
   return calculateSegment(
     points,
     endPoints,
-    isBBoxesIntersect ? [] : avoidBounds,
+    doBBoxesIntersect ? [] : avoidBounds,
   ).map((point) => toLocalSpace(arrow, point));
 };
 
@@ -183,7 +186,7 @@ const extendSegmentToBoundingBoxEdge = (
         segmentIsStart
           ? normalize(vector)
           : normalize(pointToVector(start, end)),
-        10,
+        1,
       ),
     );
   }
@@ -232,7 +235,9 @@ const kernel = (
         : [end[0] + 40, start[1]];
   }
 
-  next = resolveIntersections(points, next, boundingBoxes);
+  if (boundingBoxes.length > 0) {
+    next = resolveIntersections(points, next, boundingBoxes);
+  }
 
   return next;
 };
