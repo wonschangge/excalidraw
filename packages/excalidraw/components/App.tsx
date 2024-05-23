@@ -225,11 +225,6 @@ import { getStateForZoom } from "../scene/zoom";
 import { findShapeByKey } from "../shapes";
 import {
   GeometricShape,
-  getClosedCurveShape,
-  getCurveShape,
-  getEllipseShape,
-  getFreedrawShape,
-  getPolygonShape,
   getSelectionBoxShape,
 } from "../../utils/geometry/shape";
 import { isPointInShape } from "../../utils/collision";
@@ -421,7 +416,6 @@ import {
   hitElementBoundText,
   hitElementBoundingBoxOnly,
   hitElementItself,
-  shouldTestInside,
 } from "../element/collision";
 import { textWysiwyg } from "../element/textWysiwyg";
 import { isOverScrollBars } from "../scene/scrollbars";
@@ -431,6 +425,7 @@ import {
   isPointHittingLinkIcon,
 } from "./hyperlink/helpers";
 import { getShortcutFromShortcutName } from "../actions/shortcuts";
+import { getElementShape } from "../element/shape";
 
 const AppContext = React.createContext<AppClassProperties>(null!);
 const AppPropsContext = React.createContext<AppProps>(null!);
@@ -4421,59 +4416,6 @@ class App extends React.Component<AppProps, AppState> {
     return null;
   }
 
-  /**
-   * get the pure geometric shape of an excalidraw element
-   * which is then used for hit detection
-   */
-  public getElementShape(element: ExcalidrawElement): GeometricShape {
-    switch (element.type) {
-      case "rectangle":
-      case "diamond":
-      case "frame":
-      case "magicframe":
-      case "embeddable":
-      case "image":
-      case "iframe":
-      case "text":
-      case "selection":
-        return getPolygonShape(element);
-      case "arrow":
-      case "line": {
-        const roughShape =
-          ShapeCache.get(element)?.[0] ??
-          ShapeCache.generateElementShape(element, null)[0];
-        const [, , , , cx, cy] = getElementAbsoluteCoords(
-          element,
-          this.scene.getNonDeletedElementsMap(),
-        );
-
-        return shouldTestInside(element)
-          ? getClosedCurveShape(
-              element,
-              roughShape,
-              [element.x, element.y],
-              element.angle,
-              [cx, cy],
-            )
-          : getCurveShape(roughShape, [element.x, element.y], element.angle, [
-              cx,
-              cy,
-            ]);
-      }
-
-      case "ellipse":
-        return getEllipseShape(element);
-
-      case "freedraw": {
-        const [, , , , cx, cy] = getElementAbsoluteCoords(
-          element,
-          this.scene.getNonDeletedElementsMap(),
-        );
-        return getFreedrawShape(element, [cx, cy], shouldTestInside(element));
-      }
-    }
-  }
-
   private getBoundTextShape(element: ExcalidrawElement): GeometricShape | null {
     const boundTextElement = getBoundTextElement(
       element,
@@ -4482,18 +4424,24 @@ class App extends React.Component<AppProps, AppState> {
 
     if (boundTextElement) {
       if (element.type === "arrow") {
-        return this.getElementShape({
-          ...boundTextElement,
-          // arrow's bound text accurate position is not stored in the element's property
-          // but rather calculated and returned from the following static method
-          ...LinearElementEditor.getBoundTextElementPosition(
-            element,
-            boundTextElement,
-            this.scene.getNonDeletedElementsMap(),
-          ),
-        });
+        return getElementShape(
+          {
+            ...boundTextElement,
+            // arrow's bound text accurate position is not stored in the element's property
+            // but rather calculated and returned from the following static method
+            ...LinearElementEditor.getBoundTextElementPosition(
+              element,
+              boundTextElement,
+              this.scene.getNonDeletedElementsMap(),
+            ),
+          },
+          this.scene.getNonDeletedElementsMap(),
+        );
       }
-      return this.getElementShape(boundTextElement);
+      return getElementShape(
+        boundTextElement,
+        this.scene.getNonDeletedElementsMap(),
+      );
     }
 
     return null;
@@ -4532,7 +4480,10 @@ class App extends React.Component<AppProps, AppState> {
         x,
         y,
         element: elementWithHighestZIndex,
-        shape: this.getElementShape(elementWithHighestZIndex),
+        shape: getElementShape(
+          elementWithHighestZIndex,
+          this.scene.getNonDeletedElementsMap(),
+        ),
         // when overlapping, we would like to be more precise
         // this also avoids the need to update past tests
         threshold: this.getElementHitThreshold() / 2,
@@ -4637,7 +4588,7 @@ class App extends React.Component<AppProps, AppState> {
       x,
       y,
       element,
-      shape: this.getElementShape(element),
+      shape: getElementShape(element, this.scene.getNonDeletedElementsMap()),
       threshold: this.getElementHitThreshold(),
       frameNameBound: isFrameLikeElement(element)
         ? this.frameNameBoundsCache.get(element)
@@ -4669,7 +4620,10 @@ class App extends React.Component<AppProps, AppState> {
           x,
           y,
           element: elements[index],
-          shape: this.getElementShape(elements[index]),
+          shape: getElementShape(
+            elements[index],
+            this.scene.getNonDeletedElementsMap(),
+          ),
           threshold: this.getElementHitThreshold(),
         })
       ) {
@@ -4922,7 +4876,10 @@ class App extends React.Component<AppProps, AppState> {
             x: sceneX,
             y: sceneY,
             element: container,
-            shape: this.getElementShape(container),
+            shape: getElementShape(
+              container,
+              this.scene.getNonDeletedElementsMap(),
+            ),
             threshold: this.getElementHitThreshold(),
           })
         ) {
@@ -5614,7 +5571,10 @@ class App extends React.Component<AppProps, AppState> {
           x: scenePointerX,
           y: scenePointerY,
           element,
-          shape: this.getElementShape(element),
+          shape: getElementShape(
+            element,
+            this.scene.getNonDeletedElementsMap(),
+          ),
         })
       ) {
         hoverPointIndex = LinearElementEditor.getPointIndexUnderCursor(
@@ -6732,7 +6692,8 @@ class App extends React.Component<AppProps, AppState> {
 
     const boundElement = getHoveredElementForBinding(
       pointerDownState.origin,
-      this,
+      this.scene.getNonDeletedElements(),
+      this.scene.getNonDeletedElementsMap(),
     );
     this.scene.insertElement(element);
     this.setState({
@@ -7007,7 +6968,8 @@ class App extends React.Component<AppProps, AppState> {
       });
       const boundElement = getHoveredElementForBinding(
         pointerDownState.origin,
-        this,
+        this.scene.getNonDeletedElements(),
+        this.scene.getNonDeletedElementsMap(),
       );
 
       this.scene.insertElement(element);
@@ -8466,7 +8428,10 @@ class App extends React.Component<AppProps, AppState> {
               x: pointerDownState.origin.x,
               y: pointerDownState.origin.y,
               element: hitElement,
-              shape: this.getElementShape(hitElement),
+              shape: getElementShape(
+                hitElement,
+                this.scene.getNonDeletedElementsMap(),
+              ),
               threshold: this.getElementHitThreshold(),
               frameNameBound: isFrameLikeElement(hitElement)
                 ? this.frameNameBoundsCache.get(hitElement)
@@ -9022,7 +8987,8 @@ class App extends React.Component<AppProps, AppState> {
   }): void => {
     const hoveredBindableElement = getHoveredElementForBinding(
       pointerCoords,
-      this,
+      this.scene.getNonDeletedElements(),
+      this.scene.getNonDeletedElementsMap(),
     );
     this.setState({
       suggestedBindings:
@@ -9049,7 +9015,8 @@ class App extends React.Component<AppProps, AppState> {
       (acc: NonDeleted<ExcalidrawBindableElement>[], coords) => {
         const hoveredBindableElement = getHoveredElementForBinding(
           coords,
-          this,
+          this.scene.getNonDeletedElements(),
+          this.scene.getNonDeletedElementsMap(),
         );
         if (
           hoveredBindableElement != null &&

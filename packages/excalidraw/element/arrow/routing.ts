@@ -16,9 +16,11 @@ import {
   segmentsIntersectAt,
   toLocalSpace,
   toWorldSpace,
+  vectorToHeading,
 } from "../../math";
 import Scene from "../../scene/Scene";
 import { LocalPoint, Point, Segment, Vector } from "../../types";
+import { getHoveredElementForBinding } from "../binding";
 import { BoundingBox, Bounds } from "../bounds";
 import {
   ExcalidrawArrowElement,
@@ -33,7 +35,7 @@ import {
 } from "./debug";
 
 const STEP_COUNT_LIMIT = 10;
-const MIN_SELF_BOX_OFFSET = 10;
+const MIN_SELF_BOX_OFFSET = 20;
 
 type Heading = [1, 0] | [-1, 0] | [0, 1] | [0, -1];
 const UP = [0, -1] as Heading;
@@ -54,13 +56,15 @@ export const calculateElbowArrowJointPoints = (
   const target = toWorldSpace(arrow, arrow.points[arrow.points.length - 1]);
   const firstPoint = toWorldSpace(arrow, arrow.points[0]);
 
+  const [startBounds, endBounds] = getStartEndBounds(arrow, firstPoint, target);
+
   const [startHeading, endHeading] = getHeadingForStartEndElements(
     arrow,
     firstPoint,
     target,
   );
 
-  let avoidBounds = getStartEndBounds(arrow).filter(
+  let avoidBounds = [startBounds, endBounds].filter(
     (bb): bb is Bounds => bb !== null,
   );
 
@@ -87,7 +91,10 @@ export const calculateElbowArrowJointPoints = (
           false,
           avoidBounds,
         )
-      : target,
+      : addVectors(
+          target,
+          scaleVector(vectorToHeading(pointToVector(firstPoint, target)), 40),
+        ), //target,
     target,
   ];
 
@@ -346,38 +353,33 @@ const segmentsOverlap = (a: Segment, b: Segment) => {
   return areSegmentsColinear(a, b) && (x || y);
 };
 
-const getHeadingForStartEndElements = (
+const getStartEndBounds = (
   arrow: ExcalidrawArrowElement,
   startPoint: Point,
   endPoint: Point,
-): [Vector | null, Vector | null] => {
-  const startBoundElement =
-    arrow.startBinding && getElementForId(arrow, arrow.startBinding.elementId);
-  const endBoundElement =
-    arrow.endBinding && getElementForId(arrow, arrow.endBinding.elementId);
-
-  return [
-    startBoundElement &&
-      getHeadingForWorldPointFromElement(startBoundElement, startPoint),
-    endBoundElement &&
-      getHeadingForWorldPointFromElement(endBoundElement, endPoint),
-  ];
-};
-
-const getStartEndBounds = (
-  arrow: ExcalidrawArrowElement,
 ): [Bounds | null, Bounds | null] => {
-  const elementsMap = getElementsMap(arrow);
-  if (!elementsMap) {
+  const scene = Scene.getScene(arrow);
+  if (!scene) {
     return [null, null];
   }
+
+  const elementsMap = scene.getNonDeletedElementsMap();
+
   const startEndElements = [
     arrow.startBinding
       ? elementsMap.get(arrow.startBinding.elementId) ?? null
-      : null,
+      : getHoveredElementForBinding(
+          { x: startPoint[0], y: startPoint[1] },
+          scene.getNonDeletedElements(),
+          elementsMap,
+        ),
     arrow.endBinding
       ? elementsMap.get(arrow.endBinding.elementId) ?? null
-      : null,
+      : getHoveredElementForBinding(
+          { x: endPoint[0], y: endPoint[1] },
+          scene.getNonDeletedElements(),
+          elementsMap,
+        ),
   ];
 
   return startEndElements.map(
@@ -430,6 +432,33 @@ const extendedBoundingBoxForElement = (
   debugDrawBounds(extendedBounds);
 
   return extendedBounds;
+};
+
+const getHeadingForStartEndElements = (
+  arrow: ExcalidrawArrowElement,
+  startPoint: Point,
+  endPoint: Point,
+): [Vector | null, Vector | null] => {
+  const scene = Scene.getScene(arrow);
+  const start =
+    scene &&
+    getHoveredElementForBinding(
+      { x: startPoint[0], y: startPoint[1] },
+      scene.getNonDeletedElements(),
+      scene.getNonDeletedElementsMap(),
+    );
+  const end =
+    scene &&
+    getHoveredElementForBinding(
+      { x: endPoint[0], y: endPoint[1] },
+      scene.getNonDeletedElements(),
+      scene.getNonDeletedElementsMap(),
+    );
+
+  return [
+    start && getHeadingForWorldPointFromElement(start, startPoint),
+    end && getHeadingForWorldPointFromElement(end, endPoint),
+  ];
 };
 
 // Gets the heading for the point by creating a bounding box around the rotated
