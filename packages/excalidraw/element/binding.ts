@@ -1,38 +1,42 @@
 import * as GA from "../ga";
-import * as GAPoint from "../gapoints";
 import * as GADirection from "../gadirections";
 import * as GALine from "../galines";
+import * as GAPoint from "../gapoints";
 import * as GATransform from "../gatransforms";
 
 import {
-  ExcalidrawBindableElement,
-  ExcalidrawElement,
-  ExcalidrawRectangleElement,
-  ExcalidrawDiamondElement,
-  ExcalidrawEllipseElement,
-  ExcalidrawFreeDrawElement,
-  ExcalidrawImageElement,
-  ExcalidrawFrameLikeElement,
-  ExcalidrawIframeLikeElement,
-  NonDeleted,
-  ExcalidrawLinearElement,
-  PointBinding,
-  NonDeletedExcalidrawElement,
   ElementsMap,
-  NonDeletedSceneElementsMap,
-  ExcalidrawTextElement,
   ExcalidrawArrowElement,
-  NonDeletedElementsMap,
+  ExcalidrawBindableElement,
+  ExcalidrawDiamondElement,
+  ExcalidrawElement,
+  ExcalidrawEllipseElement,
+  ExcalidrawFrameLikeElement,
+  ExcalidrawFreeDrawElement,
+  ExcalidrawIframeLikeElement,
+  ExcalidrawImageElement,
+  ExcalidrawLinearElement,
+  ExcalidrawRectangleElement,
+  ExcalidrawTextElement,
+  NonDeleted,
+  NonDeletedExcalidrawElement,
+  NonDeletedSceneElementsMap,
+  PointBinding,
 } from "./types";
 
-import {
-  getCommonBounds,
-  getElementAbsoluteCoords,
-  getElementBounds,
-} from "./bounds";
-import { AppClassProperties, AppState, Point } from "../types";
 import { isPointOnShape } from "../../utils/collision";
+import { KEYS } from "../keys";
+import { rotatePoint } from "../math";
 import { getElementAtPosition } from "../scene";
+import Scene from "../scene/Scene";
+import { AppClassProperties, AppState, Point } from "../types";
+import { arrayToMap, tupleToCoors } from "../utils";
+import { debugDrawPoint } from "./arrow/debug";
+import { getElementAbsoluteCoords, getElementBounds } from "./bounds";
+import { LinearElementEditor } from "./linearElementEditor";
+import { ElementUpdate, mutateElement } from "./mutateElement";
+import { getElementShape } from "./shape";
+import { getBoundTextElement, handleBindTextResize } from "./textElement";
 import {
   isArrowElement,
   isBindableElement,
@@ -41,16 +45,6 @@ import {
   isLinearElement,
   isTextElement,
 } from "./typeChecks";
-import { ElementUpdate, mutateElement } from "./mutateElement";
-import Scene from "../scene/Scene";
-import { LinearElementEditor } from "./linearElementEditor";
-import { arrayToMap, tupleToCoors } from "../utils";
-import { KEYS } from "../keys";
-import { getBoundTextElement, handleBindTextResize } from "./textElement";
-import { debugDrawClear, debugDrawPoint } from "./arrow/debug";
-import { calculateElbowArrowJointPoints } from "./arrow/routing";
-import { rotatePoint } from "../math";
-import { getElementShape } from "./shape";
 
 export type SuggestedBinding =
   | NonDeleted<ExcalidrawBindableElement>
@@ -376,7 +370,7 @@ const calculateRatioForElbowArrowBinding = (
   linearElement: NonDeleted<ExcalidrawLinearElement>,
   hoveredElement: ExcalidrawBindableElement,
   startOrEnd: "start" | "end",
-  elementsMap: NonDeletedSceneElementsMap,
+  elementsMap: ElementsMap,
 ) => {
   if (linearElement.elbowed) {
     const bounds = getElementBounds(hoveredElement, elementsMap);
@@ -387,30 +381,27 @@ const calculateRatioForElbowArrowBinding = (
       edgePointIndex,
       elementsMap,
     );
-    const localPoint = [
-      globalPoint[0] - bounds[0],
-      globalPoint[1] - bounds[1],
+    const globalMidPoint = [
+      bounds[0] + (bounds[2] - bounds[0]) / 2,
+      bounds[1] + (bounds[3] - bounds[1]) / 2,
     ] as Point;
-
-    // const midPoint = [
-    //   (bounds[2] - bounds[0]) / 2,
-    //   (bounds[3] - bounds[1]) / 2,
-    // ] as Point;
-    // const rotatedLocalPoint = rotatePoint(
-    //   localPoint,
-    //   midPoint,
-    //   hoveredElement.angle,
-    // );
-    // const ratio = [
-    //   rotatedLocalPoint[0] / (bounds[2] - bounds[0]),
-    //   rotatedLocalPoint[1] / (bounds[3] - bounds[1]),
-    // ];
+    const nonRotatedGlobalPoint = rotatePoint(
+      globalPoint,
+      globalMidPoint,
+      -hoveredElement.angle,
+    );
+    const localPoint = [
+      nonRotatedGlobalPoint[0] - bounds[0],
+      nonRotatedGlobalPoint[1] - bounds[1],
+    ] as Point;
 
     const ratio = [
       localPoint[0] / (bounds[2] - bounds[0]),
       localPoint[1] / (bounds[3] - bounds[1]),
     ];
-
+    debugDrawPoint(globalMidPoint, "red");
+    debugDrawPoint(nonRotatedGlobalPoint);
+    console.log("CALC", ratio);
     return { ratio };
   }
 
@@ -659,25 +650,30 @@ const updateBoundPoint = (
   const direction = startOrEnd === "startBinding" ? -1 : 1;
   const edgePointIndex = direction === -1 ? 0 : linearElement.points.length - 1;
 
-  if (linearElement.elbowed && binding.ratio) {
+  if (linearElement.elbowed) {
+    const ratio = binding.ratio
+      ? binding.ratio
+      : calculateRatioForElbowArrowBinding(
+          linearElement,
+          bindableElement,
+          startOrEnd === "startBinding" ? "start" : "end",
+          elementsMap,
+        ).ratio;
+
     const bounds = getElementBounds(bindableElement, elementsMap);
-    const localX = (bounds[2] - bounds[0]) * binding.ratio[0];
-    const localY = (bounds[1] - bounds[1]) * binding.ratio[1];
-
-    // const midPoint = [
-    //   (bounds[2] - bounds[0]) / 2,
-    //   (bounds[3] - bounds[1]) / 2,
-    // ] as Point;
-    // const rotatedLocalPoint = rotatePoint(
-    //   [localX, localY],
-    //   midPoint,
-    //   -bindableElement.angle,
-    // );
-    // const globalX = bounds[0] + rotatedLocalPoint[0];
-    // const globalY = bounds[1] + rotatedLocalPoint[0];
-
+    const localX = (bounds[2] - bounds[0]) * ratio[0];
+    const localY = (bounds[3] - bounds[1]) * ratio[1];
     const globalX = bounds[0] + localX;
     const globalY = bounds[1] + localY;
+    const globalMidPoint = [
+      bounds[0] + (bounds[2] - bounds[0]) / 2,
+      bounds[1] + (bounds[3] - bounds[1]) / 2,
+    ] as Point;
+    const [rotatedGlobalX, rotatedGlobalY] = rotatePoint(
+      [globalX, globalY],
+      globalMidPoint,
+      bindableElement.angle,
+    );
 
     LinearElementEditor.movePoints(
       linearElement,
@@ -686,7 +682,7 @@ const updateBoundPoint = (
           index: edgePointIndex,
           point: LinearElementEditor.pointFromAbsoluteCoords(
             linearElement,
-            [globalX, globalY],
+            [rotatedGlobalX, rotatedGlobalY],
             elementsMap,
           ),
         },

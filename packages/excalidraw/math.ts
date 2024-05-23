@@ -504,6 +504,30 @@ export const rangesOverlap = (
   return false;
 };
 
+export const rangesActuallyOverlap = (
+  p0: number,
+  p1: number,
+  q0: number,
+  q1: number,
+) => {
+  const p = p0 < p1 ? [p0, p1] : [p1, p0];
+  const q = q0 < q1 ? [q0, q1] : [q1, q0];
+
+  if (p[1] - q[0] >= 0 && q[1] - p[0] >= 0) {
+    const overlap = [Math.max(p[0], q[0]), Math.min(p[1], q[1])];
+
+    return overlap[1] - overlap[0] > 0;
+  }
+  return false;
+};
+
+export const segmentsOverlap = (a: Segment, b: Segment) => {
+  const x = rangesActuallyOverlap(a[0][0], a[1][0], b[0][0], b[1][0]);
+  const y = rangesActuallyOverlap(a[0][1], a[1][1], b[0][1], b[1][1]);
+
+  return areSegmentsColinear(a, b) && (x || y);
+};
+
 // Given two ranges,return ther intersection of the two ranges if any
 // e.g. the intersection of [1, 3] and [2, 4] is [2, 3]
 export const rangeIntersection = (

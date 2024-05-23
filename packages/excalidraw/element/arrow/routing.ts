@@ -2,10 +2,9 @@ import {
   PointInTriangle,
   addVectors,
   arePointsEqual,
-  areSegmentsColinear,
   distanceSq,
-  dotProduct,
   doBoundsIntersect,
+  dotProduct,
   isPointInsideBoundingBox,
   normalize,
   pointToVector,
@@ -14,6 +13,7 @@ import {
   scaleUp,
   scaleVector,
   segmentsIntersectAt,
+  segmentsOverlap,
   toLocalSpace,
   toWorldSpace,
   vectorToHeading,
@@ -22,17 +22,8 @@ import Scene from "../../scene/Scene";
 import { LocalPoint, Point, Segment, Vector } from "../../types";
 import { getHoveredElementForBinding } from "../binding";
 import { BoundingBox, Bounds } from "../bounds";
-import {
-  ExcalidrawArrowElement,
-  ExcalidrawElement,
-  NonDeletedSceneElementsMap,
-} from "../types";
-import {
-  debugDrawBounds,
-  debugDrawClear,
-  debugDrawPoint,
-  debugDrawSegments,
-} from "./debug";
+import { ExcalidrawArrowElement, ExcalidrawElement } from "../types";
+import { debugDrawClear } from "./debug";
 
 const STEP_COUNT_LIMIT = 10;
 const MIN_SELF_BOX_OFFSET = 20;
@@ -259,7 +250,7 @@ const getHitOffset = (start: Point, next: Point, boundingBoxes: Bounds[]) => {
 
           if (p) {
             // We can use the p -> segment[1] because all bbox segments are in winding order
-            debugDrawSegments(segment, "red");
+            //debugDrawSegments(segment, "red");
             return [
               distanceSq(start, p),
               Math.sqrt(distanceSq(segment[0], p)),
@@ -332,25 +323,6 @@ const resolveIntersections = (
   }
   // debugDrawPoint(next, "blue");
   return next;
-};
-
-const rint = (p0: number, p1: number, q0: number, q1: number) => {
-  const p = p0 < p1 ? [p0, p1] : [p1, p0];
-  const q = q0 < q1 ? [q0, q1] : [q1, q0];
-
-  if (p[1] - q[0] >= 0 && q[1] - p[0] >= 0) {
-    const overlap = [Math.max(p[0], q[0]), Math.min(p[1], q[1])];
-
-    return overlap[1] - overlap[0] > 0;
-  }
-  return false;
-};
-
-const segmentsOverlap = (a: Segment, b: Segment) => {
-  const x = rint(a[0][0], a[1][0], b[0][0], b[1][0]);
-  const y = rint(a[0][1], a[1][1], b[0][1], b[1][1]);
-
-  return areSegmentsColinear(a, b) && (x || y);
 };
 
 const getStartEndBounds = (
@@ -429,7 +401,7 @@ const extendedBoundingBoxForElement = (
     Math.max(topLeftY, topRightY, bottomRightY, bottomLeftY) + offset,
   ] as Bounds;
 
-  debugDrawBounds(extendedBounds);
+  //debugDrawBounds(extendedBounds);
 
   return extendedBounds;
 };
@@ -509,25 +481,6 @@ const bboxToClockwiseWoundingSegments = (b: Bounds | null) =>
     [[b[2], b[3]] as Point, [b[0], b[3]] as Point] as Segment,
     [[b[0], b[3]] as Point, [b[0], b[1]] as Point] as Segment,
   ];
-
-const getElementForId = (
-  arrow: ExcalidrawArrowElement,
-  id: string,
-): ExcalidrawElement | null => {
-  const elementsMap = getElementsMap(arrow);
-  return elementsMap?.get(id) ?? null;
-};
-
-const getElementsMap = (
-  arrow: ExcalidrawArrowElement,
-): NonDeletedSceneElementsMap | null => {
-  const scene = Scene.getScene(arrow);
-  if (!scene) {
-    return null;
-  }
-
-  return scene.getNonDeletedElementsMap();
-};
 
 const getCenterWorldCoordsForBounds = (bounds: Bounds): Point => [
   bounds[0] + (bounds[2] - bounds[0]) / 2,
