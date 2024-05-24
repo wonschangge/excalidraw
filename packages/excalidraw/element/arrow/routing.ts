@@ -34,6 +34,7 @@ import {
 const STEP_COUNT_LIMIT = 50;
 const MIN_SELF_BOX_OFFSET = 30;
 const MIN_DONGLE_SIZE = 30;
+const DISAMBIGUATION_DISTANCE = 10;
 
 type Heading = [1, 0] | [-1, 0] | [0, 1] | [0, -1];
 const UP = [0, -1] as Heading;
@@ -151,6 +152,7 @@ const kernel = (
 
   const start = points[points.length - 1];
   const end = target[0];
+
   const startVector =
     points.length < 2
       ? ([0, 0] as Vector) // TODO: Fixed right start attachment
@@ -177,15 +179,20 @@ const kernel = (
   const nextEndDot = dotProduct(nextEndVector, endVector);
   const alignedButNotRightThere =
     (end[0] - next[0] === 0) !== (end[1] - next[1] === 0);
-  debugDrawPoint(next, "yellow");
-  debugDrawPoint(end, "red");
+  // debugDrawPoint(next, "green");
+  // debugDrawPoint(end, "red");
   if (nextEndDot === -1 && alignedButNotRightThere) {
     next =
       rightStartNormalDot === 0
-        ? [start[0], end[1] + 40]
-        : [end[0] + 40, start[1]];
+        ? [
+            start[0],
+            end[1] + (end[0] - start[0] > 0 ? -1 : 1) * DISAMBIGUATION_DISTANCE,
+          ]
+        : [
+            end[0] + (end[1] - start[1] > 0 ? -1 : 1) * DISAMBIGUATION_DISTANCE,
+            start[1],
+          ];
   }
-  //console.log(endVector, nextEndVector);
 
   if (boundingBoxes.length > 0) {
     next = resolveIntersections(points, next, boundingBoxes, end);
@@ -479,32 +486,43 @@ const getHeadingForWorldPointFromElement = (
   const SEARCH_CODE_MULTIPLIER = 2;
   const bounds = extendedBoundingBoxForElement(element, MIN_SELF_BOX_OFFSET);
   const midPoint = getCenterWorldCoordsForBounds(bounds);
-  const startTopLeft = scaleUp(
-    [bounds[0], bounds[1]],
+  const ROTATION = 0;
+
+  const topLeft = rotatePoint(
+    scaleUp([bounds[0], bounds[1]], midPoint, SEARCH_CODE_MULTIPLIER),
     midPoint,
-    SEARCH_CODE_MULTIPLIER,
+    ROTATION,
   );
-  const startTopRight = scaleUp(
-    [bounds[2], bounds[1]],
+  const topRight = rotatePoint(
+    scaleUp([bounds[2], bounds[1]], midPoint, SEARCH_CODE_MULTIPLIER),
     midPoint,
-    SEARCH_CODE_MULTIPLIER,
+    ROTATION,
   );
-  const startBottomLeft = scaleUp(
-    [bounds[0], bounds[3]],
+  const bottomLeft = rotatePoint(
+    scaleUp([bounds[0], bounds[3]], midPoint, SEARCH_CODE_MULTIPLIER),
     midPoint,
-    SEARCH_CODE_MULTIPLIER,
+    ROTATION,
   );
-  const startBottomRight = scaleUp(
-    [bounds[2], bounds[3]],
+  const bottomRight = rotatePoint(
+    scaleUp([bounds[2], bounds[3]], midPoint, SEARCH_CODE_MULTIPLIER),
     midPoint,
-    SEARCH_CODE_MULTIPLIER,
+    ROTATION,
   );
 
-  return PointInTriangle(point, startTopLeft, startTopRight, midPoint)
+  // debugDrawSegments(
+  //   [
+  //     [topLeft, topRight],
+  //     [topRight, midPoint],
+  //     [midPoint, topLeft],
+  //   ],
+  //   "red",
+  // );
+
+  return PointInTriangle(point, topLeft, topRight, midPoint)
     ? UP
-    : PointInTriangle(point, startTopRight, startBottomRight, midPoint)
+    : PointInTriangle(point, topRight, bottomRight, midPoint)
     ? RIGHT
-    : PointInTriangle(point, startBottomRight, startBottomLeft, midPoint)
+    : PointInTriangle(point, bottomRight, bottomLeft, midPoint)
     ? DOWN
     : LEFT;
 };
