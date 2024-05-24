@@ -31,7 +31,7 @@ import {
   debugNewFrame,
 } from "./debug";
 
-const STEP_COUNT_LIMIT = 1;
+const STEP_COUNT_LIMIT = 50;
 const MIN_SELF_BOX_OFFSET = 30;
 const MIN_DONGLE_SIZE = 30;
 
