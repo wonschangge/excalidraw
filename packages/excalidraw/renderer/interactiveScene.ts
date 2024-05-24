@@ -75,7 +75,6 @@ const renderLinearElementPointHighlight = (
     return;
   }
   const element = LinearElementEditor.getElement(elementId, elementsMap);
-
   if (!element) {
     return;
   }
@@ -86,7 +85,6 @@ const renderLinearElementPointHighlight = (
   );
   context.save();
   context.translate(appState.scrollX, appState.scrollY);
-
   highlightPoint(point, context, appState);
   context.restore();
 };
@@ -174,7 +172,6 @@ const renderSingleLinearPoint = (
   } else if (isPhantomPoint) {
     context.fillStyle = "rgba(177, 151, 252, 0.7)";
   }
-
   fillCircle(
     context,
     point[0],
@@ -456,10 +453,15 @@ const renderLinearPointHandles = (
   context.save();
   context.translate(appState.scrollX, appState.scrollY);
   context.lineWidth = 1 / appState.zoom.value;
-  const points = LinearElementEditor.getPointsGlobalCoordinates(
+  let points = LinearElementEditor.getPointsGlobalCoordinates(
     element,
     elementsMap,
   );
+
+  if (element.elbowed) {
+    // Elbow arrows don't have editable control points
+    points = [points[0], points[points.length - 1]];
+  }
 
   const { POINT_HANDLE_SIZE } = LinearElementEditor;
   const radius = appState.editingLinearElement
@@ -473,11 +475,13 @@ const renderLinearPointHandles = (
   });
 
   //Rendering segment mid points
-  const midPoints = LinearElementEditor.getEditorMidPoints(
-    element,
-    elementsMap,
-    appState,
-  ).filter((midPoint) => midPoint !== null) as Point[];
+  const midPoints = element.elbowed
+    ? []
+    : (LinearElementEditor.getEditorMidPoints(
+        element,
+        elementsMap,
+        appState,
+      ).filter((midPoint) => midPoint !== null) as Point[]);
 
   midPoints.forEach((segmentMidPoint) => {
     if (
