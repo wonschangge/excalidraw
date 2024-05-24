@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { isShallowEqual, sceneCoordsToViewportCoords } from "../../utils";
 import { CURSOR_TYPE } from "../../constants";
 import { t } from "../../i18n";
@@ -60,6 +60,11 @@ type InteractiveCanvasProps = {
 
 const InteractiveCanvas = (props: InteractiveCanvasProps) => {
   const isComponentMounted = useRef(false);
+  const [debugRefresh, setDebugRefresh] = useState(0);
+
+  window.v.forceRefresh = useCallback(() => {
+    setDebugRefresh(debugRefresh + 1);
+  }, [debugRefresh]);
 
   useEffect(() => {
     if (!isComponentMounted.current) {

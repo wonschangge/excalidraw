@@ -2,9 +2,15 @@ import { normalize, scaleVector } from "../../math";
 import { Point, Segment, Vector } from "../../types";
 import { BoundingBox, Bounds } from "../bounds";
 
-export function debugDrawClear() {
+export function debugClear() {
   if (import.meta.env.DEV) {
-    window.v.lines = [];
+    window.v.clearFrames();
+  }
+}
+
+export function debugNewFrame() {
+  if (import.meta.env.DEV) {
+    window.v.newFrame();
   }
 }
 
@@ -19,7 +25,11 @@ export function debugDrawNormal(
       (segment[0][1] + segment[1][1]) / 2,
     ];
     const [nx, ny] = scaleVector(normalize(normal), 20);
-    window.v.lines.push([[cx, cy], [cx + nx, cy + ny], color]);
+    window.v.frames[window.v.frames.length - 1].push([
+      [cx, cy],
+      [cx + nx, cy + ny],
+      color,
+    ]);
   }
 }
 
@@ -30,10 +40,18 @@ export function debugDrawSegments(
   if (import.meta.env.DEV) {
     if (segments && !isSegment(segments)) {
       segments.forEach((segment) =>
-        window.v.lines.push([segment[0], segment[1], color]),
+        window.v.frames[window.v.frames.length - 1].push([
+          segment[0],
+          segment[1],
+          color,
+        ]),
       );
     } else if (segments) {
-      window.v.lines.push([segments[0], segments[1], color]);
+      window.v.frames[window.v.frames.length - 1].push([
+        segments[0],
+        segments[1],
+        color,
+      ]);
     }
   }
 }
@@ -52,12 +70,12 @@ export function debugDrawPoint(
     const xOffset = fuzzy ? Math.random() * 3 : 0;
     const yOffset = fuzzy ? Math.random() * 3 : 0;
 
-    window.v.lines.push([
+    window.v.frames[window.v.frames.length - 1].push([
       [p[0] + xOffset - 10, p[1] + yOffset - 10],
       [p[0] + xOffset + 10, p[1] + yOffset + 10],
       color,
     ]);
-    window.v.lines.push([
+    window.v.frames[window.v.frames.length - 1].push([
       [p[0] + xOffset - 10, p[1] + yOffset + 10],
       [p[0] + xOffset + 10, p[1] + yOffset - 10],
       color,

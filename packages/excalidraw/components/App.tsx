@@ -9865,7 +9865,25 @@ declare global {
     };
     v: {
       enabled: boolean;
-      lines: [readonly [number, number], readonly [number, number], string][];
+      forceRefresh: () => void;
+      frames: [
+        readonly [number, number],
+        readonly [number, number],
+        string,
+      ][][];
+      current: number;
+      frameOnly: boolean;
+      clearFrames: () => void;
+      newFrame: () => void;
+      next: () => void;
+      prev: () => void;
+      all: () => void;
+      frame: () => void;
+      getLines: () => [
+        readonly [number, number],
+        readonly [number, number],
+        string,
+      ][];
     };
   }
 }
@@ -9893,7 +9911,42 @@ export const createTestHook = () => {
       window.v ||
       ({
         enabled: false,
-        lines: [],
+        forceRefresh: () => {},
+        frames: [[]],
+        current: 0,
+        frameOnly: false,
+        clearFrames: () => {
+          window.v.frames = [[]];
+          window.v.current = 0;
+        },
+        newFrame: () => window.v?.frames.push([]),
+        next: () => {
+          window.v.current =
+            window.v.current === window.v.frames.length - 1
+              ? 0
+              : window.v.current + 1;
+          window.v.forceRefresh();
+        },
+        prev: () => {
+          window.v.current =
+            window.v.current === 0
+              ? window.v.frames.length - 1
+              : window.v.current - 1;
+          window.v.forceRefresh();
+        },
+        all: () => {
+          window.v.frameOnly = false;
+          window.v.forceRefresh();
+        },
+        frame: () => {
+          window.v.frameOnly = true;
+          window.v.forceRefresh();
+        },
+        getLines: () => {
+          return window.v.frameOnly
+            ? window.v.frames[window.v.current]
+            : window.v.frames.flatMap((frame) => frame);
+        },
       } as Window["v"]);
   }
 };

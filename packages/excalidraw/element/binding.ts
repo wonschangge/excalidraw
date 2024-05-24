@@ -31,7 +31,6 @@ import { getElementAtPosition } from "../scene";
 import Scene from "../scene/Scene";
 import { AppClassProperties, AppState, Point } from "../types";
 import { arrayToMap, tupleToCoors } from "../utils";
-import { debugDrawPoint } from "./arrow/debug";
 import { getElementAbsoluteCoords, getElementBounds } from "./bounds";
 import { LinearElementEditor } from "./linearElementEditor";
 import { ElementUpdate, mutateElement } from "./mutateElement";
@@ -399,9 +398,7 @@ const calculateRatioForElbowArrowBinding = (
       localPoint[0] / (bounds[2] - bounds[0]),
       localPoint[1] / (bounds[3] - bounds[1]),
     ];
-    debugDrawPoint(globalMidPoint, "red");
-    debugDrawPoint(nonRotatedGlobalPoint);
-    console.log("CALC", ratio);
+
     return { ratio };
   }
 

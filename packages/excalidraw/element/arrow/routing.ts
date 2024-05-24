@@ -23,7 +23,13 @@ import { LocalPoint, Point, Segment, Vector } from "../../types";
 import { getHoveredElementForBinding } from "../binding";
 import { BoundingBox, Bounds } from "../bounds";
 import { ExcalidrawArrowElement, ExcalidrawElement } from "../types";
-import { debugDrawClear } from "./debug";
+import {
+  debugClear,
+  debugDrawBounds,
+  debugDrawPoint,
+  debugDrawSegments,
+  debugNewFrame,
+} from "./debug";
 
 const STEP_COUNT_LIMIT = 10;
 const MIN_SELF_BOX_OFFSET = 20;
@@ -42,7 +48,7 @@ export const calculateElbowArrowJointPoints = (
     return arrow.points;
   }
 
-  debugDrawClear();
+  debugClear();
 
   const target = toWorldSpace(arrow, arrow.points[arrow.points.length - 1]);
   const firstPoint = toWorldSpace(arrow, arrow.points[0]);
@@ -197,6 +203,8 @@ const kernel = (
   target: Point[],
   boundingBoxes: Bounds[],
 ): Point => {
+  debugNewFrame();
+
   const start = points[points.length - 1];
   const end = target[0];
   const startVector =
@@ -250,7 +258,7 @@ const getHitOffset = (start: Point, next: Point, boundingBoxes: Bounds[]) => {
 
           if (p) {
             // We can use the p -> segment[1] because all bbox segments are in winding order
-            //debugDrawSegments(segment, "red");
+            debugDrawSegments(segment, "red");
             return [
               distanceSq(start, p),
               Math.sqrt(distanceSq(segment[0], p)),
@@ -312,8 +320,8 @@ const resolveIntersections = (
         ? null
         : nextRightCandidate;
 
-    // nextLeft && debugDrawPoint(nextLeft, "red");
-    // nextRight && debugDrawPoint(nextRight, "green");
+    nextLeft && debugDrawPoint(nextLeft, "red");
+    nextRight && debugDrawPoint(nextRight, "green");
 
     if (offsetLeft > offsetRight) {
       return nextLeft ? nextLeft : nextRight ? nextRight : next;
@@ -321,7 +329,7 @@ const resolveIntersections = (
 
     return nextRight ? nextRight : nextLeft ? nextLeft : next;
   }
-  // debugDrawPoint(next, "blue");
+  debugDrawPoint(next, "blue");
   return next;
 };
 
@@ -401,7 +409,7 @@ const extendedBoundingBoxForElement = (
     Math.max(topLeftY, topRightY, bottomRightY, bottomLeftY) + offset,
   ] as Bounds;
 
-  //debugDrawBounds(extendedBounds);
+  debugDrawBounds(extendedBounds);
 
   return extendedBounds;
 };

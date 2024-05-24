@@ -585,7 +585,7 @@ const renderVisualDebug = (
     appState.scrollX * appState.zoom.value,
     appState.scrollY * appState.zoom.value,
   );
-  window.v?.lines.forEach((line) => {
+  window.v?.getLines().forEach((line) => {
     context.strokeStyle = line[2];
     context.beginPath();
     context.moveTo(
@@ -608,8 +608,6 @@ const renderVisualDebug = (
   context.lineTo(-10 * appState.zoom.value, 10 * appState.zoom.value);
   context.stroke();
   context.restore();
-
-  //window.v.lines = [];
 };
 
 const _renderInteractiveScene = ({
