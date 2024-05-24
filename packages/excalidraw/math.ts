@@ -516,7 +516,7 @@ export const rangesActuallyOverlap = (
   if (p[1] - q[0] >= 0 && q[1] - p[0] >= 0) {
     const overlap = [Math.max(p[0], q[0]), Math.min(p[1], q[1])];
 
-    return overlap[1] - overlap[0] > 0;
+    return overlap[1] - overlap[0];
   }
   return false;
 };

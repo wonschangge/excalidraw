@@ -31,8 +31,9 @@ import {
   debugNewFrame,
 } from "./debug";
 
-const STEP_COUNT_LIMIT = 10;
-const MIN_SELF_BOX_OFFSET = 20;
+const STEP_COUNT_LIMIT = 1;
+const MIN_SELF_BOX_OFFSET = 30;
+const MIN_DONGLE_SIZE = 30;
 
 type Heading = [1, 0] | [-1, 0] | [0, 1] | [0, -1];
 const UP = [0, -1] as Heading;
@@ -78,7 +79,13 @@ export const calculateElbowArrowJointPoints = (
           true,
           avoidBounds,
         )
-      : firstPoint,
+      : addVectors(
+          firstPoint,
+          scaleVector(
+            vectorToHeading(pointToVector(target, firstPoint)),
+            MIN_DONGLE_SIZE,
+          ),
+        ),
   ];
 
   const endPoints = [
@@ -90,8 +97,11 @@ export const calculateElbowArrowJointPoints = (
         )
       : addVectors(
           target,
-          scaleVector(vectorToHeading(pointToVector(firstPoint, target)), 40),
-        ), //target,
+          scaleVector(
+            vectorToHeading(pointToVector(firstPoint, target)),
+            MIN_DONGLE_SIZE,
+          ),
+        ),
     target,
   ];
 
@@ -132,6 +142,58 @@ const calculateSegment = (
   return points.concat(end);
 };
 
+const kernel = (
+  points: Point[],
+  target: Point[],
+  boundingBoxes: Bounds[],
+): Point => {
+  debugNewFrame();
+
+  const start = points[points.length - 1];
+  const end = target[0];
+  const startVector =
+    points.length < 2
+      ? ([0, 0] as Vector) // TODO: Fixed right start attachment
+      : normalize(pointToVector(start, points[points.length - 2]));
+  const endVector =
+    target.length < 2
+      ? ([0, 0] as Vector) // TODO: Fixed left end attachment
+      : normalize(pointToVector(target[1], end));
+  const startNormal = rotateVector(startVector, Math.PI / 2);
+  const rightStartNormalDot = dotProduct([1, 0], startNormal);
+  const startEndVector = pointToVector(end, start);
+  const endAhead = dotProduct(startVector, startEndVector) > 0;
+
+  let next: Point =
+    rightStartNormalDot === 0 // Last segment from start is horizontal
+      ? endAhead
+        ? [end[0], start[1]]
+        : [start[0], end[1]] // Turn up/down all the way to end
+      : endAhead
+      ? [start[0], end[1]]
+      : [end[0], start[1]]; // Turn left/right all the way to end
+
+  const nextEndVector = normalize(pointToVector(end, next));
+  const nextEndDot = dotProduct(nextEndVector, endVector);
+  const alignedButNotRightThere =
+    (end[0] - next[0] === 0) !== (end[1] - next[1] === 0);
+  debugDrawPoint(next, "yellow");
+  debugDrawPoint(end, "red");
+  if (nextEndDot === -1 && alignedButNotRightThere) {
+    next =
+      rightStartNormalDot === 0
+        ? [start[0], end[1] + 40]
+        : [end[0] + 40, start[1]];
+  }
+  //console.log(endVector, nextEndVector);
+
+  if (boundingBoxes.length > 0) {
+    next = resolveIntersections(points, next, boundingBoxes, end);
+  }
+
+  return next;
+};
+
 const extendSegmentToBoundingBoxEdge = (
   segment: Segment,
   segmentIsStart: boolean,
@@ -143,7 +205,6 @@ const extendSegmentToBoundingBoxEdge = (
   const rightSegmentNormalDot = dotProduct([1, 0], normal);
   const segmentIsHorizontal = rightSegmentNormalDot === 0;
   const rightSegmentDot = dotProduct([1, 0], vector);
-
   const containing = boundingBoxes.filter((bBox) =>
     isPointInsideBoundingBox(segmentIsStart ? start : end, bBox),
   );
@@ -190,62 +251,12 @@ const extendSegmentToBoundingBoxEdge = (
         segmentIsStart
           ? normalize(vector)
           : normalize(pointToVector(start, end)),
-        1,
+        10,
       ),
     );
   }
 
   return segmentIsStart ? segment[0] : segment[1];
-};
-
-const kernel = (
-  points: Point[],
-  target: Point[],
-  boundingBoxes: Bounds[],
-): Point => {
-  debugNewFrame();
-
-  const start = points[points.length - 1];
-  const end = target[0];
-  const startVector =
-    points.length < 2
-      ? ([0, 0] as Vector) // TODO: Fixed right start attachment
-      : normalize(pointToVector(start, points[points.length - 2]));
-  const endVector =
-    target.length < 2
-      ? ([0, 0] as Vector) // TODO: Fixed left end attachment
-      : normalize(pointToVector(target[1], end));
-  const startNormal = rotateVector(startVector, Math.PI / 2);
-  const rightStartNormalDot = dotProduct([1, 0], startNormal);
-  const startEndVector = pointToVector(end, start);
-  const endAhead = dotProduct(startVector, startEndVector) > 0;
-
-  let next: Point =
-    rightStartNormalDot === 0 // Last segment from start is horizontal
-      ? endAhead
-        ? [end[0], start[1]]
-        : [start[0], end[1]] // Turn up/down all the way to end
-      : endAhead
-      ? [start[0], end[1]]
-      : [end[0], start[1]]; // Turn left/right all the way to end
-
-  const nextEndVector = normalize(pointToVector(end, next));
-  const nextEndDot = dotProduct(nextEndVector, endVector);
-  const alignedButNotRightThere =
-    (end[0] - next[0] === 0) !== (end[1] - next[1] === 0);
-
-  if (nextEndDot === -1 && alignedButNotRightThere) {
-    next =
-      rightStartNormalDot === 0
-        ? [start[0], end[1] + 40]
-        : [end[0] + 40, start[1]];
-  }
-
-  if (boundingBoxes.length > 0) {
-    next = resolveIntersections(points, next, boundingBoxes);
-  }
-
-  return next;
 };
 
 const getHitOffset = (start: Point, next: Point, boundingBoxes: Bounds[]) => {
@@ -282,11 +293,12 @@ const resolveIntersections = (
   points: Point[],
   next: Point,
   boundingBoxes: Bounds[],
+  target: Point,
 ): Point => {
   const start = points[points.length - 1];
   const [offsetLeft, offsetRight] = getHitOffset(start, next, boundingBoxes);
 
-  if (offsetLeft - offsetRight !== 0) {
+  if (offsetLeft > 0 || offsetRight > 0) {
     const altNextLeftDirection = rotateVector(
       normalize(pointToVector(next, start)),
       -Math.PI / 2,
@@ -303,6 +315,15 @@ const resolveIntersections = (
       start,
       scaleVector(altNextRightDirection, offsetLeft + 10),
     );
+    debugDrawSegments(
+      [points[points.length - 1], points[points.length - 2]],
+      "blue",
+    );
+    debugDrawSegments([points[points.length - 1], nextLeftCandidate], "red");
+    // console.log(
+    //   [points[points.length - 1], points[points.length - 2]],
+    //   [points[points.length - 1], nextLeftCandidate],
+    // );
     const nextLeft =
       getHitOffset(start, nextLeftCandidate, boundingBoxes)[0] > 0 ||
       segmentsOverlap(
@@ -323,7 +344,14 @@ const resolveIntersections = (
     nextLeft && debugDrawPoint(nextLeft, "red");
     nextRight && debugDrawPoint(nextRight, "green");
 
-    if (offsetLeft > offsetRight) {
+    const nextLeftEndDistance = nextLeft
+      ? distanceSq(nextLeft, target)
+      : Infinity;
+    const nextRightEndDistance = nextRight
+      ? distanceSq(nextRight, target)
+      : Infinity;
+
+    if (nextLeftEndDistance < nextRightEndDistance) {
       return nextLeft ? nextLeft : nextRight ? nextRight : next;
     }
 
