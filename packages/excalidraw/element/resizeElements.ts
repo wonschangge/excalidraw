@@ -1,24 +1,41 @@
-import { MIN_FONT_SIZE, SHIFT_LOCKING_ANGLE } from "../constants";
+import {
+  BOUND_TEXT_PADDING,
+  MIN_FONT_SIZE,
+  SHIFT_LOCKING_ANGLE,
+} from "../constants";
 import { rescalePoints } from "../points";
 
-import { rotate, centerPoint, rotatePoint, normalizeAngle } from "../math";
-import {
-  ExcalidrawLinearElement,
-  ExcalidrawTextElement,
-  NonDeletedExcalidrawElement,
-  NonDeleted,
-  ExcalidrawElement,
-  ExcalidrawTextElementWithContainer,
-  ExcalidrawImageElement,
-  ElementsMap,
-} from "./types";
+import { isInGroup } from "../groups";
+import { centerPoint, normalizeAngle, rotate, rotatePoint } from "../math";
+import Scene from "../scene/Scene";
+import type { Point, PointerDownState } from "../types";
 import type { Mutable } from "../utility-types";
+import { getFontString } from "../utils";
+import { updateBoundElements } from "./binding";
 import {
-  getElementAbsoluteCoords,
-  getCommonBounds,
-  getResizedElementAbsoluteCoords,
   getCommonBoundingBox,
+  getCommonBounds,
+  getElementAbsoluteCoords,
+  getResizedElementAbsoluteCoords,
 } from "./bounds";
+import { LinearElementEditor } from "./linearElementEditor";
+import { mutateElement } from "./mutateElement";
+import {
+  getApproxMinLineHeight,
+  getApproxMinLineWidth,
+  getBoundTextElement,
+  getBoundTextElementId,
+  getBoundTextMaxWidth,
+  getContainerElement,
+  getMinCharWidth,
+  handleBindTextResize,
+  measureText,
+  wrapText,
+} from "./textElement";
+import type {
+  MaybeTransformHandleType,
+  TransformHandleDirection,
+} from "./transformHandles";
 import {
   isArrowElement,
   isBoundToContainer,
@@ -28,26 +45,16 @@ import {
   isLinearElement,
   isTextElement,
 } from "./typeChecks";
-import { mutateElement } from "./mutateElement";
-import { getFontString } from "../utils";
-import { updateBoundElements } from "./binding";
-import {
-  MaybeTransformHandleType,
-  TransformHandleDirection,
-} from "./transformHandles";
-import { Point, PointerDownState } from "../types";
-import Scene from "../scene/Scene";
-import {
-  getApproxMinLineWidth,
-  getBoundTextElement,
-  getBoundTextElementId,
-  getContainerElement,
-  handleBindTextResize,
-  getBoundTextMaxWidth,
-  getApproxMinLineHeight,
-} from "./textElement";
-import { LinearElementEditor } from "./linearElementEditor";
-import { isInGroup } from "../groups";
+import type {
+  ElementsMap,
+  ExcalidrawElement,
+  ExcalidrawImageElement,
+  ExcalidrawLinearElement,
+  ExcalidrawTextElement,
+  ExcalidrawTextElementWithContainer,
+  NonDeleted,
+  NonDeletedExcalidrawElement,
+} from "./types";
 
 // Returns true when transform (resizing/rotation) happened
 export const transformElements = (
@@ -74,14 +81,9 @@ export const transformElements = (
         shouldRotateWithDiscreteAngle,
       );
       updateBoundElements(element, elementsMap);
-    } else if (
-      isTextElement(element) &&
-      (transformHandleType === "nw" ||
-        transformHandleType === "ne" ||
-        transformHandleType === "sw" ||
-        transformHandleType === "se")
-    ) {
+    } else if (isTextElement(element) && transformHandleType) {
       resizeSingleTextElement(
+        originalElements,
         element,
         elementsMap,
         transformHandleType,
@@ -213,9 +215,10 @@ const measureFontSizeFromWidth = (
 };
 
 const resizeSingleTextElement = (
+  originalElements: PointerDownState["originalElements"],
   element: NonDeleted<ExcalidrawTextElement>,
   elementsMap: ElementsMap,
-  transformHandleType: "nw" | "ne" | "sw" | "se",
+  transformHandleType: TransformHandleDirection,
   shouldResizeFromCenter: boolean,
   pointerX: number,
   pointerY: number,
@@ -235,17 +238,19 @@ const resizeSingleTextElement = (
   let scaleX = 0;
   let scaleY = 0;
 
-  if (transformHandleType.includes("e")) {
-    scaleX = (rotatedX - x1) / (x2 - x1);
-  }
-  if (transformHandleType.includes("w")) {
-    scaleX = (x2 - rotatedX) / (x2 - x1);
-  }
-  if (transformHandleType.includes("n")) {
-    scaleY = (y2 - rotatedY) / (y2 - y1);
-  }
-  if (transformHandleType.includes("s")) {
-    scaleY = (rotatedY - y1) / (y2 - y1);
+  if (transformHandleType !== "e" && transformHandleType !== "w") {
+    if (transformHandleType.includes("e")) {
+      scaleX = (rotatedX - x1) / (x2 - x1);
+    }
+    if (transformHandleType.includes("w")) {
+      scaleX = (x2 - rotatedX) / (x2 - x1);
+    }
+    if (transformHandleType.includes("n")) {
+      scaleY = (y2 - rotatedY) / (y2 - y1);
+    }
+    if (transformHandleType.includes("s")) {
+      scaleY = (rotatedY - y1) / (y2 - y1);
+    }
   }
 
   const scale = Math.max(scaleX, scaleY);
@@ -307,6 +312,102 @@ const resizeSingleTextElement = (
       x: nextX,
       y: nextY,
     });
+  }
+
+  if (transformHandleType === "e" || transformHandleType === "w") {
+    const stateAtResizeStart = originalElements.get(element.id)!;
+    const [x1, y1, x2, y2] = getResizedElementAbsoluteCoords(
+      stateAtResizeStart,
+      stateAtResizeStart.width,
+      stateAtResizeStart.height,
+      true,
+    );
+    const startTopLeft: Point = [x1, y1];
+    const startBottomRight: Point = [x2, y2];
+    const startCenter: Point = centerPoint(startTopLeft, startBottomRight);
+
+    const rotatedPointer = rotatePoint(
+      [pointerX, pointerY],
+      startCenter,
+      -stateAtResizeStart.angle,
+    );
+
+    const [esx1, , esx2] = getResizedElementAbsoluteCoords(
+      element,
+      element.width,
+      element.height,
+      true,
+    );
+
+    const boundsCurrentWidth = esx2 - esx1;
+
+    const atStartBoundsWidth = startBottomRight[0] - startTopLeft[0];
+    const minWidth =
+      getMinCharWidth(getFontString(element)) + BOUND_TEXT_PADDING * 2;
+
+    let scaleX = atStartBoundsWidth / boundsCurrentWidth;
+
+    if (transformHandleType.includes("e")) {
+      scaleX = (rotatedPointer[0] - startTopLeft[0]) / boundsCurrentWidth;
+    }
+    if (transformHandleType.includes("w")) {
+      scaleX = (startBottomRight[0] - rotatedPointer[0]) / boundsCurrentWidth;
+    }
+
+    const newWidth =
+      element.width * scaleX < minWidth ? minWidth : element.width * scaleX;
+
+    const text = wrapText(
+      element.originalText,
+      getFontString(element),
+      Math.abs(newWidth),
+    );
+    const metrics = measureText(
+      text,
+      getFontString(element),
+      element.lineHeight,
+    );
+
+    const eleNewHeight = metrics.height;
+
+    const [newBoundsX1, newBoundsY1, newBoundsX2, newBoundsY2] =
+      getResizedElementAbsoluteCoords(
+        stateAtResizeStart,
+        newWidth,
+        eleNewHeight,
+        true,
+      );
+    const newBoundsWidth = newBoundsX2 - newBoundsX1;
+    const newBoundsHeight = newBoundsY2 - newBoundsY1;
+
+    let newTopLeft = [...startTopLeft] as [number, number];
+    if (["n", "w", "nw"].includes(transformHandleType)) {
+      newTopLeft = [
+        startBottomRight[0] - Math.abs(newBoundsWidth),
+        startTopLeft[1],
+      ];
+    }
+
+    // adjust topLeft to new rotation point
+    const angle = stateAtResizeStart.angle;
+    const rotatedTopLeft = rotatePoint(newTopLeft, startCenter, angle);
+    const newCenter: Point = [
+      newTopLeft[0] + Math.abs(newBoundsWidth) / 2,
+      newTopLeft[1] + Math.abs(newBoundsHeight) / 2,
+    ];
+    const rotatedNewCenter = rotatePoint(newCenter, startCenter, angle);
+    newTopLeft = rotatePoint(rotatedTopLeft, rotatedNewCenter, -angle);
+
+    const resizedElement: Partial<ExcalidrawTextElement> = {
+      width: Math.abs(newWidth),
+      height: Math.abs(metrics.height),
+      x: newTopLeft[0],
+      y: newTopLeft[1],
+      text,
+      autoResize: false,
+    };
+
+    mutateElement(element, resizedElement);
   }
 };
 
@@ -866,7 +967,7 @@ export const resizeMultipleElements = (
     }
   }
 
-  Scene.getScene(elementsAndUpdates[0].element)?.informMutation();
+  Scene.getScene(elementsAndUpdates[0].element)?.triggerUpdate();
 };
 
 const rotateMultipleElements = (
@@ -928,7 +1029,7 @@ const rotateMultipleElements = (
       }
     });
 
-  Scene.getScene(elements[0])?.informMutation();
+  Scene.getScene(elements[0])?.triggerUpdate();
 };
 
 export const getResizeOffsetXY = (

@@ -1,18 +1,23 @@
 import React, { useContext } from "react";
 import { flushSync } from "react-dom";
 
-import { RoughCanvas } from "roughjs/bin/canvas";
-import rough from "roughjs/bin/rough";
 import clsx from "clsx";
+import throttle from "lodash.throttle";
 import { nanoid } from "nanoid";
+import type { RoughCanvas } from "roughjs/bin/canvas";
+import rough from "roughjs/bin/rough";
+import { isPointInShape } from "../../utils/collision";
+import { exportToBlob } from "../../utils/export";
+import type { GeometricShape } from "../../utils/geometry/shape";
+import { getSelectionBoxShape } from "../../utils/geometry/shape";
 import {
   actionAddToLibrary,
+  actionBindText,
   actionBringForward,
   actionBringToFront,
   actionCopy,
   actionCopyAsPng,
   actionCopyAsSvg,
-  copyText,
   actionCopyStyles,
   actionCut,
   actionDeleteSelected,
@@ -21,52 +26,70 @@ import {
   actionFlipHorizontal,
   actionFlipVertical,
   actionGroup,
+  actionLink,
   actionPasteStyles,
   actionSelectAll,
   actionSendBackward,
   actionSendToBack,
+  actionToggleElementLock,
   actionToggleGridMode,
+  actionToggleLinearEditor,
+  actionToggleObjectsSnapMode,
   actionToggleStats,
   actionToggleZenMode,
   actionUnbindText,
-  actionBindText,
   actionUngroup,
-  actionLink,
-  actionToggleElementLock,
-  actionToggleLinearEditor,
-  actionToggleObjectsSnapMode,
+  copyText,
 } from "../actions";
+import { actionWrapTextInContainer } from "../actions/actionBoundText";
+import { actionToggleHandTool, zoomToFit } from "../actions/actionCanvas";
+import { actionPaste } from "../actions/actionClipboard";
+import { actionUnlockAllElements } from "../actions/actionElementLock";
+import {
+  actionRemoveAllElementsFromFrame,
+  actionSelectAllElementsInFrame,
+} from "../actions/actionFrame";
 import { createRedoAction, createUndoAction } from "../actions/actionHistory";
+import { actionTextAutoResize } from "../actions/actionTextAutoResize";
+import { actionToggleViewMode } from "../actions/actionToggleViewMode";
 import { ActionManager } from "../actions/manager";
 import { actions } from "../actions/register";
-import { Action, ActionResult } from "../actions/types";
+import { getShortcutFromShortcutName } from "../actions/shortcuts";
+import type { Action, ActionResult } from "../actions/types";
 import { trackEvent } from "../analytics";
+import { AnimatedTrail } from "../animated-trail";
+import { AnimationFrameHandler } from "../animation-frame-handler";
 import {
   getDefaultAppState,
   isEraserActive,
   isHandToolActive,
 } from "../appState";
+import type { PastedMixedContent } from "../clipboard";
+import { copyTextToSystemClipboard, parseClipboard } from "../clipboard";
+import { COLOR_PALETTE } from "../colors";
 import {
-  PastedMixedContent,
-  copyTextToSystemClipboard,
-  parseClipboard,
-} from "../clipboard";
+  Hyperlink,
+  hideHyperlinkToolip,
+  showHyperlinkTooltip,
+} from "../components/hyperlink/Hyperlink";
+import type { EXPORT_IMAGE_TYPES } from "../constants";
 import {
   APP_NAME,
   CURSOR_TYPE,
+  DEFAULT_COLLISION_THRESHOLD,
   DEFAULT_MAX_IMAGE_WIDTH_OR_HEIGHT,
+  DEFAULT_TEXT_ALIGN,
   DEFAULT_VERTICAL_ALIGN,
   DRAGGING_THRESHOLD,
+  EDITOR_LS_KEYS,
   ELEMENT_SHIFT_TRANSLATE_AMOUNT,
   ELEMENT_TRANSLATE_AMOUNT,
   ENV,
   EVENT,
   FRAME_STYLE,
-  EXPORT_IMAGE_TYPES,
   GRID_SIZE,
   IMAGE_MIME_TYPES,
   IMAGE_RENDER_TIMEOUT,
-  isBrave,
   LINE_CONFIRM_THRESHOLD,
   MAX_ALLOWED_FILE_BYTES,
   MIME_TYPES,
@@ -75,26 +98,54 @@ import {
   MQ_MAX_WIDTH_PORTRAIT,
   MQ_RIGHT_SIDEBAR_MIN_WIDTH,
   POINTER_BUTTON,
+  POINTER_EVENTS,
   ROUNDNESS,
   SCROLL_TIMEOUT,
   TAP_TWICE_TIMEOUT,
   TEXT_TO_CENTER_SNAP_THRESHOLD,
   THEME,
   THEME_FILTER,
+  TOOL_TYPE,
   TOUCH_CTX_MENU_TIMEOUT,
   VERTICAL_ALIGN,
   YOUTUBE_STATES,
   ZOOM_STEP,
-  POINTER_EVENTS,
-  TOOL_TYPE,
-  EDITOR_LS_KEYS,
+  isBrave,
   isIOS,
   supportsResizeObserver,
-  DEFAULT_COLLISION_THRESHOLD,
 } from "../constants";
-import { ExportedElements, exportCanvas, loadFromBlob } from "../data";
+import {
+  resetCursor,
+  setCursor,
+  setCursorForShape,
+  setEraserCursor,
+} from "../cursor";
+import type { ExportedElements } from "../data";
+import { exportCanvas, loadFromBlob } from "../data";
+import { EditorLocalStorage } from "../data/EditorLocalStorage";
+import {
+  ImageURLToFile,
+  SVGStringToFile,
+  dataURLToFile,
+  generateIdFromFile,
+  getDataURL,
+  getFileFromEvent,
+  isImageFileHandle,
+  isSupportedImageFile,
+  loadSceneOrLibraryFromBlob,
+  normalizeFile,
+  parseLibraryJSON,
+  resizeImageFile,
+} from "../data/blob";
+import type { FileSystemHandle } from "../data/filesystem";
+import { fileOpen } from "../data/filesystem";
 import Library, { distributeLibraryItemsOnSquareGrid } from "../data/library";
+import type { MagicCacheData } from "../data/magic";
+import { diagramToHTML } from "../data/magic";
 import { restore, restoreElements } from "../data/restore";
+import type { ExcalidrawElementSkeleton } from "../data/transform";
+import { convertToExcalidrawElements } from "../data/transform";
+import { isLocalLink, normalizeLink, toValidURL } from "../data/url";
 import {
   dragNewElement,
   dragSelectedElements,
@@ -102,88 +153,144 @@ import {
   getCommonBounds,
   getCursorForResizingElement,
   getDragOffsetXY,
+  getElementAbsoluteCoords,
   getElementWithTransformHandleType,
+  getLockedLinearCursorAlignSize,
   getNormalizedDimensions,
   getResizeArrowDirection,
   getResizeOffsetXY,
-  getLockedLinearCursorAlignSize,
   getTransformHandleTypeFromCoords,
   isInvisiblySmallElement,
   isNonDeletedElement,
   isTextElement,
   newElement,
+  newImageElement,
   newLinearElement,
   newTextElement,
-  newImageElement,
-  transformElements,
-  updateTextElement,
   redrawTextBoundingBox,
-  getElementAbsoluteCoords,
+  refreshTextDimensions,
+  transformElements,
 } from "../element";
+import { ElementCanvasButtons } from "../element/ElementCanvasButtons";
 import {
   bindOrUnbindLinearElement,
   bindOrUnbindLinearElements,
   fixBindingsAfterDeletion,
   fixBindingsAfterDuplication,
   getHoveredElementForBinding,
+  getSuggestedBindingsForArrows,
   isBindingEnabled,
   isLinearElementSimpleAndAlreadyBound,
   maybeBindLinearElement,
   shouldEnableBindingForPointerEvent,
   updateBoundElements,
-  getSuggestedBindingsForArrows,
 } from "../element/binding";
+import { getVisibleSceneBounds } from "../element/bounds";
+import {
+  hitElementBoundText,
+  hitElementBoundingBoxOnly,
+  hitElementItself,
+} from "../element/collision";
+import {
+  createSrcDoc,
+  embeddableURLValidator,
+  getEmbedLink,
+  maybeParseEmbedSrc,
+} from "../element/embeddable";
+import {
+  updateImageCache as _updateImageCache,
+  getInitializedImageElements,
+  loadHTMLImageElement,
+  normalizeSVG,
+} from "../element/image";
 import { LinearElementEditor } from "../element/linearElementEditor";
 import { mutateElement, newElementWith } from "../element/mutateElement";
 import {
   deepCopyElement,
   duplicateElements,
+  newEmbeddableElement,
   newFrameElement,
   newFreeDrawElement,
-  newEmbeddableElement,
-  newMagicFrameElement,
   newIframeElement,
+  newMagicFrameElement,
 } from "../element/newElement";
+import { isElementInViewport } from "../element/sizeHelpers";
+import {
+  bindTextToShapeAfterDuplication,
+  getApproxMinLineHeight,
+  getApproxMinLineWidth,
+  getBoundTextElement,
+  getContainerCenter,
+  getContainerElement,
+  getDefaultLineHeight,
+  getLineHeightInPx,
+  isMeasureTextSupported,
+  isValidTextContainer,
+  measureText,
+  wrapText,
+} from "../element/textElement";
+import { textWysiwyg } from "../element/textWysiwyg";
+import { shouldShowBoundingBox } from "../element/transformHandles";
 import {
   hasBoundTextElement,
   isArrowElement,
   isBindingElement,
   isBindingElementType,
   isBoundToContainer,
-  isFrameLikeElement,
-  isImageElement,
   isEmbeddableElement,
+  isFrameElement,
+  isFrameLikeElement,
+  isIframeElement,
+  isIframeLikeElement,
+  isImageElement,
   isInitializedImageElement,
   isLinearElement,
   isLinearElementType,
-  isUsingAdaptiveRadius,
-  isFrameElement,
-  isIframeElement,
-  isIframeLikeElement,
   isMagicFrameElement,
   isTextBindableContainer,
+  isUsingAdaptiveRadius,
 } from "../element/typeChecks";
-import {
+import type {
   ExcalidrawBindableElement,
   ExcalidrawElement,
+  ExcalidrawEmbeddableElement,
+  ExcalidrawFrameLikeElement,
   ExcalidrawFreeDrawElement,
   ExcalidrawGenericElement,
-  ExcalidrawLinearElement,
-  ExcalidrawTextElement,
-  NonDeleted,
-  InitializedExcalidrawImageElement,
-  ExcalidrawImageElement,
-  FileId,
-  NonDeletedExcalidrawElement,
-  ExcalidrawTextContainer,
-  ExcalidrawFrameLikeElement,
-  ExcalidrawMagicFrameElement,
-  ExcalidrawIframeLikeElement,
-  IframeData,
   ExcalidrawIframeElement,
-  ExcalidrawEmbeddableElement,
+  ExcalidrawIframeLikeElement,
+  ExcalidrawImageElement,
+  ExcalidrawLinearElement,
+  ExcalidrawMagicFrameElement,
+  ExcalidrawTextContainer,
+  ExcalidrawTextElement,
+  FileId,
+  IframeData,
+  InitializedExcalidrawImageElement,
+  NonDeleted,
+  NonDeletedExcalidrawElement,
   Ordered,
 } from "../element/types";
+import { Emitter } from "../emitter";
+import { ImageSceneDataError } from "../errors";
+import { syncInvalidIndices, syncMovedIndices } from "../fractionalIndex";
+import {
+  addElementsToFrame,
+  bindElementsToFramesAfterDuplication,
+  elementOverlapsWithFrame,
+  filterElementsEligibleAsFrameChildren,
+  getContainingFrame,
+  getElementsInNewFrame,
+  getElementsInResizingFrame,
+  getElementsOverlappingFrame,
+  getFrameChildren,
+  getFrameLikeTitle,
+  isCursorInFrame,
+  isElementInFrame,
+  removeElementsFromFrame,
+  replaceAllElementsInFrame,
+  updateFrameMembershipOfSelectedElements,
+} from "../frame";
 import { getCenter, getDistance } from "../gesture";
 import {
   editGroupForSelectedElement,
@@ -196,21 +303,24 @@ import {
 } from "../groups";
 import { History } from "../history";
 import { defaultLang, getLanguage, languages, setLanguage, t } from "../i18n";
+import { jotaiStore } from "../jotai";
 import {
   CODES,
-  shouldResizeFromCenter,
-  shouldMaintainAspectRatio,
-  shouldRotateWithDiscreteAngle,
-  isArrowKey,
   KEYS,
+  isArrowKey,
+  shouldMaintainAspectRatio,
+  shouldResizeFromCenter,
+  shouldRotateWithDiscreteAngle,
 } from "../keys";
-import { isElementInViewport } from "../element/sizeHelpers";
+import { LaserTrails } from "../laser-trails";
 import {
   distance2d,
   getCornerRadius,
   getGridPoint,
   isPathALoop,
 } from "../math";
+import { withBatchedUpdates, withBatchedUpdatesThrottled } from "../reactUtils";
+import { getRenderOpacity } from "../renderer/renderElement";
 import {
   calculateScrollCenter,
   getElementsWithinSelection,
@@ -219,212 +329,103 @@ import {
   hasBackground,
   isSomeElementSelected,
 } from "../scene";
-import Scene from "../scene/Scene";
-import { RenderInteractiveSceneCallback, ScrollBars } from "../scene/types";
-import { getStateForZoom } from "../scene/zoom";
-import { findShapeByKey } from "../shapes";
-import {
-  GeometricShape,
-  getSelectionBoxShape,
-} from "../../utils/geometry/shape";
-import { isPointInShape } from "../../utils/collision";
-import {
-  AppClassProperties,
-  AppProps,
-  AppState,
-  BinaryFileData,
-  DataURL,
-  ExcalidrawImperativeAPI,
-  BinaryFiles,
-  Gesture,
-  GestureEvent,
-  LibraryItems,
-  PointerDownState,
-  SceneData,
-  Device,
-  FrameNameBoundsCache,
-  SidebarName,
-  SidebarTabName,
-  KeyboardModifiersObject,
-  CollaboratorPointer,
-  ToolType,
-  OnUserFollowedPayload,
-  UnsubscribeCallback,
-  EmbedsValidationStatus,
-  ElementsPendingErasure,
-} from "../types";
-import {
-  debounce,
-  distance,
-  getFontString,
-  getNearestScrollableContainer,
-  isInputLike,
-  isToolIcon,
-  isWritableElement,
-  sceneCoordsToViewportCoords,
-  tupleToCoors,
-  viewportCoordsToSceneCoords,
-  wrapEvent,
-  updateObject,
-  updateActiveTool,
-  getShortcutKey,
-  isTransparent,
-  easeToValuesRAF,
-  muteFSAbortError,
-  isTestEnv,
-  easeOut,
-  updateStable,
-  addEventListener,
-  normalizeEOL,
-  getDateTime,
-  isShallowEqual,
-  arrayToMap,
-} from "../utils";
-import {
-  createSrcDoc,
-  embeddableURLValidator,
-  maybeParseEmbedSrc,
-  getEmbedLink,
-} from "../element/embeddable";
-import {
-  ContextMenu,
-  ContextMenuItems,
-  CONTEXT_MENU_SEPARATOR,
-} from "./ContextMenu";
-import LayerUI from "./LayerUI";
-import { Toast } from "./Toast";
-import { actionToggleViewMode } from "../actions/actionToggleViewMode";
-import {
-  dataURLToFile,
-  generateIdFromFile,
-  getDataURL,
-  getFileFromEvent,
-  ImageURLToFile,
-  isImageFileHandle,
-  isSupportedImageFile,
-  loadSceneOrLibraryFromBlob,
-  normalizeFile,
-  parseLibraryJSON,
-  resizeImageFile,
-  SVGStringToFile,
-} from "../data/blob";
-import {
-  getInitializedImageElements,
-  loadHTMLImageElement,
-  normalizeSVG,
-  updateImageCache as _updateImageCache,
-} from "../element/image";
-import throttle from "lodash.throttle";
-import { fileOpen, FileSystemHandle } from "../data/filesystem";
-import {
-  bindTextToShapeAfterDuplication,
-  getApproxMinLineHeight,
-  getApproxMinLineWidth,
-  getBoundTextElement,
-  getContainerCenter,
-  getContainerElement,
-  getDefaultLineHeight,
-  getLineHeightInPx,
-  isMeasureTextSupported,
-  isValidTextContainer,
-} from "../element/textElement";
-import {
-  showHyperlinkTooltip,
-  hideHyperlinkToolip,
-  Hyperlink,
-} from "../components/hyperlink/Hyperlink";
-import { isLocalLink, normalizeLink, toValidURL } from "../data/url";
-import { shouldShowBoundingBox } from "../element/transformHandles";
-import { actionUnlockAllElements } from "../actions/actionElementLock";
 import { Fonts } from "../scene/Fonts";
-import {
-  getFrameChildren,
-  isCursorInFrame,
-  bindElementsToFramesAfterDuplication,
-  addElementsToFrame,
-  replaceAllElementsInFrame,
-  removeElementsFromFrame,
-  getElementsInResizingFrame,
-  getElementsInNewFrame,
-  getContainingFrame,
-  elementOverlapsWithFrame,
-  updateFrameMembershipOfSelectedElements,
-  isElementInFrame,
-  getFrameLikeTitle,
-  getElementsOverlappingFrame,
-  filterElementsEligibleAsFrameChildren,
-} from "../frame";
+import { Renderer } from "../scene/Renderer";
+import Scene from "../scene/Scene";
+import { ShapeCache } from "../scene/ShapeCache";
+import { isOverScrollBars } from "../scene/scrollbars";
 import {
   excludeElementsInFramesFromSelection,
   makeNextSelectedElementIds,
 } from "../scene/selection";
-import { actionPaste } from "../actions/actionClipboard";
+import type {
+  RenderInteractiveSceneCallback,
+  ScrollBars,
+} from "../scene/types";
+import { getStateForZoom } from "../scene/zoom";
+import { findShapeByKey } from "../shapes";
 import {
-  actionRemoveAllElementsFromFrame,
-  actionSelectAllElementsInFrame,
-} from "../actions/actionFrame";
-import { actionToggleHandTool, zoomToFit } from "../actions/actionCanvas";
-import { jotaiStore } from "../jotai";
-import { activeConfirmDialogAtom } from "./ActiveConfirmDialog";
-import { ImageSceneDataError } from "../errors";
-import {
+  SnapCache,
+  getReferenceSnapPoints,
   getSnapLinesAtPointer,
-  snapDraggedElements,
+  getVisibleGaps,
   isActiveToolNonLinearSnappable,
+  isSnappingEnabled,
+  snapDraggedElements,
   snapNewElement,
   snapResizingElements,
-  isSnappingEnabled,
-  getVisibleGaps,
-  getReferenceSnapPoints,
-  SnapCache,
 } from "../snapping";
-import { actionWrapTextInContainer } from "../actions/actionBoundText";
-import BraveMeasureTextError from "./BraveMeasureTextError";
-import { activeEyeDropperAtom } from "./EyeDropper";
-import {
-  ExcalidrawElementSkeleton,
-  convertToExcalidrawElements,
-} from "../data/transform";
-import { ValueOf } from "../utility-types";
-import { isSidebarDockedAtom } from "./Sidebar/Sidebar";
-import { StaticCanvas, InteractiveCanvas } from "./canvases";
-import { Renderer } from "../scene/Renderer";
-import { ShapeCache } from "../scene/ShapeCache";
-import { SVGLayer } from "./SVGLayer";
-import {
-  setEraserCursor,
-  setCursor,
-  resetCursor,
-  setCursorForShape,
-} from "../cursor";
-import { Emitter } from "../emitter";
-import { ElementCanvasButtons } from "../element/ElementCanvasButtons";
-import { MagicCacheData, diagramToHTML } from "../data/magic";
-import { exportToBlob } from "../../utils/export";
-import { COLOR_PALETTE } from "../colors";
-import { ElementCanvasButton } from "./MagicButton";
-import { MagicIcon, copyIcon, fullscreenIcon } from "./icons";
-import { EditorLocalStorage } from "../data/EditorLocalStorage";
-import FollowMode from "./FollowMode/FollowMode";
 import { Store, StoreAction } from "../store";
-import { AnimationFrameHandler } from "../animation-frame-handler";
-import { AnimatedTrail } from "../animated-trail";
-import { LaserTrails } from "../laser-trails";
-import { withBatchedUpdates, withBatchedUpdatesThrottled } from "../reactUtils";
-import { getRenderOpacity } from "../renderer/renderElement";
+import type {
+  AppClassProperties,
+  AppProps,
+  AppState,
+  BinaryFileData,
+  BinaryFiles,
+  CollaboratorPointer,
+  DataURL,
+  Device,
+  ElementsPendingErasure,
+  EmbedsValidationStatus,
+  ExcalidrawImperativeAPI,
+  FrameNameBoundsCache,
+  Gesture,
+  GestureEvent,
+  KeyboardModifiersObject,
+  LibraryItems,
+  OnUserFollowedPayload,
+  PointerDownState,
+  SceneData,
+  SidebarName,
+  SidebarTabName,
+  ToolType,
+  UnsubscribeCallback,
+} from "../types";
+import type { ValueOf } from "../utility-types";
 import {
-  hitElementBoundText,
-  hitElementBoundingBoxOnly,
-  hitElementItself,
-} from "../element/collision";
-import { textWysiwyg } from "../element/textWysiwyg";
-import { isOverScrollBars } from "../scene/scrollbars";
-import { syncInvalidIndices, syncMovedIndices } from "../fractionalIndex";
+  addEventListener,
+  arrayToMap,
+  debounce,
+  distance,
+  easeOut,
+  easeToValuesRAF,
+  getDateTime,
+  getFontString,
+  getNearestScrollableContainer,
+  getShortcutKey,
+  isInputLike,
+  isShallowEqual,
+  isTestEnv,
+  isToolIcon,
+  isTransparent,
+  isWritableElement,
+  muteFSAbortError,
+  normalizeEOL,
+  sceneCoordsToViewportCoords,
+  tupleToCoors,
+  updateActiveTool,
+  updateObject,
+  updateStable,
+  viewportCoordsToSceneCoords,
+  wrapEvent,
+} from "../utils";
+import { activeConfirmDialogAtom } from "./ActiveConfirmDialog";
+import BraveMeasureTextError from "./BraveMeasureTextError";
+import type { ContextMenuItems } from "./ContextMenu";
+import { CONTEXT_MENU_SEPARATOR, ContextMenu } from "./ContextMenu";
+import { activeEyeDropperAtom } from "./EyeDropper";
+import FollowMode from "./FollowMode/FollowMode";
+import LayerUI from "./LayerUI";
+import { ElementCanvasButton } from "./MagicButton";
+import { SVGLayer } from "./SVGLayer";
+import { isSidebarDockedAtom } from "./Sidebar/Sidebar";
+import { Toast } from "./Toast";
+import { InteractiveCanvas, StaticCanvas } from "./canvases";
 import {
   isPointHittingLink,
   isPointHittingLinkIcon,
 } from "./hyperlink/helpers";
-import { getShortcutFromShortcutName } from "../actions/shortcuts";
+import { MagicIcon, copyIcon, fullscreenIcon } from "./icons";
 import { getElementShape } from "../element/shape";
 
 const AppContext = React.createContext<AppClassProperties>(null!);
@@ -711,10 +712,7 @@ class App extends React.Component<AppProps, AppState> {
       id: this.id,
     };
 
-    this.fonts = new Fonts({
-      scene: this.scene,
-      onSceneUpdated: this.onSceneUpdated,
-    });
+    this.fonts = new Fonts({ scene: this.scene });
     this.history = new History();
 
     this.actionManager.registerAll(actions);
@@ -937,7 +935,7 @@ class App extends React.Component<AppProps, AppState> {
     });
 
     if (updated) {
-      this.scene.informMutation();
+      this.scene.triggerUpdate();
     }
 
     // GC
@@ -1449,10 +1447,10 @@ class App extends React.Component<AppProps, AppState> {
     const selectedElements = this.scene.getSelectedElements(this.state);
     const { renderTopRightUI, renderCustomStats } = this.props;
 
-    const versionNonce = this.scene.getVersionNonce();
+    const sceneNonce = this.scene.getSceneNonce();
     const { elementsMap, visibleElements } =
       this.renderer.getRenderableElements({
-        versionNonce,
+        sceneNonce,
         zoom: this.state.zoom,
         offsetLeft: this.state.offsetLeft,
         offsetTop: this.state.offsetTop,
@@ -1670,7 +1668,7 @@ class App extends React.Component<AppProps, AppState> {
                           elementsMap={elementsMap}
                           allElementsMap={allElementsMap}
                           visibleElements={visibleElements}
-                          versionNonce={versionNonce}
+                          sceneNonce={sceneNonce}
                           selectionNonce={
                             this.state.selectionElement?.versionNonce
                           }
@@ -1692,7 +1690,7 @@ class App extends React.Component<AppProps, AppState> {
                           elementsMap={elementsMap}
                           visibleElements={visibleElements}
                           selectedElements={selectedElements}
-                          versionNonce={versionNonce}
+                          sceneNonce={sceneNonce}
                           selectionNonce={
                             this.state.selectionElement?.versionNonce
                           }
@@ -1816,7 +1814,7 @@ class App extends React.Component<AppProps, AppState> {
       );
     }
     this.magicGenerations.set(frameElement.id, data);
-    this.onSceneUpdated();
+    this.triggerRender();
   };
 
   private getTextFromElements(elements: readonly ExcalidrawElement[]) {
@@ -2441,7 +2439,7 @@ class App extends React.Component<AppProps, AppState> {
       this.history.record(increment.elementsChange, increment.appStateChange);
     });
 
-    this.scene.addCallback(this.onSceneUpdated);
+    this.scene.onUpdate(this.triggerRender);
     this.addEventListeners();
 
     if (this.props.autoFocus && this.excalidrawContainerRef.current) {
@@ -2486,6 +2484,7 @@ class App extends React.Component<AppProps, AppState> {
   public componentWillUnmount() {
     this.renderer.destroy();
     this.scene = new Scene();
+    this.fonts = new Fonts({ scene: this.scene });
     this.renderer = new Renderer(this.scene);
     this.files = {};
     this.imageCache.clear();
@@ -2563,7 +2562,7 @@ class App extends React.Component<AppProps, AppState> {
       addEventListener(document, EVENT.KEYUP, this.onKeyUp, { passive: true }),
       addEventListener(
         document,
-        EVENT.MOUSE_MOVE,
+        EVENT.POINTER_MOVE,
         this.updateCurrentCursorPosition,
       ),
       // rerender text elements on font load to fix #637 && #1553
@@ -2592,6 +2591,9 @@ class App extends React.Component<AppProps, AppState> {
       ),
       addEventListener(window, EVENT.FOCUS, () => {
         this.maybeCleanupAfterMissingPointerUp(null);
+        // browsers (chrome?) tend to free up memory a lot, which results
+        // in canvas context being cleared. Thus re-render on focus.
+        this.triggerRender(true);
       }),
     );
 
@@ -3336,32 +3338,53 @@ class App extends React.Component<AppProps, AppState> {
       text,
       fontSize: this.state.currentItemFontSize,
       fontFamily: this.state.currentItemFontFamily,
-      textAlign: this.state.currentItemTextAlign,
+      textAlign: DEFAULT_TEXT_ALIGN,
       verticalAlign: DEFAULT_VERTICAL_ALIGN,
       locked: false,
     };
-
+    const fontString = getFontString({
+      fontSize: textElementProps.fontSize,
+      fontFamily: textElementProps.fontFamily,
+    });
+    const lineHeight = getDefaultLineHeight(textElementProps.fontFamily);
+    const [x1, , x2] = getVisibleSceneBounds(this.state);
+    // long texts should not go beyond 800 pixels in width nor should it go below 200 px
+    const maxTextWidth = Math.max(Math.min((x2 - x1) * 0.5, 800), 200);
     const LINE_GAP = 10;
     let currentY = y;
 
     const lines = isPlainPaste ? [text] : text.split("\n");
     const textElements = lines.reduce(
       (acc: ExcalidrawTextElement[], line, idx) => {
-        const text = line.trim();
-
-        const lineHeight = getDefaultLineHeight(textElementProps.fontFamily);
-        if (text.length) {
+        const originalText = line.trim();
+        if (originalText.length) {
           const topLayerFrame = this.getTopLayerFrameAtSceneCoords({
             x,
             y: currentY,
           });
 
+          let metrics = measureText(originalText, fontString, lineHeight);
+          const isTextWrapped = metrics.width > maxTextWidth;
+
+          const text = isTextWrapped
+            ? wrapText(originalText, fontString, maxTextWidth)
+            : originalText;
+
+          metrics = isTextWrapped
+            ? measureText(text, fontString, lineHeight)
+            : metrics;
+
+          const startX = x - metrics.width / 2;
+          const startY = currentY - metrics.height / 2;
+
           const element = newTextElement({
             ...textElementProps,
-            x,
-            y: currentY,
+            x: startX,
+            y: startY,
             text,
+            originalText,
             lineHeight,
+            autoResize: !isTextWrapped,
             frameId: topLayerFrame ? topLayerFrame.id : null,
           });
           acc.push(element);
@@ -3667,7 +3690,7 @@ class App extends React.Component<AppProps, AppState> {
           ShapeCache.delete(element);
         }
       });
-      this.scene.informMutation();
+      this.scene.triggerUpdate();
 
       this.addNewImagesToImageCache();
     },
@@ -3678,7 +3701,7 @@ class App extends React.Component<AppProps, AppState> {
       elements?: SceneData["elements"];
       appState?: Pick<AppState, K> | null;
       collaborators?: SceneData["collaborators"];
-      /** @default StoreAction.CAPTURE */
+      /** @default StoreAction.NONE */
       storeAction?: SceneData["storeAction"];
     }) => {
       const nextElements = syncInvalidIndices(sceneData.elements ?? []);
@@ -3727,8 +3750,15 @@ class App extends React.Component<AppProps, AppState> {
     },
   );
 
-  private onSceneUpdated = () => {
-    this.setState({});
+  private triggerRender = (
+    /** force always re-renders canvas even if no change */
+    force?: boolean,
+  ) => {
+    if (force === true) {
+      this.scene.triggerUpdate();
+    } else {
+      this.setState({});
+    }
   };
 
   /**
@@ -4297,25 +4327,22 @@ class App extends React.Component<AppProps, AppState> {
   ) {
     const elementsMap = this.scene.getElementsMapIncludingDeleted();
 
-    const updateElement = (
-      text: string,
-      originalText: string,
-      isDeleted: boolean,
-    ) => {
+    const updateElement = (nextOriginalText: string, isDeleted: boolean) => {
       this.scene.replaceAllElements([
         // Not sure why we include deleted elements as well hence using deleted elements map
         ...this.scene.getElementsIncludingDeleted().map((_element) => {
           if (_element.id === element.id && isTextElement(_element)) {
-            return updateTextElement(
-              _element,
-              getContainerElement(_element, elementsMap),
-              elementsMap,
-              {
-                text,
-                isDeleted,
-                originalText,
-              },
-            );
+            return newElementWith(_element, {
+              originalText: nextOriginalText,
+              isDeleted: isDeleted ?? _element.isDeleted,
+              // returns (wrapped) text and new dimensions
+              ...refreshTextDimensions(
+                _element,
+                getContainerElement(_element, elementsMap),
+                elementsMap,
+                nextOriginalText,
+              ),
+            });
           }
           return _element;
         }),
@@ -4338,15 +4365,15 @@ class App extends React.Component<AppProps, AppState> {
           viewportY - this.state.offsetTop,
         ];
       },
-      onChange: withBatchedUpdates((text) => {
-        updateElement(text, text, false);
+      onChange: withBatchedUpdates((nextOriginalText) => {
+        updateElement(nextOriginalText, false);
         if (isNonDeletedElement(element)) {
           updateBoundElements(element, elementsMap);
         }
       }),
-      onSubmit: withBatchedUpdates(({ text, viaKeyboard, originalText }) => {
-        const isDeleted = !text.trim();
-        updateElement(text, originalText, isDeleted);
+      onSubmit: withBatchedUpdates(({ viaKeyboard, nextOriginalText }) => {
+        const isDeleted = !nextOriginalText.trim();
+        updateElement(nextOriginalText, isDeleted);
         // select the created text element only if submitting via keyboard
         // (when submitting via click it should act as signal to deselect)
         if (!isDeleted && viaKeyboard) {
@@ -4391,7 +4418,7 @@ class App extends React.Component<AppProps, AppState> {
 
     // do an initial update to re-initialize element position since we were
     // modifying element's x/y for sake of editor (case: syncing to remote)
-    updateElement(element.text, element.originalText, false);
+    updateElement(element.originalText, false);
   }
 
   private deselectElements() {
@@ -5060,8 +5087,11 @@ class App extends React.Component<AppProps, AppState> {
 
         this.translateCanvas({
           zoom: zoomState.zoom,
-          scrollX: zoomState.scrollX + deltaX / nextZoom,
-          scrollY: zoomState.scrollY + deltaY / nextZoom,
+          // 2x multiplier is just a magic number that makes this work correctly
+          // on touchscreen devices (note: if we get report that panning is slower/faster
+          // than actual movement, consider swapping with devicePixelRatio)
+          scrollX: zoomState.scrollX + 2 * (deltaX / nextZoom),
+          scrollY: zoomState.scrollY + 2 * (deltaY / nextZoom),
           shouldCacheIgnoreZoom: true,
         });
       });
@@ -5539,7 +5569,7 @@ class App extends React.Component<AppProps, AppState> {
       }
 
       this.elementsPendingErasure = new Set(this.elementsPendingErasure);
-      this.onSceneUpdated();
+      this.triggerRender();
     }
   };
 
@@ -8049,7 +8079,7 @@ class App extends React.Component<AppProps, AppState> {
                     this.scene.getNonDeletedElementsMap(),
                   );
 
-                  this.scene.informMutation();
+                  this.scene.triggerUpdate();
                 }
               }
             }
@@ -8547,7 +8577,7 @@ class App extends React.Component<AppProps, AppState> {
 
   private restoreReadyToEraseElements = () => {
     this.elementsPendingErasure = new Set();
-    this.onSceneUpdated();
+    this.triggerRender();
   };
 
   private eraseElements = () => {
@@ -8961,7 +8991,7 @@ class App extends React.Component<AppProps, AppState> {
         files,
       );
       if (updatedFiles.size) {
-        this.scene.informMutation();
+        this.scene.triggerUpdate();
       }
     }
   };
@@ -9618,6 +9648,7 @@ class App extends React.Component<AppProps, AppState> {
     }
 
     return [
+      CONTEXT_MENU_SEPARATOR,
       actionCut,
       actionCopy,
       actionPaste,
@@ -9630,6 +9661,7 @@ class App extends React.Component<AppProps, AppState> {
       actionPasteStyles,
       CONTEXT_MENU_SEPARATOR,
       actionGroup,
+      actionTextAutoResize,
       actionUnbindText,
       actionBindText,
       actionWrapTextInContainer,

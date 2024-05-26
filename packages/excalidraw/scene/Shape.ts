@@ -22,7 +22,7 @@ import {
   isLinearElement,
 } from "../element/typeChecks";
 import { canChangeRoundness } from "./comparisons";
-import { EmbedsValidationStatus, LocalPoint } from "../types";
+import type { EmbedsValidationStatus, LocalPoint } from "../types";
 import { calculateElbowArrowJointPoints } from "../element/arrow/routing";
 
 const getDashArrayDashed = (strokeWidth: number) => [8, 8 + strokeWidth];

@@ -12,6 +12,7 @@ exports[`contextMenu element > right-clicking on a group should select whole gro
   "collaborators": Map {},
   "contextMenu": {
     "items": [
+      "separator",
       {
         "icon": <svg
           aria-hidden="true"
@@ -26,7 +27,7 @@ exports[`contextMenu element > right-clicking on a group should select whole gro
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -129,7 +130,7 @@ exports[`contextMenu element > right-clicking on a group should select whole gro
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -181,7 +182,7 @@ exports[`contextMenu element > right-clicking on a group should select whole gro
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -247,7 +248,7 @@ exports[`contextMenu element > right-clicking on a group should select whole gro
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -287,7 +288,7 @@ exports[`contextMenu element > right-clicking on a group should select whole gro
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -320,6 +321,16 @@ exports[`contextMenu element > right-clicking on a group should select whole gro
         "keyTest": [Function],
         "label": "labels.group",
         "name": "group",
+        "perform": [Function],
+        "predicate": [Function],
+        "trackEvent": {
+          "category": "element",
+        },
+      },
+      {
+        "icon": null,
+        "label": "labels.autoResize",
+        "name": "autoResize",
         "perform": [Function],
         "predicate": [Function],
         "trackEvent": {
@@ -386,40 +397,40 @@ exports[`contextMenu element > right-clicking on a group should select whole gro
           stroke="currentColor"
           strokeLinecap="round"
           strokeLinejoin="round"
-          viewBox="0 0 20 20"
+          strokeWidth={2}
+          style={
+            {
+              "transform": "rotate(180deg)",
+            }
+          }
+          viewBox="0 0 24 24"
         >
-          <React.Fragment>
-            <g
-              clipPath="url(#a)"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="1.25"
-            >
-              <path
-                clipRule="evenodd"
-                d="M6.944 12.5H12.5v1.389a1.389 1.389 0 0 1-1.389 1.389H5.556a1.389 1.389 0 0 1-1.39-1.39V8.334a1.389 1.389 0 0 1 1.39-1.389h1.388"
-                fill="currentColor"
-                fillRule="evenodd"
-              />
-              <path
-                d="M13.889 4.167H8.333c-.767 0-1.389.621-1.389 1.389v5.555c0 .767.622 1.389 1.39 1.389h5.555c.767 0 1.389-.622 1.389-1.389V5.556c0-.768-.622-1.39-1.39-1.39Z"
-              />
-            </g>
-            <defs>
-              <clipPath
-                id="a"
-              >
-                <path
-                  d="M0 0h20v20H0z"
-                  fill="#fff"
-                />
-              </clipPath>
-            </defs>
-          </React.Fragment>
+          <g
+            strokeWidth={"1.50000"}
+          >
+            <path
+              d="M0 0h24v24H0z"
+              fill="none"
+              stroke="none"
+            />
+            <path
+              d="M12 5l0 14"
+            />
+            <path
+              d="M16 9l-4 -4"
+            />
+            <path
+              d="M8 9l4 -4"
+            />
+          </g>
         </svg>,
         "keyPriority": 40,
         "keyTest": [Function],
+        "keywords": [
+          "move down",
+          "zindex",
+          "layer",
+        ],
         "label": "labels.sendBackward",
         "name": "sendBackward",
         "perform": [Function],
@@ -438,38 +449,35 @@ exports[`contextMenu element > right-clicking on a group should select whole gro
           stroke="currentColor"
           strokeLinecap="round"
           strokeLinejoin="round"
-          viewBox="0 0 20 20"
+          strokeWidth={2}
+          viewBox="0 0 24 24"
         >
-          <React.Fragment>
-            <g
-              clipPath="url(#a)"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="1.25"
-            >
-              <path
-                d="M13.889 4.167H8.333c-.767 0-1.389.622-1.389 1.389v5.555c0 .767.622 1.389 1.39 1.389h5.555c.767 0 1.389-.622 1.389-1.389V5.556c0-.767-.622-1.39-1.39-1.39Z"
-                fill="currentColor"
-              />
-              <path
-                d="M12.5 12.5v1.389a1.389 1.389 0 0 1-1.389 1.389H5.556a1.389 1.389 0 0 1-1.39-1.39V8.334a1.389 1.389 0 0 1 1.39-1.389h1.388"
-              />
-            </g>
-            <defs>
-              <clipPath
-                id="a"
-              >
-                <path
-                  d="M0 0h20v20H0z"
-                  fill="#fff"
-                />
-              </clipPath>
-            </defs>
-          </React.Fragment>
+          <g
+            strokeWidth={"1.50000"}
+          >
+            <path
+              d="M0 0h24v24H0z"
+              fill="none"
+              stroke="none"
+            />
+            <path
+              d="M12 5l0 14"
+            />
+            <path
+              d="M16 9l-4 -4"
+            />
+            <path
+              d="M8 9l4 -4"
+            />
+          </g>
         </svg>,
         "keyPriority": 40,
         "keyTest": [Function],
+        "keywords": [
+          "move up",
+          "zindex",
+          "layer",
+        ],
         "label": "labels.bringForward",
         "name": "bringForward",
         "perform": [Function],
@@ -488,62 +496,42 @@ exports[`contextMenu element > right-clicking on a group should select whole gro
           stroke="currentColor"
           strokeLinecap="round"
           strokeLinejoin="round"
-          viewBox="0 0 20 20"
+          strokeWidth={2}
+          style={
+            {
+              "transform": "rotate(180deg)",
+            }
+          }
+          viewBox="0 0 24 24"
         >
-          <React.Fragment>
-            <g
-              clipPath="url(#a)"
-            >
-              <path
-                d="M5.441 9.792h2.451a2.316 2.316 0 0 1 2.316 2.316v2.45a2.316 2.316 0 0 1-2.316 2.317h-2.45a2.316 2.316 0 0 1-2.317-2.316v-2.451a2.316 2.316 0 0 1 2.316-2.316Z"
-                stroke="currentColor"
-                strokeWidth="1.25"
-              />
-              <path
-                d="M5.441 9.792h2.451a2.316 2.316 0 0 1 2.316 2.316v2.45a2.316 2.316 0 0 1-2.316 2.317h-2.45a2.316 2.316 0 0 1-2.317-2.316v-2.451a2.316 2.316 0 0 1 2.316-2.316Z"
-                stroke="currentColor"
-                strokeWidth="1.25"
-              />
-              <mask
-                fill="#fff"
-                id="SendToBackIcon"
-              >
-                <path
-                  clipRule="evenodd"
-                  d="M9.167 5.833v2.06a2.941 2.941 0 0 0 2.94 2.94h2.06v.393a2.941 2.941 0 0 1-2.941 2.94h-.393v-2.058a2.941 2.941 0 0 0-2.94-2.941h-2.06v-.393a2.941 2.941 0 0 1 2.942-2.94h.392Z"
-                  fillRule="evenodd"
-                />
-              </mask>
-              <path
-                clipRule="evenodd"
-                d="M9.167 5.833v2.06a2.941 2.941 0 0 0 2.94 2.94h2.06v.393a2.941 2.941 0 0 1-2.941 2.94h-.393v-2.058a2.941 2.941 0 0 0-2.94-2.941h-2.06v-.393a2.941 2.941 0 0 1 2.942-2.94h.392Z"
-                fill="currentColor"
-                fillRule="evenodd"
-              />
-              <path
-                d="M9.167 5.833h1.25v-1.25h-1.25v1.25Zm5 5h1.25v-1.25h-1.25v1.25Zm-3.334 3.334h-1.25v1.25h1.25v-1.25Zm-5-5h-1.25v1.25h1.25v-1.25Zm2.084-3.334v2.06h2.5v-2.06h-2.5Zm0 2.06a4.191 4.191 0 0 0 4.19 4.19v-2.5a1.691 1.691 0 0 1-1.69-1.69h-2.5Zm4.19 4.19h2.06v-2.5h-2.06v2.5Zm.81-1.25v.393h2.5v-.393h-2.5Zm0 .393c0 .933-.758 1.69-1.691 1.69v2.5a4.191 4.191 0 0 0 4.19-4.19h-2.5Zm-1.691 1.69h-.393v2.5h.393v-2.5Zm.857 1.25v-2.058h-2.5v2.059h2.5Zm0-2.058a4.191 4.191 0 0 0-4.19-4.191v2.5c.933 0 1.69.757 1.69 1.69h2.5Zm-4.19-4.191h-2.06v2.5h2.06v-2.5Zm-.81 1.25v-.393h-2.5v.393h2.5Zm0-.393c0-.934.758-1.69 1.692-1.69v-2.5a4.191 4.191 0 0 0-4.192 4.19h2.5Zm1.692-1.69h.392v-2.5h-.392v2.5Z"
-                fill="currentColor"
-                mask="url(#SendToBackIcon)"
-              />
-              <path
-                d="M12.108 3.125h2.45a2.316 2.316 0 0 1 2.317 2.316v2.451a2.316 2.316 0 0 1-2.316 2.316h-2.451a2.316 2.316 0 0 1-2.316-2.316v-2.45a2.316 2.316 0 0 1 2.316-2.317Z"
-                stroke="currentColor"
-                strokeWidth="1.25"
-              />
-            </g>
-            <defs>
-              <clipPath
-                id="a"
-              >
-                <path
-                  d="M0 0h20v20H0z"
-                  fill="#fff"
-                />
-              </clipPath>
-            </defs>
-          </React.Fragment>
+          <g
+            strokeWidth={"1.50000"}
+          >
+            <path
+              d="M0 0h24v24H0z"
+              fill="none"
+              stroke="none"
+            />
+            <path
+              d="M12 10l0 10"
+            />
+            <path
+              d="M12 10l4 4"
+            />
+            <path
+              d="M12 10l-4 4"
+            />
+            <path
+              d="M4 4l16 0"
+            />
+          </g>
         </svg>,
         "keyTest": [Function],
+        "keywords": [
+          "move down",
+          "zindex",
+          "layer",
+        ],
         "label": "labels.sendToBack",
         "name": "sendToBack",
         "perform": [Function],
@@ -562,35 +550,37 @@ exports[`contextMenu element > right-clicking on a group should select whole gro
           stroke="currentColor"
           strokeLinecap="round"
           strokeLinejoin="round"
-          viewBox="0 0 20 20"
+          strokeWidth={2}
+          viewBox="0 0 24 24"
         >
-          <React.Fragment>
-            <g
-              clipPath="url(#a)"
-              stroke="currentColor"
-              strokeWidth="1.25"
-            >
-              <path
-                d="M8.775 6.458h2.45a2.316 2.316 0 0 1 2.317 2.316v2.452a2.316 2.316 0 0 1-2.316 2.316H8.774a2.316 2.316 0 0 1-2.317-2.316V8.774a2.316 2.316 0 0 1 2.317-2.316Z"
-                fill="currentColor"
-              />
-              <path
-                d="M5.441 9.792h2.451a2.316 2.316 0 0 1 2.316 2.316v2.45a2.316 2.316 0 0 1-2.316 2.317h-2.45a2.316 2.316 0 0 1-2.317-2.316v-2.451a2.316 2.316 0 0 1 2.316-2.316ZM12.108 3.125h2.45a2.316 2.316 0 0 1 2.317 2.316v2.451a2.316 2.316 0 0 1-2.316 2.316h-2.451a2.316 2.316 0 0 1-2.316-2.316v-2.45a2.316 2.316 0 0 1 2.316-2.317Z"
-              />
-            </g>
-            <defs>
-              <clipPath
-                id="a"
-              >
-                <path
-                  d="M0 0h20v20H0z"
-                  fill="#fff"
-                />
-              </clipPath>
-            </defs>
-          </React.Fragment>
+          <g
+            strokeWidth={"1.50000"}
+          >
+            <path
+              d="M0 0h24v24H0z"
+              fill="none"
+              stroke="none"
+            />
+            <path
+              d="M12 10l0 10"
+            />
+            <path
+              d="M12 10l4 4"
+            />
+            <path
+              d="M12 10l-4 4"
+            />
+            <path
+              d="M4 4l16 0"
+            />
+          </g>
         </svg>,
         "keyTest": [Function],
+        "keywords": [
+          "move up",
+          "zindex",
+          "layer",
+        ],
         "label": "labels.bringToFront",
         "name": "bringToFront",
         "perform": [Function],
@@ -613,7 +603,7 @@ exports[`contextMenu element > right-clicking on a group should select whole gro
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -653,7 +643,7 @@ exports[`contextMenu element > right-clicking on a group should select whole gro
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -681,7 +671,11 @@ exports[`contextMenu element > right-clicking on a group should select whole gro
       },
       "separator",
       {
+        "PanelComponent": [Function],
         "category": "Elements",
+        "keywords": [
+          "line",
+        ],
         "label": [Function],
         "name": "toggleLinearEditor",
         "perform": [Function],
@@ -4451,6 +4445,7 @@ exports[`contextMenu element > shows 'Group selection' in context menu for multi
   "collaborators": Map {},
   "contextMenu": {
     "items": [
+      "separator",
       {
         "icon": <svg
           aria-hidden="true"
@@ -4465,7 +4460,7 @@ exports[`contextMenu element > shows 'Group selection' in context menu for multi
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -4568,7 +4563,7 @@ exports[`contextMenu element > shows 'Group selection' in context menu for multi
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -4620,7 +4615,7 @@ exports[`contextMenu element > shows 'Group selection' in context menu for multi
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -4686,7 +4681,7 @@ exports[`contextMenu element > shows 'Group selection' in context menu for multi
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -4726,7 +4721,7 @@ exports[`contextMenu element > shows 'Group selection' in context menu for multi
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -4759,6 +4754,16 @@ exports[`contextMenu element > shows 'Group selection' in context menu for multi
         "keyTest": [Function],
         "label": "labels.group",
         "name": "group",
+        "perform": [Function],
+        "predicate": [Function],
+        "trackEvent": {
+          "category": "element",
+        },
+      },
+      {
+        "icon": null,
+        "label": "labels.autoResize",
+        "name": "autoResize",
         "perform": [Function],
         "predicate": [Function],
         "trackEvent": {
@@ -4825,40 +4830,40 @@ exports[`contextMenu element > shows 'Group selection' in context menu for multi
           stroke="currentColor"
           strokeLinecap="round"
           strokeLinejoin="round"
-          viewBox="0 0 20 20"
+          strokeWidth={2}
+          style={
+            {
+              "transform": "rotate(180deg)",
+            }
+          }
+          viewBox="0 0 24 24"
         >
-          <React.Fragment>
-            <g
-              clipPath="url(#a)"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="1.25"
-            >
-              <path
-                clipRule="evenodd"
-                d="M6.944 12.5H12.5v1.389a1.389 1.389 0 0 1-1.389 1.389H5.556a1.389 1.389 0 0 1-1.39-1.39V8.334a1.389 1.389 0 0 1 1.39-1.389h1.388"
-                fill="currentColor"
-                fillRule="evenodd"
-              />
-              <path
-                d="M13.889 4.167H8.333c-.767 0-1.389.621-1.389 1.389v5.555c0 .767.622 1.389 1.39 1.389h5.555c.767 0 1.389-.622 1.389-1.389V5.556c0-.768-.622-1.39-1.39-1.39Z"
-              />
-            </g>
-            <defs>
-              <clipPath
-                id="a"
-              >
-                <path
-                  d="M0 0h20v20H0z"
-                  fill="#fff"
-                />
-              </clipPath>
-            </defs>
-          </React.Fragment>
+          <g
+            strokeWidth={"1.50000"}
+          >
+            <path
+              d="M0 0h24v24H0z"
+              fill="none"
+              stroke="none"
+            />
+            <path
+              d="M12 5l0 14"
+            />
+            <path
+              d="M16 9l-4 -4"
+            />
+            <path
+              d="M8 9l4 -4"
+            />
+          </g>
         </svg>,
         "keyPriority": 40,
         "keyTest": [Function],
+        "keywords": [
+          "move down",
+          "zindex",
+          "layer",
+        ],
         "label": "labels.sendBackward",
         "name": "sendBackward",
         "perform": [Function],
@@ -4877,38 +4882,35 @@ exports[`contextMenu element > shows 'Group selection' in context menu for multi
           stroke="currentColor"
           strokeLinecap="round"
           strokeLinejoin="round"
-          viewBox="0 0 20 20"
+          strokeWidth={2}
+          viewBox="0 0 24 24"
         >
-          <React.Fragment>
-            <g
-              clipPath="url(#a)"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="1.25"
-            >
-              <path
-                d="M13.889 4.167H8.333c-.767 0-1.389.622-1.389 1.389v5.555c0 .767.622 1.389 1.39 1.389h5.555c.767 0 1.389-.622 1.389-1.389V5.556c0-.767-.622-1.39-1.39-1.39Z"
-                fill="currentColor"
-              />
-              <path
-                d="M12.5 12.5v1.389a1.389 1.389 0 0 1-1.389 1.389H5.556a1.389 1.389 0 0 1-1.39-1.39V8.334a1.389 1.389 0 0 1 1.39-1.389h1.388"
-              />
-            </g>
-            <defs>
-              <clipPath
-                id="a"
-              >
-                <path
-                  d="M0 0h20v20H0z"
-                  fill="#fff"
-                />
-              </clipPath>
-            </defs>
-          </React.Fragment>
+          <g
+            strokeWidth={"1.50000"}
+          >
+            <path
+              d="M0 0h24v24H0z"
+              fill="none"
+              stroke="none"
+            />
+            <path
+              d="M12 5l0 14"
+            />
+            <path
+              d="M16 9l-4 -4"
+            />
+            <path
+              d="M8 9l4 -4"
+            />
+          </g>
         </svg>,
         "keyPriority": 40,
         "keyTest": [Function],
+        "keywords": [
+          "move up",
+          "zindex",
+          "layer",
+        ],
         "label": "labels.bringForward",
         "name": "bringForward",
         "perform": [Function],
@@ -4927,62 +4929,42 @@ exports[`contextMenu element > shows 'Group selection' in context menu for multi
           stroke="currentColor"
           strokeLinecap="round"
           strokeLinejoin="round"
-          viewBox="0 0 20 20"
+          strokeWidth={2}
+          style={
+            {
+              "transform": "rotate(180deg)",
+            }
+          }
+          viewBox="0 0 24 24"
         >
-          <React.Fragment>
-            <g
-              clipPath="url(#a)"
-            >
-              <path
-                d="M5.441 9.792h2.451a2.316 2.316 0 0 1 2.316 2.316v2.45a2.316 2.316 0 0 1-2.316 2.317h-2.45a2.316 2.316 0 0 1-2.317-2.316v-2.451a2.316 2.316 0 0 1 2.316-2.316Z"
-                stroke="currentColor"
-                strokeWidth="1.25"
-              />
-              <path
-                d="M5.441 9.792h2.451a2.316 2.316 0 0 1 2.316 2.316v2.45a2.316 2.316 0 0 1-2.316 2.317h-2.45a2.316 2.316 0 0 1-2.317-2.316v-2.451a2.316 2.316 0 0 1 2.316-2.316Z"
-                stroke="currentColor"
-                strokeWidth="1.25"
-              />
-              <mask
-                fill="#fff"
-                id="SendToBackIcon"
-              >
-                <path
-                  clipRule="evenodd"
-                  d="M9.167 5.833v2.06a2.941 2.941 0 0 0 2.94 2.94h2.06v.393a2.941 2.941 0 0 1-2.941 2.94h-.393v-2.058a2.941 2.941 0 0 0-2.94-2.941h-2.06v-.393a2.941 2.941 0 0 1 2.942-2.94h.392Z"
-                  fillRule="evenodd"
-                />
-              </mask>
-              <path
-                clipRule="evenodd"
-                d="M9.167 5.833v2.06a2.941 2.941 0 0 0 2.94 2.94h2.06v.393a2.941 2.941 0 0 1-2.941 2.94h-.393v-2.058a2.941 2.941 0 0 0-2.94-2.941h-2.06v-.393a2.941 2.941 0 0 1 2.942-2.94h.392Z"
-                fill="currentColor"
-                fillRule="evenodd"
-              />
-              <path
-                d="M9.167 5.833h1.25v-1.25h-1.25v1.25Zm5 5h1.25v-1.25h-1.25v1.25Zm-3.334 3.334h-1.25v1.25h1.25v-1.25Zm-5-5h-1.25v1.25h1.25v-1.25Zm2.084-3.334v2.06h2.5v-2.06h-2.5Zm0 2.06a4.191 4.191 0 0 0 4.19 4.19v-2.5a1.691 1.691 0 0 1-1.69-1.69h-2.5Zm4.19 4.19h2.06v-2.5h-2.06v2.5Zm.81-1.25v.393h2.5v-.393h-2.5Zm0 .393c0 .933-.758 1.69-1.691 1.69v2.5a4.191 4.191 0 0 0 4.19-4.19h-2.5Zm-1.691 1.69h-.393v2.5h.393v-2.5Zm.857 1.25v-2.058h-2.5v2.059h2.5Zm0-2.058a4.191 4.191 0 0 0-4.19-4.191v2.5c.933 0 1.69.757 1.69 1.69h2.5Zm-4.19-4.191h-2.06v2.5h2.06v-2.5Zm-.81 1.25v-.393h-2.5v.393h2.5Zm0-.393c0-.934.758-1.69 1.692-1.69v-2.5a4.191 4.191 0 0 0-4.192 4.19h2.5Zm1.692-1.69h.392v-2.5h-.392v2.5Z"
-                fill="currentColor"
-                mask="url(#SendToBackIcon)"
-              />
-              <path
-                d="M12.108 3.125h2.45a2.316 2.316 0 0 1 2.317 2.316v2.451a2.316 2.316 0 0 1-2.316 2.316h-2.451a2.316 2.316 0 0 1-2.316-2.316v-2.45a2.316 2.316 0 0 1 2.316-2.317Z"
-                stroke="currentColor"
-                strokeWidth="1.25"
-              />
-            </g>
-            <defs>
-              <clipPath
-                id="a"
-              >
-                <path
-                  d="M0 0h20v20H0z"
-                  fill="#fff"
-                />
-              </clipPath>
-            </defs>
-          </React.Fragment>
+          <g
+            strokeWidth={"1.50000"}
+          >
+            <path
+              d="M0 0h24v24H0z"
+              fill="none"
+              stroke="none"
+            />
+            <path
+              d="M12 10l0 10"
+            />
+            <path
+              d="M12 10l4 4"
+            />
+            <path
+              d="M12 10l-4 4"
+            />
+            <path
+              d="M4 4l16 0"
+            />
+          </g>
         </svg>,
         "keyTest": [Function],
+        "keywords": [
+          "move down",
+          "zindex",
+          "layer",
+        ],
         "label": "labels.sendToBack",
         "name": "sendToBack",
         "perform": [Function],
@@ -5001,35 +4983,37 @@ exports[`contextMenu element > shows 'Group selection' in context menu for multi
           stroke="currentColor"
           strokeLinecap="round"
           strokeLinejoin="round"
-          viewBox="0 0 20 20"
+          strokeWidth={2}
+          viewBox="0 0 24 24"
         >
-          <React.Fragment>
-            <g
-              clipPath="url(#a)"
-              stroke="currentColor"
-              strokeWidth="1.25"
-            >
-              <path
-                d="M8.775 6.458h2.45a2.316 2.316 0 0 1 2.317 2.316v2.452a2.316 2.316 0 0 1-2.316 2.316H8.774a2.316 2.316 0 0 1-2.317-2.316V8.774a2.316 2.316 0 0 1 2.317-2.316Z"
-                fill="currentColor"
-              />
-              <path
-                d="M5.441 9.792h2.451a2.316 2.316 0 0 1 2.316 2.316v2.45a2.316 2.316 0 0 1-2.316 2.317h-2.45a2.316 2.316 0 0 1-2.317-2.316v-2.451a2.316 2.316 0 0 1 2.316-2.316ZM12.108 3.125h2.45a2.316 2.316 0 0 1 2.317 2.316v2.451a2.316 2.316 0 0 1-2.316 2.316h-2.451a2.316 2.316 0 0 1-2.316-2.316v-2.45a2.316 2.316 0 0 1 2.316-2.317Z"
-              />
-            </g>
-            <defs>
-              <clipPath
-                id="a"
-              >
-                <path
-                  d="M0 0h20v20H0z"
-                  fill="#fff"
-                />
-              </clipPath>
-            </defs>
-          </React.Fragment>
+          <g
+            strokeWidth={"1.50000"}
+          >
+            <path
+              d="M0 0h24v24H0z"
+              fill="none"
+              stroke="none"
+            />
+            <path
+              d="M12 10l0 10"
+            />
+            <path
+              d="M12 10l4 4"
+            />
+            <path
+              d="M12 10l-4 4"
+            />
+            <path
+              d="M4 4l16 0"
+            />
+          </g>
         </svg>,
         "keyTest": [Function],
+        "keywords": [
+          "move up",
+          "zindex",
+          "layer",
+        ],
         "label": "labels.bringToFront",
         "name": "bringToFront",
         "perform": [Function],
@@ -5052,7 +5036,7 @@ exports[`contextMenu element > shows 'Group selection' in context menu for multi
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -5092,7 +5076,7 @@ exports[`contextMenu element > shows 'Group selection' in context menu for multi
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -5120,7 +5104,11 @@ exports[`contextMenu element > shows 'Group selection' in context menu for multi
       },
       "separator",
       {
+        "PanelComponent": [Function],
         "category": "Elements",
+        "keywords": [
+          "line",
+        ],
         "label": [Function],
         "name": "toggleLinearEditor",
         "perform": [Function],
@@ -5577,6 +5565,7 @@ exports[`contextMenu element > shows 'Ungroup selection' in context menu for gro
   "collaborators": Map {},
   "contextMenu": {
     "items": [
+      "separator",
       {
         "icon": <svg
           aria-hidden="true"
@@ -5591,7 +5580,7 @@ exports[`contextMenu element > shows 'Ungroup selection' in context menu for gro
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -5694,7 +5683,7 @@ exports[`contextMenu element > shows 'Ungroup selection' in context menu for gro
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -5746,7 +5735,7 @@ exports[`contextMenu element > shows 'Ungroup selection' in context menu for gro
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -5812,7 +5801,7 @@ exports[`contextMenu element > shows 'Ungroup selection' in context menu for gro
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -5852,7 +5841,7 @@ exports[`contextMenu element > shows 'Ungroup selection' in context menu for gro
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -5885,6 +5874,16 @@ exports[`contextMenu element > shows 'Ungroup selection' in context menu for gro
         "keyTest": [Function],
         "label": "labels.group",
         "name": "group",
+        "perform": [Function],
+        "predicate": [Function],
+        "trackEvent": {
+          "category": "element",
+        },
+      },
+      {
+        "icon": null,
+        "label": "labels.autoResize",
+        "name": "autoResize",
         "perform": [Function],
         "predicate": [Function],
         "trackEvent": {
@@ -5951,40 +5950,40 @@ exports[`contextMenu element > shows 'Ungroup selection' in context menu for gro
           stroke="currentColor"
           strokeLinecap="round"
           strokeLinejoin="round"
-          viewBox="0 0 20 20"
+          strokeWidth={2}
+          style={
+            {
+              "transform": "rotate(180deg)",
+            }
+          }
+          viewBox="0 0 24 24"
         >
-          <React.Fragment>
-            <g
-              clipPath="url(#a)"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="1.25"
-            >
-              <path
-                clipRule="evenodd"
-                d="M6.944 12.5H12.5v1.389a1.389 1.389 0 0 1-1.389 1.389H5.556a1.389 1.389 0 0 1-1.39-1.39V8.334a1.389 1.389 0 0 1 1.39-1.389h1.388"
-                fill="currentColor"
-                fillRule="evenodd"
-              />
-              <path
-                d="M13.889 4.167H8.333c-.767 0-1.389.621-1.389 1.389v5.555c0 .767.622 1.389 1.39 1.389h5.555c.767 0 1.389-.622 1.389-1.389V5.556c0-.768-.622-1.39-1.39-1.39Z"
-              />
-            </g>
-            <defs>
-              <clipPath
-                id="a"
-              >
-                <path
-                  d="M0 0h20v20H0z"
-                  fill="#fff"
-                />
-              </clipPath>
-            </defs>
-          </React.Fragment>
+          <g
+            strokeWidth={"1.50000"}
+          >
+            <path
+              d="M0 0h24v24H0z"
+              fill="none"
+              stroke="none"
+            />
+            <path
+              d="M12 5l0 14"
+            />
+            <path
+              d="M16 9l-4 -4"
+            />
+            <path
+              d="M8 9l4 -4"
+            />
+          </g>
         </svg>,
         "keyPriority": 40,
         "keyTest": [Function],
+        "keywords": [
+          "move down",
+          "zindex",
+          "layer",
+        ],
         "label": "labels.sendBackward",
         "name": "sendBackward",
         "perform": [Function],
@@ -6003,38 +6002,35 @@ exports[`contextMenu element > shows 'Ungroup selection' in context menu for gro
           stroke="currentColor"
           strokeLinecap="round"
           strokeLinejoin="round"
-          viewBox="0 0 20 20"
+          strokeWidth={2}
+          viewBox="0 0 24 24"
         >
-          <React.Fragment>
-            <g
-              clipPath="url(#a)"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="1.25"
-            >
-              <path
-                d="M13.889 4.167H8.333c-.767 0-1.389.622-1.389 1.389v5.555c0 .767.622 1.389 1.39 1.389h5.555c.767 0 1.389-.622 1.389-1.389V5.556c0-.767-.622-1.39-1.39-1.39Z"
-                fill="currentColor"
-              />
-              <path
-                d="M12.5 12.5v1.389a1.389 1.389 0 0 1-1.389 1.389H5.556a1.389 1.389 0 0 1-1.39-1.39V8.334a1.389 1.389 0 0 1 1.39-1.389h1.388"
-              />
-            </g>
-            <defs>
-              <clipPath
-                id="a"
-              >
-                <path
-                  d="M0 0h20v20H0z"
-                  fill="#fff"
-                />
-              </clipPath>
-            </defs>
-          </React.Fragment>
+          <g
+            strokeWidth={"1.50000"}
+          >
+            <path
+              d="M0 0h24v24H0z"
+              fill="none"
+              stroke="none"
+            />
+            <path
+              d="M12 5l0 14"
+            />
+            <path
+              d="M16 9l-4 -4"
+            />
+            <path
+              d="M8 9l4 -4"
+            />
+          </g>
         </svg>,
         "keyPriority": 40,
         "keyTest": [Function],
+        "keywords": [
+          "move up",
+          "zindex",
+          "layer",
+        ],
         "label": "labels.bringForward",
         "name": "bringForward",
         "perform": [Function],
@@ -6053,62 +6049,42 @@ exports[`contextMenu element > shows 'Ungroup selection' in context menu for gro
           stroke="currentColor"
           strokeLinecap="round"
           strokeLinejoin="round"
-          viewBox="0 0 20 20"
+          strokeWidth={2}
+          style={
+            {
+              "transform": "rotate(180deg)",
+            }
+          }
+          viewBox="0 0 24 24"
         >
-          <React.Fragment>
-            <g
-              clipPath="url(#a)"
-            >
-              <path
-                d="M5.441 9.792h2.451a2.316 2.316 0 0 1 2.316 2.316v2.45a2.316 2.316 0 0 1-2.316 2.317h-2.45a2.316 2.316 0 0 1-2.317-2.316v-2.451a2.316 2.316 0 0 1 2.316-2.316Z"
-                stroke="currentColor"
-                strokeWidth="1.25"
-              />
-              <path
-                d="M5.441 9.792h2.451a2.316 2.316 0 0 1 2.316 2.316v2.45a2.316 2.316 0 0 1-2.316 2.317h-2.45a2.316 2.316 0 0 1-2.317-2.316v-2.451a2.316 2.316 0 0 1 2.316-2.316Z"
-                stroke="currentColor"
-                strokeWidth="1.25"
-              />
-              <mask
-                fill="#fff"
-                id="SendToBackIcon"
-              >
-                <path
-                  clipRule="evenodd"
-                  d="M9.167 5.833v2.06a2.941 2.941 0 0 0 2.94 2.94h2.06v.393a2.941 2.941 0 0 1-2.941 2.94h-.393v-2.058a2.941 2.941 0 0 0-2.94-2.941h-2.06v-.393a2.941 2.941 0 0 1 2.942-2.94h.392Z"
-                  fillRule="evenodd"
-                />
-              </mask>
-              <path
-                clipRule="evenodd"
-                d="M9.167 5.833v2.06a2.941 2.941 0 0 0 2.94 2.94h2.06v.393a2.941 2.941 0 0 1-2.941 2.94h-.393v-2.058a2.941 2.941 0 0 0-2.94-2.941h-2.06v-.393a2.941 2.941 0 0 1 2.942-2.94h.392Z"
-                fill="currentColor"
-                fillRule="evenodd"
-              />
-              <path
-                d="M9.167 5.833h1.25v-1.25h-1.25v1.25Zm5 5h1.25v-1.25h-1.25v1.25Zm-3.334 3.334h-1.25v1.25h1.25v-1.25Zm-5-5h-1.25v1.25h1.25v-1.25Zm2.084-3.334v2.06h2.5v-2.06h-2.5Zm0 2.06a4.191 4.191 0 0 0 4.19 4.19v-2.5a1.691 1.691 0 0 1-1.69-1.69h-2.5Zm4.19 4.19h2.06v-2.5h-2.06v2.5Zm.81-1.25v.393h2.5v-.393h-2.5Zm0 .393c0 .933-.758 1.69-1.691 1.69v2.5a4.191 4.191 0 0 0 4.19-4.19h-2.5Zm-1.691 1.69h-.393v2.5h.393v-2.5Zm.857 1.25v-2.058h-2.5v2.059h2.5Zm0-2.058a4.191 4.191 0 0 0-4.19-4.191v2.5c.933 0 1.69.757 1.69 1.69h2.5Zm-4.19-4.191h-2.06v2.5h2.06v-2.5Zm-.81 1.25v-.393h-2.5v.393h2.5Zm0-.393c0-.934.758-1.69 1.692-1.69v-2.5a4.191 4.191 0 0 0-4.192 4.19h2.5Zm1.692-1.69h.392v-2.5h-.392v2.5Z"
-                fill="currentColor"
-                mask="url(#SendToBackIcon)"
-              />
-              <path
-                d="M12.108 3.125h2.45a2.316 2.316 0 0 1 2.317 2.316v2.451a2.316 2.316 0 0 1-2.316 2.316h-2.451a2.316 2.316 0 0 1-2.316-2.316v-2.45a2.316 2.316 0 0 1 2.316-2.317Z"
-                stroke="currentColor"
-                strokeWidth="1.25"
-              />
-            </g>
-            <defs>
-              <clipPath
-                id="a"
-              >
-                <path
-                  d="M0 0h20v20H0z"
-                  fill="#fff"
-                />
-              </clipPath>
-            </defs>
-          </React.Fragment>
+          <g
+            strokeWidth={"1.50000"}
+          >
+            <path
+              d="M0 0h24v24H0z"
+              fill="none"
+              stroke="none"
+            />
+            <path
+              d="M12 10l0 10"
+            />
+            <path
+              d="M12 10l4 4"
+            />
+            <path
+              d="M12 10l-4 4"
+            />
+            <path
+              d="M4 4l16 0"
+            />
+          </g>
         </svg>,
         "keyTest": [Function],
+        "keywords": [
+          "move down",
+          "zindex",
+          "layer",
+        ],
         "label": "labels.sendToBack",
         "name": "sendToBack",
         "perform": [Function],
@@ -6127,35 +6103,37 @@ exports[`contextMenu element > shows 'Ungroup selection' in context menu for gro
           stroke="currentColor"
           strokeLinecap="round"
           strokeLinejoin="round"
-          viewBox="0 0 20 20"
+          strokeWidth={2}
+          viewBox="0 0 24 24"
         >
-          <React.Fragment>
-            <g
-              clipPath="url(#a)"
-              stroke="currentColor"
-              strokeWidth="1.25"
-            >
-              <path
-                d="M8.775 6.458h2.45a2.316 2.316 0 0 1 2.317 2.316v2.452a2.316 2.316 0 0 1-2.316 2.316H8.774a2.316 2.316 0 0 1-2.317-2.316V8.774a2.316 2.316 0 0 1 2.317-2.316Z"
-                fill="currentColor"
-              />
-              <path
-                d="M5.441 9.792h2.451a2.316 2.316 0 0 1 2.316 2.316v2.45a2.316 2.316 0 0 1-2.316 2.317h-2.45a2.316 2.316 0 0 1-2.317-2.316v-2.451a2.316 2.316 0 0 1 2.316-2.316ZM12.108 3.125h2.45a2.316 2.316 0 0 1 2.317 2.316v2.451a2.316 2.316 0 0 1-2.316 2.316h-2.451a2.316 2.316 0 0 1-2.316-2.316v-2.45a2.316 2.316 0 0 1 2.316-2.317Z"
-              />
-            </g>
-            <defs>
-              <clipPath
-                id="a"
-              >
-                <path
-                  d="M0 0h20v20H0z"
-                  fill="#fff"
-                />
-              </clipPath>
-            </defs>
-          </React.Fragment>
+          <g
+            strokeWidth={"1.50000"}
+          >
+            <path
+              d="M0 0h24v24H0z"
+              fill="none"
+              stroke="none"
+            />
+            <path
+              d="M12 10l0 10"
+            />
+            <path
+              d="M12 10l4 4"
+            />
+            <path
+              d="M12 10l-4 4"
+            />
+            <path
+              d="M4 4l16 0"
+            />
+          </g>
         </svg>,
         "keyTest": [Function],
+        "keywords": [
+          "move up",
+          "zindex",
+          "layer",
+        ],
         "label": "labels.bringToFront",
         "name": "bringToFront",
         "perform": [Function],
@@ -6178,7 +6156,7 @@ exports[`contextMenu element > shows 'Ungroup selection' in context menu for gro
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -6218,7 +6196,7 @@ exports[`contextMenu element > shows 'Ungroup selection' in context menu for gro
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -6246,7 +6224,11 @@ exports[`contextMenu element > shows 'Ungroup selection' in context menu for gro
       },
       "separator",
       {
+        "PanelComponent": [Function],
         "category": "Elements",
+        "keywords": [
+          "line",
+        ],
         "label": [Function],
         "name": "toggleLinearEditor",
         "perform": [Function],
@@ -6773,7 +6755,7 @@ exports[`contextMenu element > shows context menu for canvas > [end of test] app
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -6825,7 +6807,7 @@ exports[`contextMenu element > shows context menu for canvas > [end of test] app
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -7037,7 +7019,7 @@ exports[`contextMenu element > shows context menu for canvas > [end of test] app
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.5}
+            strokeWidth={"1.50000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -7093,7 +7075,7 @@ exports[`contextMenu element > shows context menu for canvas > [end of test] app
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -7137,7 +7119,7 @@ exports[`contextMenu element > shows context menu for canvas > [end of test] app
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -7190,7 +7172,7 @@ exports[`contextMenu element > shows context menu for canvas > [end of test] app
           <g
             fill="none"
             stroke="currentColor"
-            strokeWidth={1.5}
+            strokeWidth={"1.50000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -7232,7 +7214,7 @@ exports[`contextMenu element > shows context menu for canvas > [end of test] app
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -7411,6 +7393,7 @@ exports[`contextMenu element > shows context menu for element > [end of test] ap
   "collaborators": Map {},
   "contextMenu": {
     "items": [
+      "separator",
       {
         "icon": <svg
           aria-hidden="true"
@@ -7425,7 +7408,7 @@ exports[`contextMenu element > shows context menu for element > [end of test] ap
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -7528,7 +7511,7 @@ exports[`contextMenu element > shows context menu for element > [end of test] ap
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -7580,7 +7563,7 @@ exports[`contextMenu element > shows context menu for element > [end of test] ap
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -7646,7 +7629,7 @@ exports[`contextMenu element > shows context menu for element > [end of test] ap
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -7686,7 +7669,7 @@ exports[`contextMenu element > shows context menu for element > [end of test] ap
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -7719,6 +7702,16 @@ exports[`contextMenu element > shows context menu for element > [end of test] ap
         "keyTest": [Function],
         "label": "labels.group",
         "name": "group",
+        "perform": [Function],
+        "predicate": [Function],
+        "trackEvent": {
+          "category": "element",
+        },
+      },
+      {
+        "icon": null,
+        "label": "labels.autoResize",
+        "name": "autoResize",
         "perform": [Function],
         "predicate": [Function],
         "trackEvent": {
@@ -7785,40 +7778,40 @@ exports[`contextMenu element > shows context menu for element > [end of test] ap
           stroke="currentColor"
           strokeLinecap="round"
           strokeLinejoin="round"
-          viewBox="0 0 20 20"
+          strokeWidth={2}
+          style={
+            {
+              "transform": "rotate(180deg)",
+            }
+          }
+          viewBox="0 0 24 24"
         >
-          <React.Fragment>
-            <g
-              clipPath="url(#a)"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="1.25"
-            >
-              <path
-                clipRule="evenodd"
-                d="M6.944 12.5H12.5v1.389a1.389 1.389 0 0 1-1.389 1.389H5.556a1.389 1.389 0 0 1-1.39-1.39V8.334a1.389 1.389 0 0 1 1.39-1.389h1.388"
-                fill="currentColor"
-                fillRule="evenodd"
-              />
-              <path
-                d="M13.889 4.167H8.333c-.767 0-1.389.621-1.389 1.389v5.555c0 .767.622 1.389 1.39 1.389h5.555c.767 0 1.389-.622 1.389-1.389V5.556c0-.768-.622-1.39-1.39-1.39Z"
-              />
-            </g>
-            <defs>
-              <clipPath
-                id="a"
-              >
-                <path
-                  d="M0 0h20v20H0z"
-                  fill="#fff"
-                />
-              </clipPath>
-            </defs>
-          </React.Fragment>
+          <g
+            strokeWidth={"1.50000"}
+          >
+            <path
+              d="M0 0h24v24H0z"
+              fill="none"
+              stroke="none"
+            />
+            <path
+              d="M12 5l0 14"
+            />
+            <path
+              d="M16 9l-4 -4"
+            />
+            <path
+              d="M8 9l4 -4"
+            />
+          </g>
         </svg>,
         "keyPriority": 40,
         "keyTest": [Function],
+        "keywords": [
+          "move down",
+          "zindex",
+          "layer",
+        ],
         "label": "labels.sendBackward",
         "name": "sendBackward",
         "perform": [Function],
@@ -7837,38 +7830,35 @@ exports[`contextMenu element > shows context menu for element > [end of test] ap
           stroke="currentColor"
           strokeLinecap="round"
           strokeLinejoin="round"
-          viewBox="0 0 20 20"
+          strokeWidth={2}
+          viewBox="0 0 24 24"
         >
-          <React.Fragment>
-            <g
-              clipPath="url(#a)"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="1.25"
-            >
-              <path
-                d="M13.889 4.167H8.333c-.767 0-1.389.622-1.389 1.389v5.555c0 .767.622 1.389 1.39 1.389h5.555c.767 0 1.389-.622 1.389-1.389V5.556c0-.767-.622-1.39-1.39-1.39Z"
-                fill="currentColor"
-              />
-              <path
-                d="M12.5 12.5v1.389a1.389 1.389 0 0 1-1.389 1.389H5.556a1.389 1.389 0 0 1-1.39-1.39V8.334a1.389 1.389 0 0 1 1.39-1.389h1.388"
-              />
-            </g>
-            <defs>
-              <clipPath
-                id="a"
-              >
-                <path
-                  d="M0 0h20v20H0z"
-                  fill="#fff"
-                />
-              </clipPath>
-            </defs>
-          </React.Fragment>
+          <g
+            strokeWidth={"1.50000"}
+          >
+            <path
+              d="M0 0h24v24H0z"
+              fill="none"
+              stroke="none"
+            />
+            <path
+              d="M12 5l0 14"
+            />
+            <path
+              d="M16 9l-4 -4"
+            />
+            <path
+              d="M8 9l4 -4"
+            />
+          </g>
         </svg>,
         "keyPriority": 40,
         "keyTest": [Function],
+        "keywords": [
+          "move up",
+          "zindex",
+          "layer",
+        ],
         "label": "labels.bringForward",
         "name": "bringForward",
         "perform": [Function],
@@ -7887,62 +7877,42 @@ exports[`contextMenu element > shows context menu for element > [end of test] ap
           stroke="currentColor"
           strokeLinecap="round"
           strokeLinejoin="round"
-          viewBox="0 0 20 20"
+          strokeWidth={2}
+          style={
+            {
+              "transform": "rotate(180deg)",
+            }
+          }
+          viewBox="0 0 24 24"
         >
-          <React.Fragment>
-            <g
-              clipPath="url(#a)"
-            >
-              <path
-                d="M5.441 9.792h2.451a2.316 2.316 0 0 1 2.316 2.316v2.45a2.316 2.316 0 0 1-2.316 2.317h-2.45a2.316 2.316 0 0 1-2.317-2.316v-2.451a2.316 2.316 0 0 1 2.316-2.316Z"
-                stroke="currentColor"
-                strokeWidth="1.25"
-              />
-              <path
-                d="M5.441 9.792h2.451a2.316 2.316 0 0 1 2.316 2.316v2.45a2.316 2.316 0 0 1-2.316 2.317h-2.45a2.316 2.316 0 0 1-2.317-2.316v-2.451a2.316 2.316 0 0 1 2.316-2.316Z"
-                stroke="currentColor"
-                strokeWidth="1.25"
-              />
-              <mask
-                fill="#fff"
-                id="SendToBackIcon"
-              >
-                <path
-                  clipRule="evenodd"
-                  d="M9.167 5.833v2.06a2.941 2.941 0 0 0 2.94 2.94h2.06v.393a2.941 2.941 0 0 1-2.941 2.94h-.393v-2.058a2.941 2.941 0 0 0-2.94-2.941h-2.06v-.393a2.941 2.941 0 0 1 2.942-2.94h.392Z"
-                  fillRule="evenodd"
-                />
-              </mask>
-              <path
-                clipRule="evenodd"
-                d="M9.167 5.833v2.06a2.941 2.941 0 0 0 2.94 2.94h2.06v.393a2.941 2.941 0 0 1-2.941 2.94h-.393v-2.058a2.941 2.941 0 0 0-2.94-2.941h-2.06v-.393a2.941 2.941 0 0 1 2.942-2.94h.392Z"
-                fill="currentColor"
-                fillRule="evenodd"
-              />
-              <path
-                d="M9.167 5.833h1.25v-1.25h-1.25v1.25Zm5 5h1.25v-1.25h-1.25v1.25Zm-3.334 3.334h-1.25v1.25h1.25v-1.25Zm-5-5h-1.25v1.25h1.25v-1.25Zm2.084-3.334v2.06h2.5v-2.06h-2.5Zm0 2.06a4.191 4.191 0 0 0 4.19 4.19v-2.5a1.691 1.691 0 0 1-1.69-1.69h-2.5Zm4.19 4.19h2.06v-2.5h-2.06v2.5Zm.81-1.25v.393h2.5v-.393h-2.5Zm0 .393c0 .933-.758 1.69-1.691 1.69v2.5a4.191 4.191 0 0 0 4.19-4.19h-2.5Zm-1.691 1.69h-.393v2.5h.393v-2.5Zm.857 1.25v-2.058h-2.5v2.059h2.5Zm0-2.058a4.191 4.191 0 0 0-4.19-4.191v2.5c.933 0 1.69.757 1.69 1.69h2.5Zm-4.19-4.191h-2.06v2.5h2.06v-2.5Zm-.81 1.25v-.393h-2.5v.393h2.5Zm0-.393c0-.934.758-1.69 1.692-1.69v-2.5a4.191 4.191 0 0 0-4.192 4.19h2.5Zm1.692-1.69h.392v-2.5h-.392v2.5Z"
-                fill="currentColor"
-                mask="url(#SendToBackIcon)"
-              />
-              <path
-                d="M12.108 3.125h2.45a2.316 2.316 0 0 1 2.317 2.316v2.451a2.316 2.316 0 0 1-2.316 2.316h-2.451a2.316 2.316 0 0 1-2.316-2.316v-2.45a2.316 2.316 0 0 1 2.316-2.317Z"
-                stroke="currentColor"
-                strokeWidth="1.25"
-              />
-            </g>
-            <defs>
-              <clipPath
-                id="a"
-              >
-                <path
-                  d="M0 0h20v20H0z"
-                  fill="#fff"
-                />
-              </clipPath>
-            </defs>
-          </React.Fragment>
+          <g
+            strokeWidth={"1.50000"}
+          >
+            <path
+              d="M0 0h24v24H0z"
+              fill="none"
+              stroke="none"
+            />
+            <path
+              d="M12 10l0 10"
+            />
+            <path
+              d="M12 10l4 4"
+            />
+            <path
+              d="M12 10l-4 4"
+            />
+            <path
+              d="M4 4l16 0"
+            />
+          </g>
         </svg>,
         "keyTest": [Function],
+        "keywords": [
+          "move down",
+          "zindex",
+          "layer",
+        ],
         "label": "labels.sendToBack",
         "name": "sendToBack",
         "perform": [Function],
@@ -7961,35 +7931,37 @@ exports[`contextMenu element > shows context menu for element > [end of test] ap
           stroke="currentColor"
           strokeLinecap="round"
           strokeLinejoin="round"
-          viewBox="0 0 20 20"
+          strokeWidth={2}
+          viewBox="0 0 24 24"
         >
-          <React.Fragment>
-            <g
-              clipPath="url(#a)"
-              stroke="currentColor"
-              strokeWidth="1.25"
-            >
-              <path
-                d="M8.775 6.458h2.45a2.316 2.316 0 0 1 2.317 2.316v2.452a2.316 2.316 0 0 1-2.316 2.316H8.774a2.316 2.316 0 0 1-2.317-2.316V8.774a2.316 2.316 0 0 1 2.317-2.316Z"
-                fill="currentColor"
-              />
-              <path
-                d="M5.441 9.792h2.451a2.316 2.316 0 0 1 2.316 2.316v2.45a2.316 2.316 0 0 1-2.316 2.317h-2.45a2.316 2.316 0 0 1-2.317-2.316v-2.451a2.316 2.316 0 0 1 2.316-2.316ZM12.108 3.125h2.45a2.316 2.316 0 0 1 2.317 2.316v2.451a2.316 2.316 0 0 1-2.316 2.316h-2.451a2.316 2.316 0 0 1-2.316-2.316v-2.45a2.316 2.316 0 0 1 2.316-2.317Z"
-              />
-            </g>
-            <defs>
-              <clipPath
-                id="a"
-              >
-                <path
-                  d="M0 0h20v20H0z"
-                  fill="#fff"
-                />
-              </clipPath>
-            </defs>
-          </React.Fragment>
+          <g
+            strokeWidth={"1.50000"}
+          >
+            <path
+              d="M0 0h24v24H0z"
+              fill="none"
+              stroke="none"
+            />
+            <path
+              d="M12 10l0 10"
+            />
+            <path
+              d="M12 10l4 4"
+            />
+            <path
+              d="M12 10l-4 4"
+            />
+            <path
+              d="M4 4l16 0"
+            />
+          </g>
         </svg>,
         "keyTest": [Function],
+        "keywords": [
+          "move up",
+          "zindex",
+          "layer",
+        ],
         "label": "labels.bringToFront",
         "name": "bringToFront",
         "perform": [Function],
@@ -8012,7 +7984,7 @@ exports[`contextMenu element > shows context menu for element > [end of test] ap
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -8052,7 +8024,7 @@ exports[`contextMenu element > shows context menu for element > [end of test] ap
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -8080,7 +8052,11 @@ exports[`contextMenu element > shows context menu for element > [end of test] ap
       },
       "separator",
       {
+        "PanelComponent": [Function],
         "category": "Elements",
+        "keywords": [
+          "line",
+        ],
         "label": [Function],
         "name": "toggleLinearEditor",
         "perform": [Function],
@@ -8304,6 +8280,7 @@ exports[`contextMenu element > shows context menu for element > [end of test] ap
   "collaborators": Map {},
   "contextMenu": {
     "items": [
+      "separator",
       {
         "icon": <svg
           aria-hidden="true"
@@ -8318,7 +8295,7 @@ exports[`contextMenu element > shows context menu for element > [end of test] ap
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -8421,7 +8398,7 @@ exports[`contextMenu element > shows context menu for element > [end of test] ap
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -8473,7 +8450,7 @@ exports[`contextMenu element > shows context menu for element > [end of test] ap
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -8539,7 +8516,7 @@ exports[`contextMenu element > shows context menu for element > [end of test] ap
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -8579,7 +8556,7 @@ exports[`contextMenu element > shows context menu for element > [end of test] ap
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -8612,6 +8589,16 @@ exports[`contextMenu element > shows context menu for element > [end of test] ap
         "keyTest": [Function],
         "label": "labels.group",
         "name": "group",
+        "perform": [Function],
+        "predicate": [Function],
+        "trackEvent": {
+          "category": "element",
+        },
+      },
+      {
+        "icon": null,
+        "label": "labels.autoResize",
+        "name": "autoResize",
         "perform": [Function],
         "predicate": [Function],
         "trackEvent": {
@@ -8678,40 +8665,40 @@ exports[`contextMenu element > shows context menu for element > [end of test] ap
           stroke="currentColor"
           strokeLinecap="round"
           strokeLinejoin="round"
-          viewBox="0 0 20 20"
+          strokeWidth={2}
+          style={
+            {
+              "transform": "rotate(180deg)",
+            }
+          }
+          viewBox="0 0 24 24"
         >
-          <React.Fragment>
-            <g
-              clipPath="url(#a)"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="1.25"
-            >
-              <path
-                clipRule="evenodd"
-                d="M6.944 12.5H12.5v1.389a1.389 1.389 0 0 1-1.389 1.389H5.556a1.389 1.389 0 0 1-1.39-1.39V8.334a1.389 1.389 0 0 1 1.39-1.389h1.388"
-                fill="currentColor"
-                fillRule="evenodd"
-              />
-              <path
-                d="M13.889 4.167H8.333c-.767 0-1.389.621-1.389 1.389v5.555c0 .767.622 1.389 1.39 1.389h5.555c.767 0 1.389-.622 1.389-1.389V5.556c0-.768-.622-1.39-1.39-1.39Z"
-              />
-            </g>
-            <defs>
-              <clipPath
-                id="a"
-              >
-                <path
-                  d="M0 0h20v20H0z"
-                  fill="#fff"
-                />
-              </clipPath>
-            </defs>
-          </React.Fragment>
+          <g
+            strokeWidth={"1.50000"}
+          >
+            <path
+              d="M0 0h24v24H0z"
+              fill="none"
+              stroke="none"
+            />
+            <path
+              d="M12 5l0 14"
+            />
+            <path
+              d="M16 9l-4 -4"
+            />
+            <path
+              d="M8 9l4 -4"
+            />
+          </g>
         </svg>,
         "keyPriority": 40,
         "keyTest": [Function],
+        "keywords": [
+          "move down",
+          "zindex",
+          "layer",
+        ],
         "label": "labels.sendBackward",
         "name": "sendBackward",
         "perform": [Function],
@@ -8730,38 +8717,35 @@ exports[`contextMenu element > shows context menu for element > [end of test] ap
           stroke="currentColor"
           strokeLinecap="round"
           strokeLinejoin="round"
-          viewBox="0 0 20 20"
+          strokeWidth={2}
+          viewBox="0 0 24 24"
         >
-          <React.Fragment>
-            <g
-              clipPath="url(#a)"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="1.25"
-            >
-              <path
-                d="M13.889 4.167H8.333c-.767 0-1.389.622-1.389 1.389v5.555c0 .767.622 1.389 1.39 1.389h5.555c.767 0 1.389-.622 1.389-1.389V5.556c0-.767-.622-1.39-1.39-1.39Z"
-                fill="currentColor"
-              />
-              <path
-                d="M12.5 12.5v1.389a1.389 1.389 0 0 1-1.389 1.389H5.556a1.389 1.389 0 0 1-1.39-1.39V8.334a1.389 1.389 0 0 1 1.39-1.389h1.388"
-              />
-            </g>
-            <defs>
-              <clipPath
-                id="a"
-              >
-                <path
-                  d="M0 0h20v20H0z"
-                  fill="#fff"
-                />
-              </clipPath>
-            </defs>
-          </React.Fragment>
+          <g
+            strokeWidth={"1.50000"}
+          >
+            <path
+              d="M0 0h24v24H0z"
+              fill="none"
+              stroke="none"
+            />
+            <path
+              d="M12 5l0 14"
+            />
+            <path
+              d="M16 9l-4 -4"
+            />
+            <path
+              d="M8 9l4 -4"
+            />
+          </g>
         </svg>,
         "keyPriority": 40,
         "keyTest": [Function],
+        "keywords": [
+          "move up",
+          "zindex",
+          "layer",
+        ],
         "label": "labels.bringForward",
         "name": "bringForward",
         "perform": [Function],
@@ -8780,62 +8764,42 @@ exports[`contextMenu element > shows context menu for element > [end of test] ap
           stroke="currentColor"
           strokeLinecap="round"
           strokeLinejoin="round"
-          viewBox="0 0 20 20"
+          strokeWidth={2}
+          style={
+            {
+              "transform": "rotate(180deg)",
+            }
+          }
+          viewBox="0 0 24 24"
         >
-          <React.Fragment>
-            <g
-              clipPath="url(#a)"
-            >
-              <path
-                d="M5.441 9.792h2.451a2.316 2.316 0 0 1 2.316 2.316v2.45a2.316 2.316 0 0 1-2.316 2.317h-2.45a2.316 2.316 0 0 1-2.317-2.316v-2.451a2.316 2.316 0 0 1 2.316-2.316Z"
-                stroke="currentColor"
-                strokeWidth="1.25"
-              />
-              <path
-                d="M5.441 9.792h2.451a2.316 2.316 0 0 1 2.316 2.316v2.45a2.316 2.316 0 0 1-2.316 2.317h-2.45a2.316 2.316 0 0 1-2.317-2.316v-2.451a2.316 2.316 0 0 1 2.316-2.316Z"
-                stroke="currentColor"
-                strokeWidth="1.25"
-              />
-              <mask
-                fill="#fff"
-                id="SendToBackIcon"
-              >
-                <path
-                  clipRule="evenodd"
-                  d="M9.167 5.833v2.06a2.941 2.941 0 0 0 2.94 2.94h2.06v.393a2.941 2.941 0 0 1-2.941 2.94h-.393v-2.058a2.941 2.941 0 0 0-2.94-2.941h-2.06v-.393a2.941 2.941 0 0 1 2.942-2.94h.392Z"
-                  fillRule="evenodd"
-                />
-              </mask>
-              <path
-                clipRule="evenodd"
-                d="M9.167 5.833v2.06a2.941 2.941 0 0 0 2.94 2.94h2.06v.393a2.941 2.941 0 0 1-2.941 2.94h-.393v-2.058a2.941 2.941 0 0 0-2.94-2.941h-2.06v-.393a2.941 2.941 0 0 1 2.942-2.94h.392Z"
-                fill="currentColor"
-                fillRule="evenodd"
-              />
-              <path
-                d="M9.167 5.833h1.25v-1.25h-1.25v1.25Zm5 5h1.25v-1.25h-1.25v1.25Zm-3.334 3.334h-1.25v1.25h1.25v-1.25Zm-5-5h-1.25v1.25h1.25v-1.25Zm2.084-3.334v2.06h2.5v-2.06h-2.5Zm0 2.06a4.191 4.191 0 0 0 4.19 4.19v-2.5a1.691 1.691 0 0 1-1.69-1.69h-2.5Zm4.19 4.19h2.06v-2.5h-2.06v2.5Zm.81-1.25v.393h2.5v-.393h-2.5Zm0 .393c0 .933-.758 1.69-1.691 1.69v2.5a4.191 4.191 0 0 0 4.19-4.19h-2.5Zm-1.691 1.69h-.393v2.5h.393v-2.5Zm.857 1.25v-2.058h-2.5v2.059h2.5Zm0-2.058a4.191 4.191 0 0 0-4.19-4.191v2.5c.933 0 1.69.757 1.69 1.69h2.5Zm-4.19-4.191h-2.06v2.5h2.06v-2.5Zm-.81 1.25v-.393h-2.5v.393h2.5Zm0-.393c0-.934.758-1.69 1.692-1.69v-2.5a4.191 4.191 0 0 0-4.192 4.19h2.5Zm1.692-1.69h.392v-2.5h-.392v2.5Z"
-                fill="currentColor"
-                mask="url(#SendToBackIcon)"
-              />
-              <path
-                d="M12.108 3.125h2.45a2.316 2.316 0 0 1 2.317 2.316v2.451a2.316 2.316 0 0 1-2.316 2.316h-2.451a2.316 2.316 0 0 1-2.316-2.316v-2.45a2.316 2.316 0 0 1 2.316-2.317Z"
-                stroke="currentColor"
-                strokeWidth="1.25"
-              />
-            </g>
-            <defs>
-              <clipPath
-                id="a"
-              >
-                <path
-                  d="M0 0h20v20H0z"
-                  fill="#fff"
-                />
-              </clipPath>
-            </defs>
-          </React.Fragment>
+          <g
+            strokeWidth={"1.50000"}
+          >
+            <path
+              d="M0 0h24v24H0z"
+              fill="none"
+              stroke="none"
+            />
+            <path
+              d="M12 10l0 10"
+            />
+            <path
+              d="M12 10l4 4"
+            />
+            <path
+              d="M12 10l-4 4"
+            />
+            <path
+              d="M4 4l16 0"
+            />
+          </g>
         </svg>,
         "keyTest": [Function],
+        "keywords": [
+          "move down",
+          "zindex",
+          "layer",
+        ],
         "label": "labels.sendToBack",
         "name": "sendToBack",
         "perform": [Function],
@@ -8854,35 +8818,37 @@ exports[`contextMenu element > shows context menu for element > [end of test] ap
           stroke="currentColor"
           strokeLinecap="round"
           strokeLinejoin="round"
-          viewBox="0 0 20 20"
+          strokeWidth={2}
+          viewBox="0 0 24 24"
         >
-          <React.Fragment>
-            <g
-              clipPath="url(#a)"
-              stroke="currentColor"
-              strokeWidth="1.25"
-            >
-              <path
-                d="M8.775 6.458h2.45a2.316 2.316 0 0 1 2.317 2.316v2.452a2.316 2.316 0 0 1-2.316 2.316H8.774a2.316 2.316 0 0 1-2.317-2.316V8.774a2.316 2.316 0 0 1 2.317-2.316Z"
-                fill="currentColor"
-              />
-              <path
-                d="M5.441 9.792h2.451a2.316 2.316 0 0 1 2.316 2.316v2.45a2.316 2.316 0 0 1-2.316 2.317h-2.45a2.316 2.316 0 0 1-2.317-2.316v-2.451a2.316 2.316 0 0 1 2.316-2.316ZM12.108 3.125h2.45a2.316 2.316 0 0 1 2.317 2.316v2.451a2.316 2.316 0 0 1-2.316 2.316h-2.451a2.316 2.316 0 0 1-2.316-2.316v-2.45a2.316 2.316 0 0 1 2.316-2.317Z"
-              />
-            </g>
-            <defs>
-              <clipPath
-                id="a"
-              >
-                <path
-                  d="M0 0h20v20H0z"
-                  fill="#fff"
-                />
-              </clipPath>
-            </defs>
-          </React.Fragment>
+          <g
+            strokeWidth={"1.50000"}
+          >
+            <path
+              d="M0 0h24v24H0z"
+              fill="none"
+              stroke="none"
+            />
+            <path
+              d="M12 10l0 10"
+            />
+            <path
+              d="M12 10l4 4"
+            />
+            <path
+              d="M12 10l-4 4"
+            />
+            <path
+              d="M4 4l16 0"
+            />
+          </g>
         </svg>,
         "keyTest": [Function],
+        "keywords": [
+          "move up",
+          "zindex",
+          "layer",
+        ],
         "label": "labels.bringToFront",
         "name": "bringToFront",
         "perform": [Function],
@@ -8905,7 +8871,7 @@ exports[`contextMenu element > shows context menu for element > [end of test] ap
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -8945,7 +8911,7 @@ exports[`contextMenu element > shows context menu for element > [end of test] ap
           viewBox="0 0 24 24"
         >
           <g
-            strokeWidth={1.25}
+            strokeWidth={"1.25000"}
           >
             <path
               d="M0 0h24v24H0z"
@@ -8973,7 +8939,11 @@ exports[`contextMenu element > shows context menu for element > [end of test] ap
       },
       "separator",
       {
+        "PanelComponent": [Function],
         "category": "Elements",
+        "keywords": [
+          "line",
+        ],
         "label": [Function],
         "name": "toggleLinearEditor",
         "perform": [Function],

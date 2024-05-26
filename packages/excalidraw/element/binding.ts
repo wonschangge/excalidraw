@@ -4,7 +4,7 @@ import * as GALine from "../galines";
 import * as GAPoint from "../gapoints";
 import * as GATransform from "../gatransforms";
 
-import {
+import type {
   ElementsMap,
   ExcalidrawArrowElement,
   ExcalidrawBindableElement,
@@ -24,16 +24,18 @@ import {
   PointBinding,
 } from "./types";
 
+import { getElementAbsoluteCoords } from "./bounds";
+import type { AppClassProperties, AppState, Point } from "../types";
 import { isPointOnShape } from "../../utils/collision";
 import { KEYS } from "../keys";
 import { rotatePoint } from "../math";
 import { getElementAtPosition } from "../scene";
 import Scene from "../scene/Scene";
-import { AppClassProperties, AppState, Point } from "../types";
+
 import { arrayToMap, tupleToCoors } from "../utils";
-import { getElementAbsoluteCoords, getElementBounds } from "./bounds";
+import { getElementBounds } from "./bounds";
 import { LinearElementEditor } from "./linearElementEditor";
-import { ElementUpdate, mutateElement } from "./mutateElement";
+import { mutateElement } from "./mutateElement";
 import { getElementShape } from "./shape";
 import { getBoundTextElement, handleBindTextResize } from "./textElement";
 import {
@@ -44,6 +46,7 @@ import {
   isLinearElement,
   isTextElement,
 } from "./typeChecks";
+import type { ElementUpdate } from "./mutateElement";
 
 export type SuggestedBinding =
   | NonDeleted<ExcalidrawBindableElement>

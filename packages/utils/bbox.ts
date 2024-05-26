@@ -1,6 +1,6 @@
-import { Bounds } from "../excalidraw/element/bounds";
+import type { Bounds } from "../excalidraw/element/bounds";
 import { crossProduct } from "../excalidraw/math";
-import { Point } from "../excalidraw/types";
+import type { Point } from "../excalidraw/types";
 
 export type LineSegment = [Point, Point];
 

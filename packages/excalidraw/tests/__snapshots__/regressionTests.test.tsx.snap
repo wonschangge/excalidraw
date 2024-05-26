@@ -337,7 +337,7 @@ History {
               "groupIds": [
                 "id5",
               ],
-              "index": "a1V",
+              "index": "a2",
             },
             "inserted": {
               "groupIds": [],
@@ -349,9 +349,11 @@ History {
               "groupIds": [
                 "id5",
               ],
+              "index": "a3",
             },
             "inserted": {
               "groupIds": [],
+              "index": "a2",
             },
           },
         },
@@ -721,7 +723,7 @@ History {
               "groupIds": [
                 "id4",
               ],
-              "index": "a1V",
+              "index": "a2",
             },
             "inserted": {
               "groupIds": [],
@@ -733,9 +735,11 @@ History {
               "groupIds": [
                 "id4",
               ],
+              "index": "a3",
             },
             "inserted": {
               "groupIds": [],
+              "index": "a2",
             },
           },
         },
@@ -1861,7 +1865,7 @@ History {
               "groupIds": [
                 "id5",
               ],
-              "index": "a1V",
+              "index": "a2",
             },
             "inserted": {
               "groupIds": [],
@@ -1873,9 +1877,11 @@ History {
               "groupIds": [
                 "id5",
               ],
+              "index": "a3",
             },
             "inserted": {
               "groupIds": [],
+              "index": "a2",
             },
           },
         },
@@ -10800,7 +10806,7 @@ exports[`regression tests > pinch-to-zoom works > [end of test] appState 1`] = `
   "pendingImageElementId": null,
   "previousSelectedElementIds": {},
   "resizingElement": null,
-  "scrollX": -2.916666666666668,
+  "scrollX": "-6.25000",
   "scrollY": 0,
   "scrolledOutside": false,
   "selectedElementIds": {},
@@ -12864,7 +12870,7 @@ History {
                 "id5",
                 "id3",
               ],
-              "index": "a1V",
+              "index": "a2",
             },
             "inserted": {
               "groupIds": [
@@ -12879,11 +12885,13 @@ History {
                 "id5",
                 "id3",
               ],
+              "index": "a3",
             },
             "inserted": {
               "groupIds": [
                 "id3",
               ],
+              "index": "a2",
             },
           },
         },
@@ -13745,8 +13753,8 @@ exports[`regression tests > two-finger scroll works > [end of test] appState 1`]
   "pendingImageElementId": null,
   "previousSelectedElementIds": {},
   "resizingElement": null,
-  "scrollX": 10,
-  "scrollY": -10,
+  "scrollX": 20,
+  "scrollY": "-18.53553",
   "scrolledOutside": false,
   "selectedElementIds": {},
   "selectedElementsAreBeingDragged": false,

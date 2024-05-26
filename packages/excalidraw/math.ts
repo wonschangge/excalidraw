@@ -1,17 +1,24 @@
-import { NormalizedZoomValue, Point, Segment, Vector, Zoom } from "./types";
+import type {
+  NormalizedZoomValue,
+  Point,
+  Segment,
+  Vector,
+  Zoom,
+} from "./types";
 import {
   DEFAULT_ADAPTIVE_RADIUS,
   LINE_CONFIRM_THRESHOLD,
   DEFAULT_PROPORTIONAL_RADIUS,
   ROUNDNESS,
 } from "./constants";
-import {
+import type {
   ExcalidrawElement,
   ExcalidrawLinearElement,
   NonDeleted,
 } from "./element/types";
-import { Bounds, getCurvePathOps } from "./element/bounds";
-import { Mutable } from "./utility-types";
+import { getCurvePathOps } from "./element/bounds";
+import type { Bounds } from "./element/bounds";
+import type { Mutable } from "./utility-types";
 import { ShapeCache } from "./scene/ShapeCache";
 
 export const rotate = (
