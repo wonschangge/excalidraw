@@ -1,6 +1,6 @@
 import { normalize, scaleVector } from "../../math";
-import { Point, Segment, Vector } from "../../types";
-import { BoundingBox, Bounds } from "../bounds";
+import type { Point, Segment, Vector } from "../../types";
+import type { BoundingBox, Bounds } from "../bounds";
 
 export function debugClear() {
   if (import.meta.env.DEV) {
@@ -104,23 +104,26 @@ export const debugDrawBoundingBox = (bbox: BoundingBox) => {
   ]);
 };
 
-export const debugDrawBounds = (bbox: Bounds) => {
-  debugDrawSegments([
+export const debugDrawBounds = (bbox: Bounds, color: string = "green") => {
+  debugDrawSegments(
     [
-      [bbox[0], bbox[1]],
-      [bbox[2], bbox[1]],
+      [
+        [bbox[0], bbox[1]],
+        [bbox[2], bbox[1]],
+      ],
+      [
+        [bbox[2], bbox[1]],
+        [bbox[2], bbox[3]],
+      ],
+      [
+        [bbox[2], bbox[3]],
+        [bbox[0], bbox[3]],
+      ],
+      [
+        [bbox[0], bbox[3]],
+        [bbox[0], bbox[1]],
+      ],
     ],
-    [
-      [bbox[2], bbox[1]],
-      [bbox[2], bbox[3]],
-    ],
-    [
-      [bbox[2], bbox[3]],
-      [bbox[0], bbox[3]],
-    ],
-    [
-      [bbox[0], bbox[3]],
-      [bbox[0], bbox[1]],
-    ],
-  ]);
+    color,
+  );
 };

@@ -19,10 +19,10 @@ import {
   vectorToHeading,
 } from "../../math";
 import Scene from "../../scene/Scene";
-import { LocalPoint, Point, Segment, Vector } from "../../types";
+import type { LocalPoint, Point, Segment, Vector } from "../../types";
 import { getHoveredElementForBinding } from "../binding";
-import { BoundingBox, Bounds } from "../bounds";
-import { ExcalidrawArrowElement, ExcalidrawElement } from "../types";
+import type { BoundingBox, Bounds } from "../bounds";
+import type { ExcalidrawArrowElement, ExcalidrawElement } from "../types";
 import {
   debugClear,
   debugDrawBounds,

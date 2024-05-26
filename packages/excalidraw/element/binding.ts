@@ -47,6 +47,11 @@ import {
   isTextElement,
 } from "./typeChecks";
 import type { ElementUpdate } from "./mutateElement";
+import {
+  debugDrawBoundingBox,
+  debugDrawBounds,
+  debugDrawPoint,
+} from "./arrow/debug";
 
 export type SuggestedBinding =
   | NonDeleted<ExcalidrawBindableElement>
@@ -660,14 +665,19 @@ const updateBoundPoint = (
           elementsMap,
         ).ratio;
 
-    const bounds = getElementBounds(bindableElement, elementsMap);
-    const localX = (bounds[2] - bounds[0]) * ratio[0];
-    const localY = (bounds[3] - bounds[1]) * ratio[1];
-    const globalX = bounds[0] + localX;
-    const globalY = bounds[1] + localY;
+    const unrotatedBounds = [
+      bindableElement.x,
+      bindableElement.y,
+      bindableElement.x + bindableElement.width,
+      bindableElement.y + bindableElement.height,
+    ];
+    const localX = (unrotatedBounds[2] - unrotatedBounds[0]) * ratio[0];
+    const localY = (unrotatedBounds[3] - unrotatedBounds[1]) * ratio[1];
+    const globalX = unrotatedBounds[0] + localX;
+    const globalY = unrotatedBounds[1] + localY;
     const globalMidPoint = [
-      bounds[0] + (bounds[2] - bounds[0]) / 2,
-      bounds[1] + (bounds[3] - bounds[1]) / 2,
+      unrotatedBounds[0] + (unrotatedBounds[2] - unrotatedBounds[0]) / 2,
+      unrotatedBounds[1] + (unrotatedBounds[3] - unrotatedBounds[1]) / 2,
     ] as Point;
     const [rotatedGlobalX, rotatedGlobalY] = rotatePoint(
       [globalX, globalY],
