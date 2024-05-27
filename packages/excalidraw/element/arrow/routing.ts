@@ -61,16 +61,13 @@ export const calculateElbowArrowJointPoints = (
     arrow,
     firstPoint,
     target,
+    startBounds,
+    endBounds,
   );
 
   let avoidBounds = [startBounds, endBounds].filter(
     (bb): bb is Bounds => bb !== null,
   );
-
-  const doBBoxesIntersect =
-    avoidBounds[0] &&
-    avoidBounds[1] &&
-    doBoundsIntersect(avoidBounds[0], avoidBounds[1]);
 
   const points = [
     firstPoint,
@@ -78,7 +75,7 @@ export const calculateElbowArrowJointPoints = (
       ? extendSegmentToBoundingBoxEdge(
           [firstPoint, addVectors(firstPoint, startHeading)],
           true,
-          avoidBounds,
+          startBounds !== null ? [startBounds] : [],
         )
       : addVectors(
           firstPoint,
@@ -88,13 +85,12 @@ export const calculateElbowArrowJointPoints = (
           ),
         ),
   ];
-
   const endPoints = [
     endHeading
       ? extendSegmentToBoundingBoxEdge(
           [addVectors(target, endHeading), target],
           false,
-          avoidBounds,
+          endBounds !== null ? [endBounds] : [],
         )
       : addVectors(
           target,
@@ -117,7 +113,8 @@ export const calculateElbowArrowJointPoints = (
   return calculateSegment(
     points,
     endPoints,
-    doBBoxesIntersect ? [] : avoidBounds,
+    avoidBounds,
+    //doBBoxesIntersect ? [] : avoidBounds,
   ).map((point) => toLocalSpace(arrow, point));
 };
 
@@ -179,17 +176,17 @@ const kernel = (
   const nextEndDot = dotProduct(nextEndVector, endVector);
   const alignedButNotRightThere =
     (end[0] - next[0] === 0) !== (end[1] - next[1] === 0);
-  // debugDrawPoint(next, "green");
+  debugDrawPoint(next, "green");
   // debugDrawPoint(end, "red");
   if (nextEndDot === -1 && alignedButNotRightThere) {
     next =
       rightStartNormalDot === 0
         ? [
             start[0],
-            end[1] + (end[0] - start[0] > 0 ? -1 : 1) * DISAMBIGUATION_DISTANCE,
+            end[1] + (end[0] > start[0] ? 1 : -1) * DISAMBIGUATION_DISTANCE,
           ]
         : [
-            end[0] + (end[1] - start[1] > 0 ? -1 : 1) * DISAMBIGUATION_DISTANCE,
+            end[0] + (end[1] > start[1] ? 1 : -1) * DISAMBIGUATION_DISTANCE,
             start[1],
           ];
   }
@@ -212,13 +209,10 @@ const extendSegmentToBoundingBoxEdge = (
   const rightSegmentNormalDot = dotProduct([1, 0], normal);
   const segmentIsHorizontal = rightSegmentNormalDot === 0;
   const rightSegmentDot = dotProduct([1, 0], vector);
-  const containing = boundingBoxes.filter((bBox) =>
-    isPointInsideBoundingBox(segmentIsStart ? start : end, bBox),
-  );
 
   // TODO: If this is > 1 it means the arrow is in an overlapping shape
-  if (containing.length > 0) {
-    const minDist = containing
+  if (boundingBoxes.length > 0) {
+    const minDist = boundingBoxes
       .map((bbox) =>
         segmentIsHorizontal ? bbox[2] - bbox[0] : bbox[3] - bbox[1],
       )
@@ -245,7 +239,7 @@ const extendSegmentToBoundingBoxEdge = (
           addVectors(end, [0, rightSegmentNormalDot > 0 ? minDist : -minDist]),
         ];
 
-    const intersection = containing
+    const intersection = boundingBoxes
       .map(bboxToClockwiseWoundingSegments) // TODO: This could be calcualted once in createRoute
       .flatMap((segments) =>
         segments!.map((segment) => segmentsIntersectAt(candidate, segment)),
@@ -258,7 +252,7 @@ const extendSegmentToBoundingBoxEdge = (
         segmentIsStart
           ? normalize(vector)
           : normalize(pointToVector(start, end)),
-        10,
+        1, // TODO figure out scaling
       ),
     );
   }
@@ -278,7 +272,7 @@ const getHitOffset = (start: Point, next: Point, boundingBoxes: Bounds[]) => {
             // We can use the p -> segment[1] because all bbox segments are in winding order
             debugDrawSegments(segment, "red");
             return [
-              distanceSq(start, p),
+              Math.sqrt(distanceSq(start, p)),
               Math.sqrt(distanceSq(segment[0], p)),
               Math.sqrt(distanceSq(segment[1], p)),
             ];
@@ -291,8 +285,7 @@ const getHitOffset = (start: Point, next: Point, boundingBoxes: Bounds[]) => {
       .reduce(
         (acc, value) => (value![0] < acc![0] ? value : acc),
         [Infinity, 0, 0],
-      )
-      ?.slice(1) ?? [0, 0]
+      ) ?? [0, 0, 0]
   );
 };
 
@@ -303,7 +296,22 @@ const resolveIntersections = (
   target: Point,
 ): Point => {
   const start = points[points.length - 1];
-  const [offsetLeft, offsetRight] = getHitOffset(start, next, boundingBoxes);
+  const [offsetAhead, offsetLeft, offsetRight] = getHitOffset(
+    start,
+    next,
+    boundingBoxes,
+  );
+
+  if (
+    offsetAhead < Infinity &&
+    offsetAhead > 10 && // TODO: This is a stand-in for still checking the start bound, but the start bound only
+    boundingBoxes[0] &&
+    boundingBoxes[1] &&
+    !doBoundsIntersect(boundingBoxes[0], boundingBoxes[1])
+  ) {
+    const heading = vectorToHeading(pointToVector(next, start));
+    return addVectors(start, scaleVector(heading, offsetAhead - 1));
+  }
 
   if (offsetLeft > 0 || offsetRight > 0) {
     const altNextLeftDirection = rotateVector(
@@ -332,7 +340,7 @@ const resolveIntersections = (
     //   [points[points.length - 1], nextLeftCandidate],
     // );
     const nextLeft =
-      getHitOffset(start, nextLeftCandidate, boundingBoxes)[0] > 0 ||
+      getHitOffset(start, nextLeftCandidate, boundingBoxes)[1] > 0 ||
       segmentsOverlap(
         [points[points.length - 1], points[points.length - 2]],
         [points[points.length - 1], nextLeftCandidate],
@@ -340,7 +348,7 @@ const resolveIntersections = (
         ? null
         : nextLeftCandidate;
     const nextRight =
-      getHitOffset(start, nextRightCandidate, boundingBoxes)[0] > 0 ||
+      getHitOffset(start, nextRightCandidate, boundingBoxes)[1] > 0 ||
       segmentsOverlap(
         [points[points.length - 1], points[points.length - 2]],
         [points[points.length - 1], nextRightCandidate],
@@ -348,8 +356,8 @@ const resolveIntersections = (
         ? null
         : nextRightCandidate;
 
-    nextLeft && debugDrawPoint(nextLeft, "red");
-    nextRight && debugDrawPoint(nextRight, "green");
+    nextLeft && debugDrawPoint(nextLeft, "cyan");
+    nextRight && debugDrawPoint(nextRight, "red");
 
     const nextLeftEndDistance = nextLeft
       ? distanceSq(nextLeft, target)
@@ -364,7 +372,7 @@ const resolveIntersections = (
 
     return nextRight ? nextRight : nextLeft ? nextLeft : next;
   }
-  debugDrawPoint(next, "blue");
+  debugDrawPoint(next, "black");
   return next;
 };
 
@@ -453,27 +461,37 @@ const getHeadingForStartEndElements = (
   arrow: ExcalidrawArrowElement,
   startPoint: Point,
   endPoint: Point,
+  startBounds: Bounds | null,
+  endBounds: Bounds | null,
 ): [Vector | null, Vector | null] => {
   const scene = Scene.getScene(arrow);
-  const start =
-    scene &&
-    getHoveredElementForBinding(
-      { x: startPoint[0], y: startPoint[1] },
-      scene.getNonDeletedElements(),
-      scene.getNonDeletedElementsMap(),
-    );
-  const end =
-    scene &&
-    getHoveredElementForBinding(
-      { x: endPoint[0], y: endPoint[1] },
-      scene.getNonDeletedElements(),
-      scene.getNonDeletedElementsMap(),
-    );
+  if (scene) {
+    const elements = scene.getNonDeletedElements();
+    const elementsMap = scene.getNonDeletedElementsMap();
+    const start =
+      arrow.startBinding === null
+        ? getHoveredElementForBinding(
+            { x: startPoint[0], y: startPoint[1] },
+            elements,
+            elementsMap,
+          )
+        : elementsMap.get(arrow.startBinding.elementId) ?? null;
+    const end =
+      arrow.endBinding === null
+        ? getHoveredElementForBinding(
+            { x: endPoint[0], y: endPoint[1] },
+            elements,
+            elementsMap,
+          )
+        : elementsMap.get(arrow.endBinding.elementId) ?? null;
 
-  return [
-    start && getHeadingForWorldPointFromElement(start, startPoint),
-    end && getHeadingForWorldPointFromElement(end, endPoint),
-  ];
+    return [
+      start && getHeadingForWorldPointFromElement(start, startPoint),
+      end && getHeadingForWorldPointFromElement(end, endPoint),
+    ];
+  }
+
+  return [null, null];
 };
 
 // Gets the heading for the point by creating a bounding box around the rotated
@@ -483,28 +501,28 @@ const getHeadingForWorldPointFromElement = (
   element: ExcalidrawElement,
   point: Point,
 ): Heading => {
-  const SEARCH_CODE_MULTIPLIER = 2;
+  const SEARCH_CONE_MULTIPLIER = 2;
   const bounds = extendedBoundingBoxForElement(element, MIN_SELF_BOX_OFFSET);
   const midPoint = getCenterWorldCoordsForBounds(bounds);
   const ROTATION = 0;
 
   const topLeft = rotatePoint(
-    scaleUp([bounds[0], bounds[1]], midPoint, SEARCH_CODE_MULTIPLIER),
+    scaleUp([bounds[0], bounds[1]], midPoint, SEARCH_CONE_MULTIPLIER),
     midPoint,
     ROTATION,
   );
   const topRight = rotatePoint(
-    scaleUp([bounds[2], bounds[1]], midPoint, SEARCH_CODE_MULTIPLIER),
+    scaleUp([bounds[2], bounds[1]], midPoint, SEARCH_CONE_MULTIPLIER),
     midPoint,
     ROTATION,
   );
   const bottomLeft = rotatePoint(
-    scaleUp([bounds[0], bounds[3]], midPoint, SEARCH_CODE_MULTIPLIER),
+    scaleUp([bounds[0], bounds[3]], midPoint, SEARCH_CONE_MULTIPLIER),
     midPoint,
     ROTATION,
   );
   const bottomRight = rotatePoint(
-    scaleUp([bounds[2], bounds[3]], midPoint, SEARCH_CODE_MULTIPLIER),
+    scaleUp([bounds[2], bounds[3]], midPoint, SEARCH_CONE_MULTIPLIER),
     midPoint,
     ROTATION,
   );
@@ -540,3 +558,18 @@ const getCenterWorldCoordsForBounds = (bounds: Bounds): Point => [
   bounds[0] + (bounds[2] - bounds[0]) / 2,
   bounds[1] + (bounds[3] - bounds[1]) / 2,
 ];
+
+/// If last and current segments have the same heading, skip the middle point
+const simplifyElbowArrowPoints = (points: Point[]): Point[] =>
+  points.reduce(
+    (result, point) =>
+      arePointsEqual(
+        vectorToHeading(
+          pointToVector(result[result.length - 1], result[result.length - 2]),
+        ),
+        vectorToHeading(pointToVector(point, result[result.length - 1])),
+      )
+        ? [...result.slice(-1), point]
+        : result,
+    [points[0] ?? [0, 0], points[1] ?? [1, 0]],
+  );
