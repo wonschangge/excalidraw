@@ -61,10 +61,13 @@ type InteractiveCanvasProps = {
 const InteractiveCanvas = (props: InteractiveCanvasProps) => {
   const isComponentMounted = useRef(false);
   const [debugRefresh, setDebugRefresh] = useState(0);
-
-  window.v.forceRefresh = useCallback(() => {
+  const forceRefresh = useCallback(() => {
     setDebugRefresh(debugRefresh + 1);
   }, [debugRefresh]);
+
+  if (window.v) {
+    window.v.forceRefresh = forceRefresh;
+  }
 
   useEffect(() => {
     if (!isComponentMounted.current) {

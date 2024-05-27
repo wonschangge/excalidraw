@@ -26,7 +26,6 @@ import type { ExcalidrawArrowElement, ExcalidrawElement } from "../types";
 import {
   debugClear,
   debugDrawBounds,
-  debugDrawPoint,
   debugDrawSegments,
   debugNewFrame,
 } from "./debug";
@@ -54,9 +53,7 @@ export const calculateElbowArrowJointPoints = (
 
   const target = toWorldSpace(arrow, arrow.points[arrow.points.length - 1]);
   const firstPoint = toWorldSpace(arrow, arrow.points[0]);
-
   const [startBounds, endBounds] = getStartEndBounds(arrow, firstPoint, target);
-
   const [startHeading, endHeading] = getHeadingForStartEndElements(
     arrow,
     firstPoint,
