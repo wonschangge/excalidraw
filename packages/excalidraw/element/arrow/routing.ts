@@ -246,15 +246,19 @@ const extendSegmentToBoundingBoxEdge = (
       )
       .filter((x) => x !== null)[0]!;
 
-    return addVectors(
-      intersection,
-      scaleVector(
-        segmentIsStart
-          ? normalize(vector)
-          : normalize(pointToVector(start, end)),
-        1, // TODO figure out scaling
-      ),
-    );
+    return intersection
+      ? addVectors(
+          intersection,
+          scaleVector(
+            segmentIsStart
+              ? normalize(vector)
+              : normalize(pointToVector(start, end)),
+            1, // TODO figure out scaling
+          ),
+        )
+      : segmentIsStart
+      ? segment[0]
+      : segment[1];
   }
 
   return segmentIsStart ? segment[0] : segment[1];
@@ -504,7 +508,7 @@ const getHeadingForWorldPointFromElement = (
   const SEARCH_CONE_MULTIPLIER = 2;
   const bounds = extendedBoundingBoxForElement(element, MIN_SELF_BOX_OFFSET);
   const midPoint = getCenterWorldCoordsForBounds(bounds);
-  const ROTATION = 0;
+  const ROTATION = element.type === "diamond" ? Math.PI / 4 : 0;
 
   const topLeft = rotatePoint(
     scaleUp([bounds[0], bounds[1]], midPoint, SEARCH_CONE_MULTIPLIER),
@@ -527,14 +531,24 @@ const getHeadingForWorldPointFromElement = (
     ROTATION,
   );
 
-  // debugDrawSegments(
-  //   [
-  //     [topLeft, topRight],
-  //     [topRight, midPoint],
-  //     [midPoint, topLeft],
-  //   ],
-  //   "red",
-  // );
+  debugDrawSegments(
+    [
+      [topLeft, topRight],
+      [topRight, midPoint],
+      [midPoint, topLeft],
+    ],
+    "red",
+  );
+
+  if (element.type === "diamond") {
+    return PointInTriangle(point, topLeft, topRight, midPoint)
+      ? RIGHT
+      : PointInTriangle(point, topRight, bottomRight, midPoint)
+      ? RIGHT
+      : PointInTriangle(point, bottomRight, bottomLeft, midPoint)
+      ? LEFT
+      : LEFT;
+  }
 
   return PointInTriangle(point, topLeft, topRight, midPoint)
     ? UP
