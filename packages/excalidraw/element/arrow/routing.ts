@@ -33,8 +33,8 @@ import {
 
 const STEP_COUNT_LIMIT = 50;
 const MIN_DONGLE_SIZE = 30;
-const DONGLE_EXTENSION_SIZE = 30;
-const HITBOX_EXTENSION_SIZE = 3;
+const DONGLE_EXTENSION_SIZE = 40;
+const HITBOX_EXTENSION_SIZE = 5;
 
 type Heading = [1, 0] | [-1, 0] | [0, 1] | [0, -1];
 const UP = [0, -1] as Heading;
@@ -427,11 +427,27 @@ const getStartEndBounds = (
     (el) => el && extendedBoundingBoxForElement(el, offset),
   ) as [Bounds | null, Bounds | null];
 
+  // Finally we need to check somehow if the arrow endpoint is dragged out of
+  // the binding area to disconnect arrowhead tracking from the bindable shape
   return [
-    startBoundingBox && isPointInsideBoundingBox(startPoint, startBoundingBox)
+    startEndElements[0] &&
+    isPointInsideBoundingBox(
+      startPoint,
+      extendedBoundingBoxForElement(
+        startEndElements[0],
+        30, // This is the fixed binding area size!
+      ),
+    )
       ? startBoundingBox
       : null,
-    endBoundingBox && isPointInsideBoundingBox(endPoint, endBoundingBox)
+    startEndElements[1] &&
+    isPointInsideBoundingBox(
+      endPoint,
+      extendedBoundingBoxForElement(
+        startEndElements[1],
+        30, // This is the fixed binding area size!
+      ),
+    )
       ? endBoundingBox
       : null,
   ];
@@ -439,7 +455,7 @@ const getStartEndBounds = (
 
 const extendedBoundingBoxForElement = (
   element: ExcalidrawElement,
-  offset: number = 0,
+  offset: number,
 ) => {
   const bbox = {
     minX: element.x,
