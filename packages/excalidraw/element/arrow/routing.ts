@@ -1,4 +1,3 @@
-import { isPointInBounds } from "../../../utils/collision";
 import {
   PointInTriangle,
   addVectors,
@@ -7,7 +6,6 @@ import {
   doBoundsIntersect,
   dotProduct,
   isPointInsideBoundingBox,
-  isPointWithinBounds,
   normalize,
   pointToVector,
   rotatePoint,
@@ -418,9 +416,18 @@ const getStartEndBounds = (
         ),
   ];
 
-  return startEndElements.map(
+  const [startBoundingBox, endBoundingBox] = startEndElements.map(
     (el) => el && extendedBoundingBoxForElement(el, offset),
   ) as [Bounds | null, Bounds | null];
+
+  return [
+    startBoundingBox && isPointInsideBoundingBox(startPoint, startBoundingBox)
+      ? startBoundingBox
+      : null,
+    endBoundingBox && isPointInsideBoundingBox(endPoint, endBoundingBox)
+      ? endBoundingBox
+      : null,
+  ];
 };
 
 const extendedBoundingBoxForElement = (
@@ -513,7 +520,16 @@ const getHeadingForWorldPointFromElement = (
   element: ExcalidrawElement,
   point: Point,
   offset: number,
-): Heading => {
+): Heading | null => {
+  if (
+    !isPointInsideBoundingBox(
+      point,
+      extendedBoundingBoxForElement(element, offset),
+    )
+  ) {
+    return null;
+  }
+
   const SEARCH_CONE_MULTIPLIER = 2;
   const bounds = extendedBoundingBoxForElement(element, offset);
   const midPoint = getCenterWorldCoordsForBounds(bounds);
