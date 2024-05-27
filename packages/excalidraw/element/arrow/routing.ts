@@ -200,7 +200,7 @@ const kernel = (
     Math.abs(vectorToHeading(nextEndVector)[0]) === 1
       ? end[0] - next[0] !== 0 && end[1] - next[1] === 0
       : end[0] - next[0] === 0 && end[1] - next[1] !== 0;
-  debugDrawPoint(next, "red");
+
   if (nextEndDot === -1 && alignedButNotRightThere) {
     next = addVectors(start, scaleVector(pointToVector(next, start), 0.5));
   }
@@ -348,7 +348,7 @@ const resolveIntersections = (
     );
     const nextLeftCandidate = addVectors(
       start,
-      scaleVector(altNextLeftDirection, offsetRight + 10),
+      scaleVector(altNextLeftDirection, offsetRight + 1),
     );
     const altNextRightDirection = rotateVector(
       normalize(pointToVector(next, start)),
@@ -356,7 +356,7 @@ const resolveIntersections = (
     );
     const nextRightCandidate = addVectors(
       start,
-      scaleVector(altNextRightDirection, offsetLeft + 10),
+      scaleVector(altNextRightDirection, offsetLeft + 1),
     );
 
     const nextLeft =
@@ -375,6 +375,9 @@ const resolveIntersections = (
       )
         ? null
         : nextRightCandidate;
+
+    // nextLeft && debugDrawPoint(nextLeft, "red");
+    // nextRight && debugDrawPoint(nextRight, "green");
 
     const nextLeftEndDistance = nextLeft
       ? distanceSq(nextLeft, target)
@@ -578,15 +581,6 @@ const getHeadingForWorldPointFromElement = (
     midPoint,
     ROTATION,
   );
-
-  // debugDrawSegments(
-  //   [
-  //     [topLeft, topRight],
-  //     [topRight, midPoint],
-  //     [midPoint, topLeft],
-  //   ],
-  //   "red",
-  // );
 
   if (element.type === "diamond") {
     return PointInTriangle(point, topLeft, topRight, midPoint)
