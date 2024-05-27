@@ -34,7 +34,6 @@ import {
 const STEP_COUNT_LIMIT = 50;
 const MIN_SELF_BOX_OFFSET = 30;
 const MIN_DONGLE_SIZE = 30;
-const DISAMBIGUATION_DISTANCE = 10;
 
 type Heading = [1, 0] | [-1, 0] | [0, 1] | [0, -1];
 const UP = [0, -1] as Heading;
@@ -126,7 +125,7 @@ const calculateSegment = (
   const points: Point[] = Array.from(start);
   // Limit max step to avoid infinite loop
   for (let step = 0; step < STEP_COUNT_LIMIT; step++) {
-    const next = kernel(points, end, boundingBoxes);
+    const next = kernel(points, end, boundingBoxes, step);
     if (arePointsEqual(end[0], next)) {
       break;
     }
@@ -144,6 +143,7 @@ const kernel = (
   points: Point[],
   target: Point[],
   boundingBoxes: Bounds[],
+  step: number,
 ): Point => {
   debugNewFrame();
 
@@ -172,7 +172,10 @@ const kernel = (
       : [end[0], start[1]]; // Turn left/right all the way to end
 
   const startNextVector = normalize(pointToVector(next, start));
-  if (dotProduct(startNextVector, startVector) === 1) {
+  if (
+    step !== 0 && // Segment start is only a stub, so allow going forward
+    dotProduct(startNextVector, startVector) === 1
+  ) {
     next = rightStartNormalDot === 0 ? [start[0], end[1]] : [end[0], start[1]];
   }
 
@@ -319,7 +322,6 @@ const resolveIntersections = (
     boundingBoxes[1] &&
     !doBoundsIntersect(boundingBoxes[0], boundingBoxes[1])
   ) {
-    console.log("dsfsdfds");
     const heading = vectorToHeading(pointToVector(next, start));
     return addVectors(start, scaleVector(heading, offsetAhead - 1));
   }
