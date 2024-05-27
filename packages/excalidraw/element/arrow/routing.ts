@@ -1,3 +1,4 @@
+import { isPointInBounds } from "../../../utils/collision";
 import {
   PointInTriangle,
   addVectors,
@@ -6,6 +7,7 @@ import {
   doBoundsIntersect,
   dotProduct,
   isPointInsideBoundingBox,
+  isPointWithinBounds,
   normalize,
   pointToVector,
   rotatePoint,
@@ -32,7 +34,6 @@ import {
 } from "./debug";
 
 const STEP_COUNT_LIMIT = 50;
-const MIN_SELF_BOX_OFFSET = 30;
 const MIN_DONGLE_SIZE = 30;
 
 type Heading = [1, 0] | [-1, 0] | [0, 1] | [0, -1];
@@ -53,17 +54,17 @@ export const calculateElbowArrowJointPoints = (
 
   const target = toWorldSpace(arrow, arrow.points[arrow.points.length - 1]);
   const firstPoint = toWorldSpace(arrow, arrow.points[0]);
-  const [startBounds, endBounds] = getStartEndBounds(arrow, firstPoint, target);
   const [startHeading, endHeading] = getHeadingForStartEndElements(
     arrow,
     firstPoint,
     target,
-    startBounds,
-    endBounds,
+    30,
   );
-
-  let avoidBounds = [startBounds, endBounds].filter(
-    (bb): bb is Bounds => bb !== null,
+  const [startDongleBounds, endDongleBounds] = getStartEndBounds(
+    arrow,
+    firstPoint,
+    target,
+    30,
   );
 
   const points = [
@@ -72,7 +73,7 @@ export const calculateElbowArrowJointPoints = (
       ? extendSegmentToBoundingBoxEdge(
           [firstPoint, addVectors(firstPoint, startHeading)],
           true,
-          startBounds !== null ? [startBounds] : [],
+          startDongleBounds !== null ? [startDongleBounds] : [],
         )
       : addVectors(
           firstPoint,
@@ -87,7 +88,7 @@ export const calculateElbowArrowJointPoints = (
       ? extendSegmentToBoundingBoxEdge(
           [addVectors(target, endHeading), target],
           false,
-          endBounds !== null ? [endBounds] : [],
+          endDongleBounds !== null ? [endDongleBounds] : [],
         )
       : addVectors(
           target,
@@ -99,13 +100,15 @@ export const calculateElbowArrowJointPoints = (
     target,
   ];
 
-  avoidBounds = avoidBounds.filter(
-    (bbox) =>
-      !(
-        isPointInsideBoundingBox(points[1], bbox) ||
-        isPointInsideBoundingBox(endPoints[0], bbox)
-      ),
-  );
+  const avoidBounds = getStartEndBounds(arrow, firstPoint, target, 30)
+    .filter((bb): bb is Bounds => bb !== null)
+    .filter(
+      (bbox) =>
+        !(
+          isPointInsideBoundingBox(points[1], bbox) ||
+          isPointInsideBoundingBox(endPoints[0], bbox)
+        ),
+    );
 
   // return simplifyElbowArrowPoints(
   //   calculateSegment(points, endPoints, avoidBounds).map((point) =>
@@ -125,7 +128,14 @@ const calculateSegment = (
   const points: Point[] = Array.from(start);
   // Limit max step to avoid infinite loop
   for (let step = 0; step < STEP_COUNT_LIMIT; step++) {
-    const next = kernel(points, end, boundingBoxes, step);
+    const next = kernel(
+      points,
+      end,
+      boundingBoxes.filter(
+        (bbox) => !isPointInsideBoundingBox(points[points.length - 1], bbox),
+      ),
+      step,
+    );
     if (arePointsEqual(end[0], next)) {
       break;
     }
@@ -382,6 +392,7 @@ const getStartEndBounds = (
   arrow: ExcalidrawArrowElement,
   startPoint: Point,
   endPoint: Point,
+  offset: number,
 ): [Bounds | null, Bounds | null] => {
   const scene = Scene.getScene(arrow);
   if (!scene) {
@@ -408,7 +419,7 @@ const getStartEndBounds = (
   ];
 
   return startEndElements.map(
-    (el) => el && extendedBoundingBoxForElement(el, MIN_SELF_BOX_OFFSET),
+    (el) => el && extendedBoundingBoxForElement(el, offset),
   ) as [Bounds | null, Bounds | null];
 };
 
@@ -463,8 +474,7 @@ const getHeadingForStartEndElements = (
   arrow: ExcalidrawArrowElement,
   startPoint: Point,
   endPoint: Point,
-  startBounds: Bounds | null,
-  endBounds: Bounds | null,
+  offset: number,
 ): [Vector | null, Vector | null] => {
   const scene = Scene.getScene(arrow);
   if (scene) {
@@ -488,8 +498,8 @@ const getHeadingForStartEndElements = (
         : elementsMap.get(arrow.endBinding.elementId) ?? null;
 
     return [
-      start && getHeadingForWorldPointFromElement(start, startPoint),
-      end && getHeadingForWorldPointFromElement(end, endPoint),
+      start && getHeadingForWorldPointFromElement(start, startPoint, offset),
+      end && getHeadingForWorldPointFromElement(end, endPoint, offset),
     ];
   }
 
@@ -502,9 +512,10 @@ const getHeadingForStartEndElements = (
 const getHeadingForWorldPointFromElement = (
   element: ExcalidrawElement,
   point: Point,
+  offset: number,
 ): Heading => {
   const SEARCH_CONE_MULTIPLIER = 2;
-  const bounds = extendedBoundingBoxForElement(element, MIN_SELF_BOX_OFFSET);
+  const bounds = extendedBoundingBoxForElement(element, offset);
   const midPoint = getCenterWorldCoordsForBounds(bounds);
   const ROTATION = element.type === "diamond" ? Math.PI / 4 : 0;
 
