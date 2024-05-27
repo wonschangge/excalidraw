@@ -110,12 +110,11 @@ export const calculateElbowArrowJointPoints = (
       ),
   );
 
-  return calculateSegment(
-    points,
-    endPoints,
-    avoidBounds,
-    //doBBoxesIntersect ? [] : avoidBounds,
-  ).map((point) => toLocalSpace(arrow, point));
+  return simplifyElbowArrowPoints(
+    calculateSegment(points, endPoints, avoidBounds).map((point) =>
+      toLocalSpace(arrow, point),
+    ),
+  );
 };
 
 const calculateSegment = (
@@ -176,8 +175,7 @@ const kernel = (
   const nextEndDot = dotProduct(nextEndVector, endVector);
   const alignedButNotRightThere =
     (end[0] - next[0] === 0) !== (end[1] - next[1] === 0);
-  debugDrawPoint(next, "green");
-  // debugDrawPoint(end, "red");
+
   if (nextEndDot === -1 && alignedButNotRightThere) {
     next =
       rightStartNormalDot === 0
@@ -334,15 +332,13 @@ const resolveIntersections = (
       start,
       scaleVector(altNextRightDirection, offsetLeft + 10),
     );
+
     debugDrawSegments(
       [points[points.length - 1], points[points.length - 2]],
       "blue",
     );
     debugDrawSegments([points[points.length - 1], nextLeftCandidate], "red");
-    // console.log(
-    //   [points[points.length - 1], points[points.length - 2]],
-    //   [points[points.length - 1], nextLeftCandidate],
-    // );
+
     const nextLeft =
       getHitOffset(start, nextLeftCandidate, boundingBoxes)[1] > 0 ||
       segmentsOverlap(
@@ -360,9 +356,6 @@ const resolveIntersections = (
         ? null
         : nextRightCandidate;
 
-    nextLeft && debugDrawPoint(nextLeft, "cyan");
-    nextRight && debugDrawPoint(nextRight, "red");
-
     const nextLeftEndDistance = nextLeft
       ? distanceSq(nextLeft, target)
       : Infinity;
@@ -376,7 +369,7 @@ const resolveIntersections = (
 
     return nextRight ? nextRight : nextLeft ? nextLeft : next;
   }
-  debugDrawPoint(next, "black");
+
   return next;
 };
 
@@ -531,14 +524,14 @@ const getHeadingForWorldPointFromElement = (
     ROTATION,
   );
 
-  debugDrawSegments(
-    [
-      [topLeft, topRight],
-      [topRight, midPoint],
-      [midPoint, topLeft],
-    ],
-    "red",
-  );
+  // debugDrawSegments(
+  //   [
+  //     [topLeft, topRight],
+  //     [topRight, midPoint],
+  //     [midPoint, topLeft],
+  //   ],
+  //   "red",
+  // );
 
   if (element.type === "diamond") {
     return PointInTriangle(point, topLeft, topRight, midPoint)
@@ -575,15 +568,17 @@ const getCenterWorldCoordsForBounds = (bounds: Bounds): Point => [
 
 /// If last and current segments have the same heading, skip the middle point
 const simplifyElbowArrowPoints = (points: Point[]): Point[] =>
-  points.reduce(
-    (result, point) =>
-      arePointsEqual(
-        vectorToHeading(
-          pointToVector(result[result.length - 1], result[result.length - 2]),
-        ),
-        vectorToHeading(pointToVector(point, result[result.length - 1])),
-      )
-        ? [...result.slice(-1), point]
-        : result,
-    [points[0] ?? [0, 0], points[1] ?? [1, 0]],
-  );
+  points
+    .slice(2)
+    .reduce(
+      (result, point) =>
+        arePointsEqual(
+          vectorToHeading(
+            pointToVector(result[result.length - 1], result[result.length - 2]),
+          ),
+          vectorToHeading(pointToVector(point, result[result.length - 1])),
+        )
+          ? [...result.slice(0, -1), point]
+          : [...result, point],
+      [points[0] ?? [0, 0], points[1] ?? [1, 0]],
+    );
