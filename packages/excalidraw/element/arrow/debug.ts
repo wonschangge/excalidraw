@@ -3,13 +3,13 @@ import type { Point, Segment, Vector } from "../../types";
 import type { BoundingBox, Bounds } from "../bounds";
 
 export function debugClear() {
-  if (import.meta.env.DEV) {
+  if (import.meta.env.DEV || import.meta.env.MODE === "test") {
     window.v.clearFrames();
   }
 }
 
 export function debugNewFrame() {
-  if (import.meta.env.DEV) {
+  if (import.meta.env.DEV || import.meta.env.MODE === "test") {
     window.v.newFrame();
   }
 }
@@ -19,7 +19,11 @@ export function debugDrawNormal(
   segment: Segment,
   color: string = "cyan",
 ) {
-  if (import.meta.env.DEV && normal && segment) {
+  if (
+    (import.meta.env.DEV || import.meta.env.MODE === "test") &&
+    normal &&
+    segment
+  ) {
     const [cx, cy] = [
       (segment[0][0] + segment[1][0]) / 2,
       (segment[0][1] + segment[1][1]) / 2,
@@ -37,7 +41,7 @@ export function debugDrawSegments(
   segments?: Readonly<Segment> | Readonly<Segment>[] | null,
   color: string = "green",
 ) {
-  if (import.meta.env.DEV) {
+  if (import.meta.env.DEV || import.meta.env.MODE === "test") {
     if (segments && !isSegment(segments)) {
       segments.forEach((segment) =>
         window.v.frames[window.v.frames.length - 1].push([
@@ -66,7 +70,7 @@ export function debugDrawPoint(
   color: string = "#FF1493",
   fuzzy = false,
 ) {
-  if (import.meta.env.DEV) {
+  if (import.meta.env.DEV || import.meta.env.MODE === "test") {
     const xOffset = fuzzy ? Math.random() * 3 : 0;
     const yOffset = fuzzy ? Math.random() * 3 : 0;
 
