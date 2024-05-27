@@ -33,6 +33,8 @@ import {
 
 const STEP_COUNT_LIMIT = 50;
 const MIN_DONGLE_SIZE = 30;
+const DONGLE_EXTENSION_SIZE = 30;
+const HITBOX_EXTENSION_SIZE = 3;
 
 type Heading = [1, 0] | [-1, 0] | [0, 1] | [0, -1];
 const UP = [0, -1] as Heading;
@@ -56,13 +58,13 @@ export const calculateElbowArrowJointPoints = (
     arrow,
     firstPoint,
     target,
-    30,
+    DONGLE_EXTENSION_SIZE,
   );
   const [startDongleBounds, endDongleBounds] = getStartEndBounds(
     arrow,
     firstPoint,
     target,
-    30,
+    DONGLE_EXTENSION_SIZE,
   );
 
   const points = [
@@ -98,7 +100,12 @@ export const calculateElbowArrowJointPoints = (
     target,
   ];
 
-  const avoidBounds = getStartEndBounds(arrow, firstPoint, target, 30)
+  const avoidBounds = getStartEndBounds(
+    arrow,
+    firstPoint,
+    target,
+    HITBOX_EXTENSION_SIZE,
+  )
     .filter((bb): bb is Bounds => bb !== null)
     .filter(
       (bbox) =>
@@ -325,7 +332,7 @@ const resolveIntersections = (
   if (
     !targetNextFacing &&
     offsetAhead < Infinity &&
-    offsetAhead > 10 && // TODO: This is a stand-in for still checking the start bound, but the start bound only
+    offsetAhead > DONGLE_EXTENSION_SIZE - HITBOX_EXTENSION_SIZE + 1 && // TODO: This is a stand-in for still checking the start bound, but the start bound only
     boundingBoxes[0] &&
     boundingBoxes[1] &&
     !doBoundsIntersect(boundingBoxes[0], boundingBoxes[1])
