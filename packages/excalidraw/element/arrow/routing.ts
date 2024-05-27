@@ -348,7 +348,7 @@ const resolveIntersections = (
     );
     const nextLeftCandidate = addVectors(
       start,
-      scaleVector(altNextLeftDirection, offsetRight + 1),
+      scaleVector(altNextLeftDirection, Math.min(offsetLeft, offsetRight) + 1),
     );
     const altNextRightDirection = rotateVector(
       normalize(pointToVector(next, start)),
@@ -356,7 +356,7 @@ const resolveIntersections = (
     );
     const nextRightCandidate = addVectors(
       start,
-      scaleVector(altNextRightDirection, offsetLeft + 1),
+      scaleVector(altNextRightDirection, Math.min(offsetLeft, offsetRight) + 1),
     );
 
     const nextLeft =
