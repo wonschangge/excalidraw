@@ -26,6 +26,7 @@ import type { ExcalidrawArrowElement, ExcalidrawElement } from "../types";
 import {
   debugClear,
   debugDrawBounds,
+  debugDrawPoint,
   debugDrawSegments,
   debugNewFrame,
 } from "./debug";
@@ -107,10 +108,13 @@ export const calculateElbowArrowJointPoints = (
       ),
   );
 
-  return simplifyElbowArrowPoints(
-    calculateSegment(points, endPoints, avoidBounds).map((point) =>
-      toLocalSpace(arrow, point),
-    ),
+  // return simplifyElbowArrowPoints(
+  //   calculateSegment(points, endPoints, avoidBounds).map((point) =>
+  //     toLocalSpace(arrow, point),
+  //   ),
+  // );
+  return calculateSegment(points, endPoints, avoidBounds).map((point) =>
+    toLocalSpace(arrow, point),
   );
 };
 
@@ -145,7 +149,6 @@ const kernel = (
 
   const start = points[points.length - 1];
   const end = target[0];
-
   const startVector =
     points.length < 2
       ? ([0, 0] as Vector) // TODO: Fixed right start attachment
@@ -168,27 +171,33 @@ const kernel = (
       ? [start[0], end[1]]
       : [end[0], start[1]]; // Turn left/right all the way to end
 
+  const startNextVector = normalize(pointToVector(next, start));
+  if (dotProduct(startNextVector, startVector) === 1) {
+    next = rightStartNormalDot === 0 ? [start[0], end[1]] : [end[0], start[1]];
+  }
+
   const nextEndVector = normalize(pointToVector(end, next));
   const nextEndDot = dotProduct(nextEndVector, endVector);
   const alignedButNotRightThere =
-    (end[0] - next[0] === 0) !== (end[1] - next[1] === 0);
-
+    Math.abs(vectorToHeading(nextEndVector)[0]) === 1
+      ? end[0] - next[0] !== 0 && end[1] - next[1] === 0
+      : end[0] - next[0] === 0 && end[1] - next[1] !== 0;
+  debugDrawPoint(next, "red");
   if (nextEndDot === -1 && alignedButNotRightThere) {
-    next =
-      rightStartNormalDot === 0
-        ? [
-            start[0],
-            end[1] + (end[0] > start[0] ? 1 : -1) * DISAMBIGUATION_DISTANCE,
-          ]
-        : [
-            end[0] + (end[1] > start[1] ? 1 : -1) * DISAMBIGUATION_DISTANCE,
-            start[1],
-          ];
+    next = addVectors(start, scaleVector(pointToVector(next, start), 0.5));
   }
 
   if (boundingBoxes.length > 0) {
-    next = resolveIntersections(points, next, boundingBoxes, end);
+    const newStartNextVector = normalize(pointToVector(next, start));
+    next = resolveIntersections(
+      points,
+      next,
+      boundingBoxes,
+      end,
+      dotProduct(endVector, newStartNextVector) === -1,
+    );
   }
+  debugDrawPoint(next);
 
   return next;
 };
@@ -293,6 +302,7 @@ const resolveIntersections = (
   next: Point,
   boundingBoxes: Bounds[],
   target: Point,
+  targetNextFacing: boolean,
 ): Point => {
   const start = points[points.length - 1];
   const [offsetAhead, offsetLeft, offsetRight] = getHitOffset(
@@ -302,12 +312,14 @@ const resolveIntersections = (
   );
 
   if (
+    !targetNextFacing &&
     offsetAhead < Infinity &&
     offsetAhead > 10 && // TODO: This is a stand-in for still checking the start bound, but the start bound only
     boundingBoxes[0] &&
     boundingBoxes[1] &&
     !doBoundsIntersect(boundingBoxes[0], boundingBoxes[1])
   ) {
+    console.log("dsfsdfds");
     const heading = vectorToHeading(pointToVector(next, start));
     return addVectors(start, scaleVector(heading, offsetAhead - 1));
   }
@@ -329,12 +341,6 @@ const resolveIntersections = (
       start,
       scaleVector(altNextRightDirection, offsetLeft + 10),
     );
-
-    debugDrawSegments(
-      [points[points.length - 1], points[points.length - 2]],
-      "blue",
-    );
-    debugDrawSegments([points[points.length - 1], nextLeftCandidate], "red");
 
     const nextLeft =
       getHitOffset(start, nextLeftCandidate, boundingBoxes)[1] > 0 ||
