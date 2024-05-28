@@ -34,7 +34,7 @@ import {
 const STEP_COUNT_LIMIT = 50;
 const MIN_DONGLE_SIZE = 30;
 const DONGLE_EXTENSION_SIZE = 50;
-const HITBOX_EXTENSION_SIZE = 5;
+const HITBOX_EXTENSION_SIZE = 30;
 
 type Heading = [1, 0] | [-1, 0] | [0, 1] | [0, -1];
 const UP = [0, -1] as Heading;
@@ -214,7 +214,7 @@ const kernel = (
       dotProduct(endVector, newStartNextVector) === -1,
     );
   }
-  debugDrawPoint(next);
+  //debugDrawPoint(next);
 
   return next;
 };
@@ -375,16 +375,17 @@ const resolveIntersections = (
         ? null
         : nextRightCandidate;
 
-    // nextLeft && debugDrawPoint(nextLeft, "red");
-    // nextRight && debugDrawPoint(nextRight, "green");
+    nextLeft && debugDrawPoint(nextLeft, "red");
+    nextRight && debugDrawPoint(nextRight, "green");
 
     const nextLeftEndDistance = nextLeft
-      ? distanceSq(nextLeft, target)
+      ? Math.sqrt(distanceSq(nextLeft, target)) + offsetRight
       : Infinity;
     const nextRightEndDistance = nextRight
-      ? distanceSq(nextRight, target)
+      ? Math.sqrt(distanceSq(nextRight, target)) + offsetLeft
       : Infinity;
-
+    // console.log(offsetAhead, offsetLeft, offsetRight);
+    // console.log(nextLeftEndDistance, nextRightEndDistance);
     if (nextLeftEndDistance < nextRightEndDistance) {
       return nextLeft ? nextLeft : nextRight ? nextRight : next;
     }
@@ -426,7 +427,7 @@ const getStartEndBounds = (
   ];
 
   const [startBoundingBox, endBoundingBox] = startEndElements.map(
-    (el) => el && extendedBoundingBoxForElement(el, offset),
+    (el) => el && extendedBoundingBoxForElement(el, offset, true),
   ) as [Bounds | null, Bounds | null];
 
   // Finally we need to check somehow if the arrow endpoint is dragged out of
@@ -466,6 +467,7 @@ const getStartEndBounds = (
 const extendedBoundingBoxForElement = (
   element: ExcalidrawElement,
   offset: number,
+  flag: boolean = false,
 ) => {
   const bbox = {
     minX: element.x,
@@ -505,7 +507,7 @@ const extendedBoundingBoxForElement = (
     Math.max(topLeftY, topRightY, bottomRightY, bottomLeftY) + offset,
   ] as Bounds;
 
-  debugDrawBounds(extendedBounds);
+  flag && debugDrawBounds(extendedBounds);
 
   return extendedBounds;
 };

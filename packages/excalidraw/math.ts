@@ -712,7 +712,7 @@ export const segmentsIntersectAt = (
 
   const p = addVectors(a[0], scaleVector(r, t));
 
-  if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
+  if (t > 0 && t < 1 && u > 0 && u < 1) {
     return p;
   }
 
