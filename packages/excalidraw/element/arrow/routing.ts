@@ -20,7 +20,7 @@ import {
 } from "../../math";
 import Scene from "../../scene/Scene";
 import type { LocalPoint, Point, Segment, Vector } from "../../types";
-import { getHoveredElementForBinding } from "../binding";
+import { getHoveredElementForBinding, maxBindingGap } from "../binding";
 import type { BoundingBox, Bounds } from "../bounds";
 import type { ExcalidrawArrowElement, ExcalidrawElement } from "../types";
 import {
@@ -33,7 +33,7 @@ import {
 
 const STEP_COUNT_LIMIT = 50;
 const MIN_DONGLE_SIZE = 30;
-const DONGLE_EXTENSION_SIZE = 40;
+const DONGLE_EXTENSION_SIZE = 50;
 const HITBOX_EXTENSION_SIZE = 5;
 
 type Heading = [1, 0] | [-1, 0] | [0, 1] | [0, -1];
@@ -58,7 +58,6 @@ export const calculateElbowArrowJointPoints = (
     arrow,
     firstPoint,
     target,
-    DONGLE_EXTENSION_SIZE,
   );
   const [startDongleBounds, endDongleBounds] = getStartEndBounds(
     arrow,
@@ -438,7 +437,11 @@ const getStartEndBounds = (
       startPoint,
       extendedBoundingBoxForElement(
         startEndElements[0],
-        30, // This is the fixed binding area size!
+        maxBindingGap(
+          startEndElements[0],
+          startEndElements[0].width,
+          startEndElements[0].height,
+        ), // This is the binding area size!
       ),
     )
       ? startBoundingBox
@@ -448,7 +451,11 @@ const getStartEndBounds = (
       endPoint,
       extendedBoundingBoxForElement(
         startEndElements[1],
-        30, // This is the fixed binding area size!
+        maxBindingGap(
+          startEndElements[1],
+          startEndElements[1].width,
+          startEndElements[1].height,
+        ), // This is the binding area size!
       ),
     )
       ? endBoundingBox
@@ -507,7 +514,6 @@ const getHeadingForStartEndElements = (
   arrow: ExcalidrawArrowElement,
   startPoint: Point,
   endPoint: Point,
-  offset: number,
 ): [Vector | null, Vector | null] => {
   const scene = Scene.getScene(arrow);
   if (scene) {
@@ -531,8 +537,18 @@ const getHeadingForStartEndElements = (
         : elementsMap.get(arrow.endBinding.elementId) ?? null;
 
     return [
-      start && getHeadingForWorldPointFromElement(start, startPoint, offset),
-      end && getHeadingForWorldPointFromElement(end, endPoint, offset),
+      start &&
+        getHeadingForWorldPointFromElement(
+          start,
+          startPoint,
+          maxBindingGap(start, start.width, start.height),
+        ),
+      end &&
+        getHeadingForWorldPointFromElement(
+          end,
+          endPoint,
+          maxBindingGap(end, end.width, end.height),
+        ),
     ];
   }
 
