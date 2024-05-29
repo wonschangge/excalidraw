@@ -1,5 +1,4 @@
 import {
-  PointInTriangle,
   addVectors,
   arePointsEqual,
   distanceSq,
@@ -8,47 +7,32 @@ import {
   isPointInsideBoundingBox,
   normalize,
   pointToVector,
-  rotatePoint,
   rotateVector,
-  scaleUp,
   scaleVector,
-  segmentsIntersectAt,
   segmentsOverlap,
   toLocalSpace,
   toWorldSpace,
   vectorToHeading,
 } from "../../math";
 import Scene from "../../scene/Scene";
-import type { LocalPoint, Point, Segment, Vector } from "../../types";
-import {
-  distanceToBindableElement,
-  getHoveredElementForBinding,
-  maxBindingGap,
-} from "../binding";
-import type { BoundingBox, Bounds } from "../bounds";
-import type {
-  ExcalidrawArrowElement,
-  ExcalidrawBindableElement,
-  ExcalidrawElement,
-} from "../types";
+import type { LocalPoint, Point, Vector } from "../../types";
+import type { Bounds } from "../bounds";
+import type { ExcalidrawArrowElement } from "../types";
+import { getHitOffset, getStartEndBounds } from "./common";
 import {
   debugClear,
   debugDrawBounds,
   debugDrawPoint,
-  debugDrawSegments,
   debugNewFrame,
 } from "./debug";
+import {
+  extendSegmentToBoundingBoxEdge,
+  getHeadingForStartEndElements,
+} from "./dongle";
 
 const STEP_COUNT_LIMIT = 50;
-const MIN_DONGLE_SIZE = 30;
 const DONGLE_EXTENSION_SIZE = 50;
-const HITBOX_EXTENSION_SIZE = 5;
-
-type Heading = [1, 0] | [-1, 0] | [0, 1] | [0, -1];
-const UP = [0, -1] as Heading;
-const RIGHT = [1, 0] as Heading;
-const DOWN = [0, 1] as Heading;
-const LEFT = [-1, 0] as Heading;
+const HITBOX_EXTENSION_SIZE = 50;
 
 export const calculateElbowArrowJointPoints = (
   arrow: ExcalidrawArrowElement,
@@ -58,61 +42,49 @@ export const calculateElbowArrowJointPoints = (
     return arrow.points;
   }
 
+  const scene = Scene.getScene(arrow);
+  if (scene === null) {
+    // The arrow is not on the scene??
+    return arrow.points;
+  }
+
   debugClear();
 
   const target = toWorldSpace(arrow, arrow.points[arrow.points.length - 1]);
   const firstPoint = toWorldSpace(arrow, arrow.points[0]);
   const [startHeading, endHeading] = getHeadingForStartEndElements(
+    scene,
     arrow,
     firstPoint,
     target,
   );
-  const [startDongleBounds, endDongleBounds] = getStartEndBounds(
+  //console.log(startHeading, endHeading);
+  const [startBounds, endBounds] = getStartEndBounds(
     arrow,
     firstPoint,
     target,
-    DONGLE_EXTENSION_SIZE,
+    startHeading,
+    endHeading,
   );
 
   const points = [
     firstPoint,
-    startHeading
-      ? extendSegmentToBoundingBoxEdge(
-          [firstPoint, addVectors(firstPoint, startHeading)],
-          true,
-          startDongleBounds !== null ? [startDongleBounds] : [],
-        )
-      : addVectors(
-          firstPoint,
-          scaleVector(
-            vectorToHeading(pointToVector(target, firstPoint)),
-            MIN_DONGLE_SIZE,
-          ),
-        ),
+    extendSegmentToBoundingBoxEdge(
+      [firstPoint, addVectors(firstPoint, startHeading)],
+      true,
+      startBounds,
+    ),
   ];
   const endPoints = [
-    endHeading
-      ? extendSegmentToBoundingBoxEdge(
-          [addVectors(target, endHeading), target],
-          false,
-          endDongleBounds !== null ? [endDongleBounds] : [],
-        )
-      : addVectors(
-          target,
-          scaleVector(
-            vectorToHeading(pointToVector(firstPoint, target)),
-            MIN_DONGLE_SIZE,
-          ),
-        ),
+    extendSegmentToBoundingBoxEdge(
+      [addVectors(target, endHeading), target],
+      false,
+      endBounds,
+    ),
     target,
   ];
 
-  const avoidBounds = getStartEndBounds(
-    arrow,
-    firstPoint,
-    target,
-    HITBOX_EXTENSION_SIZE,
-  )
+  const avoidBounds = [startBounds, endBounds]
     .filter((bb): bb is Bounds => bb !== null)
     .filter(
       (bbox) =>
@@ -120,18 +92,27 @@ export const calculateElbowArrowJointPoints = (
           isPointInsideBoundingBox(points[1], bbox) ||
           isPointInsideBoundingBox(endPoints[0], bbox)
         ),
-    );
+    )
+    .map((bbox) => {
+      debugDrawBounds(bbox);
+      return bbox;
+    });
 
   // return simplifyElbowArrowPoints(
   //   calculateSegment(points, endPoints, avoidBounds).map((point) =>
   //     toLocalSpace(arrow, point),
   //   ),
   // );
-  return calculateSegment(points, endPoints, avoidBounds).map((point) =>
+  const p = calculateSegment(points, endPoints, avoidBounds).map((point) =>
     toLocalSpace(arrow, point),
   );
+
+  p.forEach((x) => debugDrawPoint(x));
+
+  return p;
 };
 
+// Calculates the poitns between a start segment and an end segment with elbows
 const calculateSegment = (
   start: readonly Point[],
   end: Point[],
@@ -140,17 +121,19 @@ const calculateSegment = (
   const points: Point[] = Array.from(start);
   // Limit max step to avoid infinite loop
   for (let step = 0; step < STEP_COUNT_LIMIT; step++) {
-    const next = kernel(
-      points,
-      end,
-      boundingBoxes.filter(
-        (bbox) => !isPointInsideBoundingBox(points[points.length - 1], bbox),
-      ),
-      step,
+    // If the last generated point (or the start dongle) is inside a
+    // bounding box then disable that bbox to avoid hitting in from the
+    // "inside"
+    const externalBoundingBoxes = boundingBoxes.filter(
+      (bbox) => !isPointInsideBoundingBox(points[points.length - 1], bbox),
     );
+    const next = kernel(points, end, externalBoundingBoxes, step);
+
     if (arePointsEqual(end[0], next)) {
+      // We have reached the end dongle with the last step
       break;
     }
+
     points.push(next);
   }
 
@@ -158,9 +141,13 @@ const calculateSegment = (
     console.error("Elbow arrow routing step count limit reached", points);
   }
 
+  // As the last step, connect to the end dongle since we skipped the
+  // `points.push(next)` for the last step
   return points.concat(end);
 };
 
+// Generates the coordinate for the next point given the previous points
+// and bounding boxes and the target dongle.
 const kernel = (
   points: Point[],
   target: Point[],
@@ -183,24 +170,35 @@ const kernel = (
   const rightStartNormalDot = dotProduct([1, 0], startNormal);
   const startEndVector = pointToVector(end, start);
   const endAhead = dotProduct(startVector, startEndVector) > 0;
+  const startVectorIsHorizontal = rightStartNormalDot === 0;
 
-  let next: Point =
-    rightStartNormalDot === 0 // Last segment from start is horizontal
-      ? endAhead
-        ? [end[0], start[1]]
-        : [start[0], end[1]] // Turn up/down all the way to end
-      : endAhead
-      ? [start[0], end[1]]
-      : [end[0], start[1]]; // Turn left/right all the way to end
+  // The point generation happens in 4 phases:
+  //
+  // Phase 1: If the end dongle is ahead of the start dongle, go ahead as
+  //          far as possible. If behind, turn toward the end dongle b
+  //          90 degrees and go as far as possible.
+  let next: Point = startVectorIsHorizontal
+    ? endAhead
+      ? [end[0], start[1]] // Go ahead
+      : [start[0], end[1]] // Turn up/down all the way to end
+    : endAhead
+    ? [start[0], end[1]]
+    : [end[0], start[1]]; // Turn left/right all the way to end
 
+  // Phase 2: Do not go forward again if the previous segment we generated
+  //          is continuing in the same direction, except the first step,
+  //          because the start dongle might not go far enough on it's own.
   const startNextVector = normalize(pointToVector(next, start));
-  if (
-    step !== 0 && // Segment start is only a stub, so allow going forward
-    dotProduct(startNextVector, startVector) === 1
-  ) {
+  if (step !== 0 && dotProduct(startNextVector, startVector) === 1) {
     next = rightStartNormalDot === 0 ? [start[0], end[1]] : [end[0], start[1]];
   }
 
+  // Phase 3: Check the heading of the segment to the next point and the end
+  //          dongle, determine of the next segment vector and the end dongle
+  //          vector are facing each other or not. Also determine if the next
+  //          and end dongles are aligned in either the X or the Y axis. If
+  //          they are directly in front of each other then we need to go left
+  //          or right to avoid collision and make a loop around.
   const nextEndVector = normalize(pointToVector(end, next));
   const nextEndDot = dotProduct(nextEndVector, endVector);
   const alignedButNotRightThere =
@@ -212,6 +210,9 @@ const kernel = (
     next = addVectors(start, scaleVector(pointToVector(next, start), 0.5));
   }
 
+  // Phase 4: The last step is to check against the bounding boxes to see if
+  //          the next segment would cross the bbox borders. Generate a new
+  //          point if there is collision.
   if (boundingBoxes.length > 0) {
     const newStartNextVector = normalize(pointToVector(next, start));
     next = resolveIntersections(
@@ -225,101 +226,6 @@ const kernel = (
   //debugDrawPoint(next);
 
   return next;
-};
-
-const extendSegmentToBoundingBoxEdge = (
-  segment: Segment,
-  segmentIsStart: boolean,
-  boundingBoxes: Bounds[],
-): Point => {
-  const [start, end] = segment;
-  const vector = pointToVector(end, start);
-  const normal = rotateVector(vector, Math.PI / 2);
-  const rightSegmentNormalDot = dotProduct([1, 0], normal);
-  const segmentIsHorizontal = rightSegmentNormalDot === 0;
-  const rightSegmentDot = dotProduct([1, 0], vector);
-
-  // TODO: If this is > 1 it means the arrow is in an overlapping shape
-  if (boundingBoxes.length > 0) {
-    const minDist = boundingBoxes
-      .map((bbox) =>
-        segmentIsHorizontal ? bbox[2] - bbox[0] : bbox[3] - bbox[1],
-      )
-      .reduce((largest, value) => (value > largest ? value : largest), 0);
-
-    // TODO: Simplify this by having the segment for end provided backwards
-    const candidate: Segment = segmentIsStart
-      ? segmentIsHorizontal
-        ? [
-            start,
-            addVectors(start, [rightSegmentDot > 0 ? minDist : -minDist, 0]),
-          ]
-        : [
-            start,
-            addVectors(start, [
-              0,
-              rightSegmentNormalDot > 0 ? -minDist : minDist,
-            ]),
-          ]
-      : segmentIsHorizontal
-      ? [end, addVectors(end, [rightSegmentDot > 0 ? -minDist : minDist, 0])]
-      : [
-          end,
-          addVectors(end, [0, rightSegmentNormalDot > 0 ? minDist : -minDist]),
-        ];
-
-    const intersection = boundingBoxes
-      .map(bboxToClockwiseWoundingSegments) // TODO: This could be calcualted once in createRoute
-      .flatMap((segments) =>
-        segments!.map((segment) => segmentsIntersectAt(candidate, segment)),
-      )
-      .filter((x) => x !== null)[0]!;
-
-    return intersection
-      ? addVectors(
-          intersection,
-          scaleVector(
-            segmentIsStart
-              ? normalize(vector)
-              : normalize(pointToVector(start, end)),
-            1, // TODO figure out scaling
-          ),
-        )
-      : segmentIsStart
-      ? segment[0]
-      : segment[1];
-  }
-
-  return segmentIsStart ? segment[0] : segment[1];
-};
-
-const getHitOffset = (start: Point, next: Point, boundingBoxes: Bounds[]) => {
-  return (
-    boundingBoxes
-      .map(bboxToClockwiseWoundingSegments)
-      .flatMap((segments) =>
-        segments!.map((segment) => {
-          const p = segmentsIntersectAt([start, next], segment);
-
-          if (p) {
-            // We can use the p -> segment[1] because all bbox segments are in winding order
-            debugDrawSegments(segment, "red");
-            return [
-              Math.sqrt(distanceSq(start, p)),
-              Math.sqrt(distanceSq(segment[0], p)),
-              Math.sqrt(distanceSq(segment[1], p)),
-            ];
-          }
-
-          return [Infinity, 0, 0];
-        }),
-      )
-      .filter((x) => x != null)
-      .reduce(
-        (acc, value) => (value![0] < acc![0] ? value : acc),
-        [Infinity, 0, 0],
-      ) ?? [0, 0, 0]
-  );
 };
 
 const resolveIntersections = (
@@ -403,303 +309,3 @@ const resolveIntersections = (
 
   return next;
 };
-
-const getStartEndBounds = (
-  arrow: ExcalidrawArrowElement,
-  startPoint: Point,
-  endPoint: Point,
-  offset: number,
-): [Bounds | null, Bounds | null] => {
-  const scene = Scene.getScene(arrow);
-  if (!scene) {
-    return [null, null];
-  }
-
-  const elementsMap = scene.getNonDeletedElementsMap();
-
-  const startEndElements = [
-    arrow.startBinding
-      ? (elementsMap.get(
-          arrow.startBinding.elementId,
-        ) as ExcalidrawBindableElement) ?? null
-      : getHoveredElementForBinding(
-          { x: startPoint[0], y: startPoint[1] },
-          scene.getNonDeletedElements(),
-          elementsMap,
-        ),
-    arrow.endBinding
-      ? (elementsMap.get(
-          arrow.endBinding.elementId,
-        ) as ExcalidrawBindableElement) ?? null
-      : getHoveredElementForBinding(
-          { x: endPoint[0], y: endPoint[1] },
-          scene.getNonDeletedElements(),
-          elementsMap,
-        ),
-  ];
-
-  // Dynamic bounding box
-  const relativeOffset =
-    startEndElements[0] && startEndElements[1]
-      ? Math.min(
-          distanceToBindableElement(
-            startEndElements[0],
-            [startEndElements[1].x, startEndElements[1].y],
-            elementsMap,
-          ),
-          distanceToBindableElement(
-            startEndElements[0],
-            [
-              startEndElements[1].x + startEndElements[1].width,
-              startEndElements[1].y,
-            ],
-            elementsMap,
-          ),
-          distanceToBindableElement(
-            startEndElements[0],
-            [
-              startEndElements[1].x + startEndElements[1].width,
-              startEndElements[1].y + startEndElements[1].height,
-            ],
-            elementsMap,
-          ),
-          distanceToBindableElement(
-            startEndElements[0],
-            [
-              startEndElements[1].x,
-              startEndElements[1].y + startEndElements[1].height,
-            ],
-            elementsMap,
-          ),
-        )
-      : offset;
-
-  const [startBoundingBox, endBoundingBox] = startEndElements.map(
-    (el) =>
-      el &&
-      extendedBoundingBoxForElement(
-        el,
-        Math.max(HITBOX_EXTENSION_SIZE, relativeOffset / 2 - 5),
-        true,
-      ),
-  ) as [Bounds | null, Bounds | null];
-
-  // Finally we need to check somehow if the arrow endpoint is dragged out of
-  // the binding area to disconnect arrowhead tracking from the bindable shape
-  return [
-    startEndElements[0] &&
-    isPointInsideBoundingBox(
-      startPoint,
-      extendedBoundingBoxForElement(
-        startEndElements[0],
-        maxBindingGap(
-          startEndElements[0],
-          startEndElements[0].width,
-          startEndElements[0].height,
-        ), // This is the binding area size!
-      ),
-    )
-      ? startBoundingBox
-      : null,
-    startEndElements[1] &&
-    isPointInsideBoundingBox(
-      endPoint,
-      extendedBoundingBoxForElement(
-        startEndElements[1],
-        maxBindingGap(
-          startEndElements[1],
-          startEndElements[1].width,
-          startEndElements[1].height,
-        ), // This is the binding area size!
-      ),
-    )
-      ? endBoundingBox
-      : null,
-  ];
-};
-
-const extendedBoundingBoxForElement = (
-  element: ExcalidrawElement,
-  offset: number,
-  flag: boolean = false,
-) => {
-  const bbox = {
-    minX: element.x,
-    minY: element.y,
-    maxX: element.x + element.width,
-    maxY: element.y + element.height,
-    midX: element.x + element.width / 2,
-    midY: element.y + element.height / 2,
-  } as BoundingBox;
-
-  const center = [bbox.midX, bbox.midY] as Point;
-  const [topLeftX, topLeftY] = rotatePoint(
-    [bbox.minX, bbox.minY],
-    center,
-    element.angle,
-  );
-  const [topRightX, topRightY] = rotatePoint(
-    [bbox.maxX, bbox.minY],
-    center,
-    element.angle,
-  );
-  const [bottomRightX, bottomRightY] = rotatePoint(
-    [bbox.maxX, bbox.maxY],
-    center,
-    element.angle,
-  );
-  const [bottomLeftX, bottomLeftY] = rotatePoint(
-    [bbox.minX, bbox.maxY],
-    center,
-    element.angle,
-  );
-
-  const extendedBounds = [
-    Math.min(topLeftX, topRightX, bottomRightX, bottomLeftX) - offset,
-    Math.min(topLeftY, topRightY, bottomRightY, bottomLeftY) - offset,
-    Math.max(topLeftX, topRightX, bottomRightX, bottomLeftX) + offset,
-    Math.max(topLeftY, topRightY, bottomRightY, bottomLeftY) + offset,
-  ] as Bounds;
-
-  flag && debugDrawBounds(extendedBounds);
-
-  return extendedBounds;
-};
-
-const getHeadingForStartEndElements = (
-  arrow: ExcalidrawArrowElement,
-  startPoint: Point,
-  endPoint: Point,
-): [Vector | null, Vector | null] => {
-  const scene = Scene.getScene(arrow);
-  if (scene) {
-    const elements = scene.getNonDeletedElements();
-    const elementsMap = scene.getNonDeletedElementsMap();
-    const start =
-      arrow.startBinding === null
-        ? getHoveredElementForBinding(
-            { x: startPoint[0], y: startPoint[1] },
-            elements,
-            elementsMap,
-          )
-        : elementsMap.get(arrow.startBinding.elementId) ?? null;
-    const end =
-      arrow.endBinding === null
-        ? getHoveredElementForBinding(
-            { x: endPoint[0], y: endPoint[1] },
-            elements,
-            elementsMap,
-          )
-        : elementsMap.get(arrow.endBinding.elementId) ?? null;
-
-    return [
-      start &&
-        getHeadingForWorldPointFromElement(
-          start,
-          startPoint,
-          maxBindingGap(start, start.width, start.height),
-        ),
-      end &&
-        getHeadingForWorldPointFromElement(
-          end,
-          endPoint,
-          maxBindingGap(end, end.width, end.height),
-        ),
-    ];
-  }
-
-  return [null, null];
-};
-
-// Gets the heading for the point by creating a bounding box around the rotated
-// close fitting bounding box, then creating 4 search cones around the center of
-// the external bbox.
-const getHeadingForWorldPointFromElement = (
-  element: ExcalidrawElement,
-  point: Point,
-  offset: number,
-): Heading | null => {
-  if (
-    !isPointInsideBoundingBox(
-      point,
-      extendedBoundingBoxForElement(element, offset),
-    )
-  ) {
-    return null;
-  }
-
-  const SEARCH_CONE_MULTIPLIER = 2;
-  const bounds = extendedBoundingBoxForElement(element, offset);
-  const midPoint = getCenterWorldCoordsForBounds(bounds);
-  const ROTATION = element.type === "diamond" ? Math.PI / 4 : 0;
-
-  const topLeft = rotatePoint(
-    scaleUp([bounds[0], bounds[1]], midPoint, SEARCH_CONE_MULTIPLIER),
-    midPoint,
-    ROTATION,
-  );
-  const topRight = rotatePoint(
-    scaleUp([bounds[2], bounds[1]], midPoint, SEARCH_CONE_MULTIPLIER),
-    midPoint,
-    ROTATION,
-  );
-  const bottomLeft = rotatePoint(
-    scaleUp([bounds[0], bounds[3]], midPoint, SEARCH_CONE_MULTIPLIER),
-    midPoint,
-    ROTATION,
-  );
-  const bottomRight = rotatePoint(
-    scaleUp([bounds[2], bounds[3]], midPoint, SEARCH_CONE_MULTIPLIER),
-    midPoint,
-    ROTATION,
-  );
-
-  if (element.type === "diamond") {
-    return PointInTriangle(point, topLeft, topRight, midPoint)
-      ? RIGHT
-      : PointInTriangle(point, topRight, bottomRight, midPoint)
-      ? RIGHT
-      : PointInTriangle(point, bottomRight, bottomLeft, midPoint)
-      ? LEFT
-      : LEFT;
-  }
-
-  return PointInTriangle(point, topLeft, topRight, midPoint)
-    ? UP
-    : PointInTriangle(point, topRight, bottomRight, midPoint)
-    ? RIGHT
-    : PointInTriangle(point, bottomRight, bottomLeft, midPoint)
-    ? DOWN
-    : LEFT;
-};
-
-// Turn a bounding box into 4 clockwise wounding segments
-const bboxToClockwiseWoundingSegments = (b: Bounds | null) =>
-  b && [
-    [[b[0], b[1]] as Point, [b[2], b[1]] as Point] as Segment,
-    [[b[2], b[1]] as Point, [b[2], b[3]] as Point] as Segment,
-    [[b[2], b[3]] as Point, [b[0], b[3]] as Point] as Segment,
-    [[b[0], b[3]] as Point, [b[0], b[1]] as Point] as Segment,
-  ];
-
-const getCenterWorldCoordsForBounds = (bounds: Bounds): Point => [
-  bounds[0] + (bounds[2] - bounds[0]) / 2,
-  bounds[1] + (bounds[3] - bounds[1]) / 2,
-];
-
-/// If last and current segments have the same heading, skip the middle point
-const simplifyElbowArrowPoints = (points: Point[]): Point[] =>
-  points
-    .slice(2)
-    .reduce(
-      (result, point) =>
-        arePointsEqual(
-          vectorToHeading(
-            pointToVector(result[result.length - 1], result[result.length - 2]),
-          ),
-          vectorToHeading(pointToVector(point, result[result.length - 1])),
-        )
-          ? [...result.slice(0, -1), point]
-          : [...result, point],
-      [points[0] ?? [0, 0], points[1] ?? [1, 0]],
-    );

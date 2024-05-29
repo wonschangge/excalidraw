@@ -965,7 +965,7 @@ export const maxBindingGap = (
   return Math.max(16, Math.min(0.25 * smallerDimension, 32));
 };
 
-const distanceToBindableElement = (
+export const distanceToBindableElement = (
   element: ExcalidrawBindableElement,
   point: Point,
   elementsMap: ElementsMap,
