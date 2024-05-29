@@ -655,6 +655,8 @@ const updateBoundPoint = (
   const direction = startOrEnd === "startBinding" ? -1 : 1;
   const edgePointIndex = direction === -1 ? 0 : linearElement.points.length - 1;
 
+  let newEdgePoint: Point;
+
   if (linearElement.elbowed) {
     const ratio = binding.ratio
       ? binding.ratio
@@ -685,60 +687,45 @@ const updateBoundPoint = (
       bindableElement.angle,
     );
 
-    LinearElementEditor.movePoints(
-      linearElement,
-      [
-        {
-          index: edgePointIndex,
-          point: LinearElementEditor.pointFromAbsoluteCoords(
-            linearElement,
-            [rotatedGlobalX, rotatedGlobalY],
-            elementsMap,
-          ),
-        },
-      ],
-      { [startOrEnd]: binding },
-    );
-
-    return;
-  }
-
-  const adjacentPointIndex = edgePointIndex - direction;
-  const adjacentPoint = LinearElementEditor.getPointAtIndexGlobalCoordinates(
-    linearElement,
-    adjacentPointIndex,
-    elementsMap,
-  );
-
-  const focusPointAbsolute = determineFocusPoint(
-    bindableElement,
-    binding.focus,
-    adjacentPoint,
-    elementsMap,
-  );
-
-  let newEdgePoint;
-  // The linear element was not originally pointing inside the bound shape,
-  // we can point directly at the focus point
-  if (binding.gap === 0) {
-    newEdgePoint = focusPointAbsolute;
+    newEdgePoint = [rotatedGlobalX, rotatedGlobalY];
   } else {
-    const intersections = intersectElementWithLine(
-      bindableElement,
-      adjacentPoint,
-      focusPointAbsolute,
-      binding.gap,
+    const adjacentPointIndex = edgePointIndex - direction;
+    const adjacentPoint = LinearElementEditor.getPointAtIndexGlobalCoordinates(
+      linearElement,
+      adjacentPointIndex,
       elementsMap,
     );
-    if (intersections.length === 0) {
-      // This should never happen, since focusPoint should always be
-      // inside the element, but just in case, bail out
+
+    const focusPointAbsolute = determineFocusPoint(
+      bindableElement,
+      binding.focus,
+      adjacentPoint,
+      elementsMap,
+    );
+
+    // The linear element was not originally pointing inside the bound shape,
+    // we can point directly at the focus point
+    if (binding.gap === 0) {
       newEdgePoint = focusPointAbsolute;
     } else {
-      // Guaranteed to intersect because focusPoint is always inside the shape
-      newEdgePoint = intersections[0];
+      const intersections = intersectElementWithLine(
+        bindableElement,
+        adjacentPoint,
+        focusPointAbsolute,
+        binding.gap,
+        elementsMap,
+      );
+      if (intersections.length === 0) {
+        // This should never happen, since focusPoint should always be
+        // inside the element, but just in case, bail out
+        newEdgePoint = focusPointAbsolute;
+      } else {
+        // Guaranteed to intersect because focusPoint is always inside the shape
+        newEdgePoint = intersections[0];
+      }
     }
   }
+
   LinearElementEditor.movePoints(
     linearElement,
     [
@@ -965,7 +952,7 @@ export const maxBindingGap = (
   return Math.max(16, Math.min(0.25 * smallerDimension, 32));
 };
 
-const distanceToBindableElement = (
+export const distanceToBindableElement = (
   element: ExcalidrawBindableElement,
   point: Point,
   elementsMap: ElementsMap,
