@@ -20,9 +20,17 @@ import {
 } from "../../math";
 import Scene from "../../scene/Scene";
 import type { LocalPoint, Point, Segment, Vector } from "../../types";
-import { getHoveredElementForBinding, maxBindingGap } from "../binding";
+import {
+  distanceToBindableElement,
+  getHoveredElementForBinding,
+  maxBindingGap,
+} from "../binding";
 import type { BoundingBox, Bounds } from "../bounds";
-import type { ExcalidrawArrowElement, ExcalidrawElement } from "../types";
+import type {
+  ExcalidrawArrowElement,
+  ExcalidrawBindableElement,
+  ExcalidrawElement,
+} from "../types";
 import {
   debugClear,
   debugDrawBounds,
@@ -34,7 +42,7 @@ import {
 const STEP_COUNT_LIMIT = 50;
 const MIN_DONGLE_SIZE = 30;
 const DONGLE_EXTENSION_SIZE = 50;
-const HITBOX_EXTENSION_SIZE = 30;
+const HITBOX_EXTENSION_SIZE = 5;
 
 type Heading = [1, 0] | [-1, 0] | [0, 1] | [0, -1];
 const UP = [0, -1] as Heading;
@@ -411,14 +419,18 @@ const getStartEndBounds = (
 
   const startEndElements = [
     arrow.startBinding
-      ? elementsMap.get(arrow.startBinding.elementId) ?? null
+      ? (elementsMap.get(
+          arrow.startBinding.elementId,
+        ) as ExcalidrawBindableElement) ?? null
       : getHoveredElementForBinding(
           { x: startPoint[0], y: startPoint[1] },
           scene.getNonDeletedElements(),
           elementsMap,
         ),
     arrow.endBinding
-      ? elementsMap.get(arrow.endBinding.elementId) ?? null
+      ? (elementsMap.get(
+          arrow.endBinding.elementId,
+        ) as ExcalidrawBindableElement) ?? null
       : getHoveredElementForBinding(
           { x: endPoint[0], y: endPoint[1] },
           scene.getNonDeletedElements(),
@@ -426,8 +438,50 @@ const getStartEndBounds = (
         ),
   ];
 
+  // Dynamic bounding box
+  const relativeOffset =
+    startEndElements[0] && startEndElements[1]
+      ? Math.min(
+          distanceToBindableElement(
+            startEndElements[0],
+            [startEndElements[1].x, startEndElements[1].y],
+            elementsMap,
+          ),
+          distanceToBindableElement(
+            startEndElements[0],
+            [
+              startEndElements[1].x + startEndElements[1].width,
+              startEndElements[1].y,
+            ],
+            elementsMap,
+          ),
+          distanceToBindableElement(
+            startEndElements[0],
+            [
+              startEndElements[1].x + startEndElements[1].width,
+              startEndElements[1].y + startEndElements[1].height,
+            ],
+            elementsMap,
+          ),
+          distanceToBindableElement(
+            startEndElements[0],
+            [
+              startEndElements[1].x,
+              startEndElements[1].y + startEndElements[1].height,
+            ],
+            elementsMap,
+          ),
+        )
+      : offset;
+
   const [startBoundingBox, endBoundingBox] = startEndElements.map(
-    (el) => el && extendedBoundingBoxForElement(el, offset, true),
+    (el) =>
+      el &&
+      extendedBoundingBoxForElement(
+        el,
+        Math.max(HITBOX_EXTENSION_SIZE, relativeOffset / 2 - 5),
+        true,
+      ),
   ) as [Bounds | null, Bounds | null];
 
   // Finally we need to check somehow if the arrow endpoint is dragged out of
