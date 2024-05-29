@@ -20,9 +20,17 @@ import {
 } from "../../math";
 import Scene from "../../scene/Scene";
 import type { LocalPoint, Point, Segment, Vector } from "../../types";
-import { getHoveredElementForBinding, maxBindingGap } from "../binding";
-import type { BoundingBox, Bounds } from "../bounds";
-import type { ExcalidrawArrowElement, ExcalidrawElement } from "../types";
+import {
+  distanceToBindableElement,
+  getHoveredElementForBinding,
+  maxBindingGap,
+} from "../binding";
+import { type BoundingBox, type Bounds } from "../bounds";
+import type {
+  ExcalidrawArrowElement,
+  ExcalidrawBindableElement,
+  ExcalidrawElement,
+} from "../types";
 import {
   debugClear,
   debugDrawBounds,
@@ -33,7 +41,7 @@ import {
 
 const STEP_COUNT_LIMIT = 50;
 const MIN_DONGLE_SIZE = 30;
-const DONGLE_EXTENSION_SIZE = 50;
+const DONGLE_EXTENSION_SIZE = 150;
 const HITBOX_EXTENSION_SIZE = 30;
 
 type Heading = [1, 0] | [-1, 0] | [0, 1] | [0, -1];
@@ -63,9 +71,7 @@ export const calculateElbowArrowJointPoints = (
     arrow,
     firstPoint,
     target,
-    DONGLE_EXTENSION_SIZE,
   );
-
   const points = [
     firstPoint,
     startHeading
@@ -98,13 +104,7 @@ export const calculateElbowArrowJointPoints = (
         ),
     target,
   ];
-
-  const avoidBounds = getStartEndBounds(
-    arrow,
-    firstPoint,
-    target,
-    HITBOX_EXTENSION_SIZE,
-  )
+  const avoidBounds = getStartEndBounds(arrow, firstPoint, target)
     .filter((bb): bb is Bounds => bb !== null)
     .filter(
       (bbox) =>
@@ -214,7 +214,7 @@ const kernel = (
       dotProduct(endVector, newStartNextVector) === -1,
     );
   }
-  //debugDrawPoint(next);
+  debugDrawPoint(next);
 
   return next;
 };
@@ -396,11 +396,17 @@ const resolveIntersections = (
   return next;
 };
 
+const getCommonAABB = (a: Bounds, b: Bounds): Bounds => [
+  Math.min(a[0], b[0]),
+  Math.min(a[1], b[1]),
+  Math.max(a[2], b[2]),
+  Math.max(a[3], b[3]),
+];
+
 const getStartEndBounds = (
   arrow: ExcalidrawArrowElement,
   startPoint: Point,
   endPoint: Point,
-  offset: number,
 ): [Bounds | null, Bounds | null] => {
   const scene = Scene.getScene(arrow);
   if (!scene) {
@@ -426,9 +432,73 @@ const getStartEndBounds = (
         ),
   ];
 
-  const [startBoundingBox, endBoundingBox] = startEndElements.map(
-    (el) => el && extendedBoundingBoxForElement(el, offset, true),
-  ) as [Bounds | null, Bounds | null];
+  const BIAS = 50;
+  const startBoundingBox =
+    startEndElements[0] &&
+    (extendedBoundingBoxForElement(startEndElements[0], BIAS) as [
+      number,
+      number,
+      number,
+      number,
+    ]);
+  const endBoundingBox =
+    startEndElements[1] &&
+    (extendedBoundingBoxForElement(startEndElements[1], BIAS) as [
+      number,
+      number,
+      number,
+      number,
+    ]);
+
+  if (
+    startBoundingBox &&
+    endBoundingBox &&
+    startEndElements[0] &&
+    startEndElements[1]
+  ) {
+    const commonBbox = getCommonAABB(startBoundingBox, endBoundingBox);
+    debugDrawBounds(commonBbox);
+    const vertical =
+      commonBbox[3] -
+      commonBbox[1] -
+      4 * BIAS -
+      (startEndElements[0].height + startEndElements[1].height);
+    const horizontal =
+      commonBbox[2] -
+      commonBbox[0] -
+      4 * BIAS -
+      (startEndElements[0].width + startEndElements[1].width);
+
+    if (vertical > 0) {
+      // Not overlapping vertically
+      if (
+        startEndElements[0].y + startEndElements[0].height <
+        startEndElements[1].y
+      ) {
+        // Start is higher
+        startBoundingBox[3] += vertical / 2 - 1;
+        endBoundingBox[1] -= vertical / 2 - 1;
+      } else {
+        startBoundingBox[1] -= vertical / 2 - 1;
+        endBoundingBox[3] += vertical / 2 - 1;
+      }
+    }
+    if (horizontal > 0) {
+      if (
+        startEndElements[0].x + startEndElements[0].width <
+        startEndElements[1].x
+      ) {
+        // Start is to the left
+        startBoundingBox[2] += horizontal / 2 - 1;
+        endBoundingBox[0] -= horizontal / 2 - 1;
+      } else {
+        startBoundingBox[0] -= horizontal / 2 - 1;
+        endBoundingBox[2] += horizontal / 2 - 1;
+      }
+    }
+    debugDrawBounds(startBoundingBox, "cyan");
+    debugDrawBounds(endBoundingBox, "cyan");
+  }
 
   // Finally we need to check somehow if the arrow endpoint is dragged out of
   // the binding area to disconnect arrowhead tracking from the bindable shape
@@ -467,7 +537,6 @@ const getStartEndBounds = (
 const extendedBoundingBoxForElement = (
   element: ExcalidrawElement,
   offset: number,
-  flag: boolean = false,
 ) => {
   const bbox = {
     minX: element.x,
@@ -506,8 +575,6 @@ const extendedBoundingBoxForElement = (
     Math.max(topLeftX, topRightX, bottomRightX, bottomLeftX) + offset,
     Math.max(topLeftY, topRightY, bottomRightY, bottomLeftY) + offset,
   ] as Bounds;
-
-  flag && debugDrawBounds(extendedBounds);
 
   return extendedBounds;
 };
@@ -600,6 +667,15 @@ const getHeadingForWorldPointFromElement = (
     ROTATION,
   );
 
+  // debugDrawSegments(
+  //   [
+  //     [topLeft, topRight],
+  //     [topRight, midPoint],
+  //     [midPoint, topLeft],
+  //   ],
+  //   "red",
+  // );
+
   if (element.type === "diamond") {
     return PointInTriangle(point, topLeft, topRight, midPoint)
       ? RIGHT
@@ -632,6 +708,44 @@ const getCenterWorldCoordsForBounds = (bounds: Bounds): Point => [
   bounds[0] + (bounds[2] - bounds[0]) / 2,
   bounds[1] + (bounds[3] - bounds[1]) / 2,
 ];
+
+const distanceBetweenStartEndBinds = (arrow: ExcalidrawArrowElement) => {
+  const scene = Scene.getScene(arrow);
+  if (scene === null) {
+    return null;
+  }
+
+  const elementsMap = scene.getNonDeletedElementsMap();
+  const startEl = ((arrow.startBinding &&
+    elementsMap.get(arrow.startBinding.elementId)) ??
+    null) as ExcalidrawBindableElement | null;
+  const endEl = ((arrow.endBinding &&
+    elementsMap.get(arrow.endBinding.elementId)) ??
+    null) as ExcalidrawBindableElement | null;
+
+  return (
+    startEl &&
+    endEl &&
+    Math.min(
+      distanceToBindableElement(startEl, [endEl.x, endEl.y], elementsMap),
+      distanceToBindableElement(
+        startEl,
+        [endEl.x + endEl.width, endEl.y],
+        elementsMap,
+      ),
+      distanceToBindableElement(
+        startEl,
+        [endEl.x + endEl.width, endEl.y + endEl.height],
+        elementsMap,
+      ),
+      distanceToBindableElement(
+        startEl,
+        [endEl.x, endEl.y + endEl.height],
+        elementsMap,
+      ),
+    )
+  );
+};
 
 /// If last and current segments have the same heading, skip the middle point
 const simplifyElbowArrowPoints = (points: Point[]): Point[] =>
