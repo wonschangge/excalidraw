@@ -124,6 +124,7 @@ export const calculateElbowArrowJointPoints = (
   );
 };
 
+// Calculates the points between a start segment and an end segment with elbows
 const calculateSegment = (
   start: readonly Point[],
   end: Point[],
@@ -132,17 +133,19 @@ const calculateSegment = (
   const points: Point[] = Array.from(start);
   // Limit max step to avoid infinite loop
   for (let step = 0; step < STEP_COUNT_LIMIT; step++) {
-    const next = kernel(
-      points,
-      end,
-      boundingBoxes.filter(
-        (bbox) => !isPointInsideBoundingBox(points[points.length - 1], bbox),
-      ),
-      step,
+    // If the last generated point (or the start dongle) is inside a
+    // bounding box then disable that bbox to avoid hitting in from the
+    // "inside"
+    const externalBoundingBoxes = boundingBoxes.filter(
+      (bbox) => !isPointInsideBoundingBox(points[points.length - 1], bbox),
     );
+    const next = kernel(points, end, externalBoundingBoxes, step);
+
     if (arePointsEqual(end[0], next)) {
+      // We have reached the end dongle with the last step
       break;
     }
+
     points.push(next);
   }
 
@@ -150,9 +153,13 @@ const calculateSegment = (
     console.error("Elbow arrow routing step count limit reached", points);
   }
 
+  // As the last step, connect to the end dongle since we skipped the
+  // `points.push(next)` for the last step
   return points.concat(end);
 };
 
+// Generates the coordinate for the next point given the previous points
+// and bounding boxes and the target dongle.
 const kernel = (
   points: Point[],
   target: Point[],
@@ -176,6 +183,11 @@ const kernel = (
   const startEndVector = pointToVector(end, start);
   const endAhead = dotProduct(startVector, startEndVector) > 0;
 
+  // The point generation happens in 4 phases:
+  //
+  // Phase 1: If the end dongle is ahead of the start dongle, go ahead as
+  //          far as possible. If behind, turn toward the end dongle b
+  //          90 degrees and go as far as possible.
   let next: Point =
     rightStartNormalDot === 0 // Last segment from start is horizontal
       ? endAhead
@@ -185,6 +197,9 @@ const kernel = (
       ? [start[0], end[1]]
       : [end[0], start[1]]; // Turn left/right all the way to end
 
+  // Phase 2: Do not go forward again if the previous segment we generated
+  //          is continuing in the same direction, except the first step,
+  //          because the start dongle might not go far enough on it's own.
   const startNextVector = normalize(pointToVector(next, start));
   if (
     step !== 0 && // Segment start is only a stub, so allow going forward
@@ -193,6 +208,12 @@ const kernel = (
     next = rightStartNormalDot === 0 ? [start[0], end[1]] : [end[0], start[1]];
   }
 
+  // Phase 3: Check the heading of the segment to the next point and the end
+  //          dongle, determine of the next segment vector and the end dongle
+  //          vector are facing each other or not. Also determine if the next
+  //          and end dongles are aligned in either the X or the Y axis. If
+  //          they are directly in front of each other then we need to go left
+  //          or right to avoid collision and make a loop around.
   const nextEndVector = normalize(pointToVector(end, next));
   const nextEndDot = dotProduct(nextEndVector, endVector);
   const alignedButNotRightThere =
@@ -204,6 +225,9 @@ const kernel = (
     next = addVectors(start, scaleVector(pointToVector(next, start), 0.5));
   }
 
+  // Phase 4: The last step is to check against the bounding boxes to see if
+  //          the next segment would cross the bbox borders. Generate a new
+  //          point if there is collision.
   if (boundingBoxes.length > 0) {
     const newStartNextVector = normalize(pointToVector(next, start));
     next = resolveIntersections(
