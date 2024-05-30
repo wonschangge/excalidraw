@@ -204,45 +204,38 @@ const kernel = (
       : [end[0], start[1]]; // Turn left/right all the way to end
 
   if (step === 0) {
-    const offsets = getAllHitOffsets(next, end, boundingBoxes).filter(
-      (x) => x[0] < Infinity,
-    );
+    const intersections = boundingBoxes
+      .map(bboxToClockwiseWoundingSegments)
+      .flatMap((segments) =>
+        segments!.map((segment) => {
+          const p = segmentsIntersectAt([start, next], segment);
 
-    if (offsets.length === 2) {
-      const [, offsetLeft, offsetRight] = offsets.reduce(
-        (acc, value) => (value![0] < acc![0] ? value : acc),
-        [Infinity, 0, 0],
-      ) ?? [0, 0, 0];
+          return p
+            ? [p, segment[0], segment[1]]
+            : [
+                [Infinity, Infinity],
+                [0, 0],
+                [0, 0],
+              ];
+        }),
+      )
+      .filter((x) => x != null)
+      .filter((x) => x[0][0] < Infinity);
+
+    if (intersections.length === 2) {
       console.log("AH!");
-      const startNextVector = normalize(pointToVector(next, start));
-      const oppositeVector = rotateVector(startNextVector, Math.PI);
-      // next = addVectors(
-      //   start,
-      //   scaleVector(oppositeVector, Math.min(offsetLeft + 1, offsetRight + 1)),
-      // );
-      debugDrawPoint(start, "orange");
-
-      // const [, offsetLeft, offsetRight] = getHitOffset(
-      //   points[points.length - 2],
-      //   points[points.length - 1],
-      //   boundingBoxes,
-      // );
-      // const len = Math.sqrt(distanceSq(start, next));
-      // if (
-      //   (offsetLeft > len && len > offsetRight) ||
-      //   (offsetRight > len && len > offsetLeft)
-      // ) {
-      //   console.log("ROUTE LENGTH OVERRIDE");
-      //   const startNextVector = normalize(pointToVector(next, start));
-      //   const oppositeVector = rotateVector(startNextVector, Math.PI / 2);
-      //   next = addVectors(
-      //     start,
-      //     scaleVector(
-      //       oppositeVector,
-      //       Math.min(offsetLeft + 1, offsetRight + 1),
-      //     ),
-      //   );
+      // const [hitPoint, leftPoint, rightPoint] = intersections[0] as Point[];
+      // const startNextVector = normalize(pointToVector(next, start));
+      // const len = distanceSq(start, next);
+      // const lenLeft = distanceSq(hitPoint, leftPoint);
+      // const lenRight = distanceSq(hitPoint, rightPoint);
+      // const leftVec = normalize(pointToVector(leftPoint, hitPoint));
+      // if (dotProduct(leftVec, startNextVector) === 1 && lenRight < len) {
+      //   const oppositeVector = rotateVector(startNextVector, Math.PI);
+      //   next = addVectors(start, scaleVector(oppositeVector, lenRight));
       // }
+
+      debugDrawPoint(start, "orange");
     }
   }
 
@@ -357,7 +350,7 @@ const extendSegmentToBoundingBoxEdge = (
   return segmentIsStart ? segment[0] : segment[1];
 };
 
-const getAllHitOffsets = (start: Point, next: Point, boundingBoxes: Bounds[]) =>
+const getHitOffset = (start: Point, next: Point, boundingBoxes: Bounds[]) =>
   boundingBoxes
     .map(bboxToClockwiseWoundingSegments)
     .flatMap((segments) =>
@@ -378,13 +371,11 @@ const getAllHitOffsets = (start: Point, next: Point, boundingBoxes: Bounds[]) =>
         return [Infinity, 0, 0];
       }),
     )
-    .filter((x) => x != null);
-
-const getHitOffset = (start: Point, next: Point, boundingBoxes: Bounds[]) =>
-  getAllHitOffsets(start, next, boundingBoxes).reduce(
-    (acc, value) => (value![0] < acc![0] ? value : acc),
-    [Infinity, 0, 0],
-  ) ?? [0, 0, 0];
+    .filter((x) => x != null)
+    .reduce(
+      (acc, value) => (value![0] < acc![0] ? value : acc),
+      [Infinity, 0, 0],
+    ) ?? [0, 0, 0];
 
 const resolveIntersections = (
   points: Point[],
