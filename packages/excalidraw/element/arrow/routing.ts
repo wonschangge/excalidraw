@@ -2,6 +2,7 @@ import {
   PointInTriangle,
   addVectors,
   arePointsEqual,
+  distance2d,
   distanceSq,
   doBoundsIntersect,
   dotProduct,
@@ -117,11 +118,13 @@ export const calculateElbowArrowJointPoints = (
           isPointInsideBoundingBox(endPoints[0], bbox)
         ),
     );
+
   // return simplifyElbowArrowPoints(
   //   calculateSegment(points, endPoints, avoidBounds).map((point) =>
   //     toLocalSpace(arrow, point),
   //   ),
   // );
+
   return calculateSegment(points, endPoints, avoidBounds).map((point) =>
     toLocalSpace(arrow, point),
   );
@@ -186,7 +189,7 @@ const kernel = (
   const startEndVector = pointToVector(end, start);
   const endAhead = dotProduct(startVector, startEndVector) > 0;
 
-  // The point generation happens in 4 phases:
+  // The point generation happens in 5 phases:
   //
   // Phase 1: If the end dongle is ahead of the start dongle, go ahead as
   //          far as possible. If behind, turn toward the end dongle b
@@ -200,18 +203,62 @@ const kernel = (
       ? [start[0], end[1]]
       : [end[0], start[1]]; // Turn left/right all the way to end
 
-  // Phase 2: Do not go forward again if the previous segment we generated
-  //          is continuing in the same direction, except the first step,
-  //          because the start dongle might not go far enough on it's own.
-  const startNextVector = normalize(pointToVector(next, start));
-  if (
-    step !== 0 && // Segment start is only a stub, so allow going forward
-    dotProduct(startNextVector, startVector) === 1
-  ) {
-    next = rightStartNormalDot === 0 ? [start[0], end[1]] : [end[0], start[1]];
+  if (step === 0) {
+    const offsets = getAllHitOffsets(next, end, boundingBoxes).filter(
+      (x) => x[0] < Infinity,
+    );
+
+    if (offsets.length === 2) {
+      const [, offsetLeft, offsetRight] = offsets.reduce(
+        (acc, value) => (value![0] < acc![0] ? value : acc),
+        [Infinity, 0, 0],
+      ) ?? [0, 0, 0];
+      console.log("AH!");
+      const startNextVector = normalize(pointToVector(next, start));
+      const oppositeVector = rotateVector(startNextVector, Math.PI);
+      // next = addVectors(
+      //   start,
+      //   scaleVector(oppositeVector, Math.min(offsetLeft + 1, offsetRight + 1)),
+      // );
+      debugDrawPoint(start, "orange");
+
+      // const [, offsetLeft, offsetRight] = getHitOffset(
+      //   points[points.length - 2],
+      //   points[points.length - 1],
+      //   boundingBoxes,
+      // );
+      // const len = Math.sqrt(distanceSq(start, next));
+      // if (
+      //   (offsetLeft > len && len > offsetRight) ||
+      //   (offsetRight > len && len > offsetLeft)
+      // ) {
+      //   console.log("ROUTE LENGTH OVERRIDE");
+      //   const startNextVector = normalize(pointToVector(next, start));
+      //   const oppositeVector = rotateVector(startNextVector, Math.PI / 2);
+      //   next = addVectors(
+      //     start,
+      //     scaleVector(
+      //       oppositeVector,
+      //       Math.min(offsetLeft + 1, offsetRight + 1),
+      //     ),
+      //   );
+      // }
+    }
   }
 
-  // Phase 3: Check the heading of the segment to the next point and the end
+  // Phase 3: Do not go forward again if the previous segment we generated
+  //          is continuing in the same direction, except the first step,
+  //          because the start dongle might not go far enough on it's own.
+  if (step !== 0) {
+    // Segment start is only a stub, so allow going forward
+    const startNextVector = normalize(pointToVector(next, start));
+    if (dotProduct(startNextVector, startVector) === 1) {
+      next =
+        rightStartNormalDot === 0 ? [start[0], end[1]] : [end[0], start[1]];
+    }
+  }
+
+  // Phase 4: Check the heading of the segment to the next point and the end
   //          dongle, determine of the next segment vector and the end dongle
   //          vector are facing each other or not. Also determine if the next
   //          and end dongles are aligned in either the X or the Y axis. If
@@ -228,19 +275,20 @@ const kernel = (
     next = addVectors(start, scaleVector(pointToVector(next, start), 0.5));
   }
 
-  // Phase 4: The last step is to check against the bounding boxes to see if
+  // Phase 5: The last step is to check against the bounding boxes to see if
   //          the next segment would cross the bbox borders. Generate a new
   //          point if there is collision.
   if (boundingBoxes.length > 0) {
-    const newStartNextVector = normalize(pointToVector(next, start));
+    const startNextVector = normalize(pointToVector(next, start));
     next = resolveIntersections(
       points,
       next,
       boundingBoxes,
       end,
-      dotProduct(endVector, newStartNextVector) === -1,
+      dotProduct(endVector, startNextVector) === -1,
     );
   }
+
   debugDrawPoint(next);
 
   return next;
@@ -297,12 +345,9 @@ const extendSegmentToBoundingBoxEdge = (
     return intersection
       ? addVectors(
           intersection,
-          scaleVector(
-            segmentIsStart
-              ? normalize(vector)
-              : normalize(pointToVector(start, end)),
-            1, // TODO figure out scaling
-          ),
+          segmentIsStart
+            ? normalize(vector)
+            : normalize(pointToVector(start, end)),
         )
       : segmentIsStart
       ? segment[0]
@@ -312,34 +357,34 @@ const extendSegmentToBoundingBoxEdge = (
   return segmentIsStart ? segment[0] : segment[1];
 };
 
-const getHitOffset = (start: Point, next: Point, boundingBoxes: Bounds[]) => {
-  return (
-    boundingBoxes
-      .map(bboxToClockwiseWoundingSegments)
-      .flatMap((segments) =>
-        segments!.map((segment) => {
-          const p = segmentsIntersectAt([start, next], segment);
+const getAllHitOffsets = (start: Point, next: Point, boundingBoxes: Bounds[]) =>
+  boundingBoxes
+    .map(bboxToClockwiseWoundingSegments)
+    .flatMap((segments) =>
+      segments!.map((segment) => {
+        const p = segmentsIntersectAt([start, next], segment);
 
-          if (p) {
-            // We can use the p -> segment[1] because all bbox segments are in winding order
-            debugDrawSegments(segment, "red");
-            return [
-              Math.sqrt(distanceSq(start, p)),
-              Math.sqrt(distanceSq(segment[0], p)),
-              Math.sqrt(distanceSq(segment[1], p)),
-            ];
-          }
+        if (p) {
+          // We can use the p -> segment[1] because all bbox segments are in winding order
+          debugDrawSegments(segment, "red");
 
-          return [Infinity, 0, 0];
-        }),
-      )
-      .filter((x) => x != null)
-      .reduce(
-        (acc, value) => (value![0] < acc![0] ? value : acc),
-        [Infinity, 0, 0],
-      ) ?? [0, 0, 0]
-  );
-};
+          return [
+            Math.sqrt(distanceSq(start, p)),
+            Math.sqrt(distanceSq(segment[0], p)),
+            Math.sqrt(distanceSq(segment[1], p)),
+          ];
+        }
+
+        return [Infinity, 0, 0];
+      }),
+    )
+    .filter((x) => x != null);
+
+const getHitOffset = (start: Point, next: Point, boundingBoxes: Bounds[]) =>
+  getAllHitOffsets(start, next, boundingBoxes).reduce(
+    (acc, value) => (value![0] < acc![0] ? value : acc),
+    [Infinity, 0, 0],
+  ) ?? [0, 0, 0];
 
 const resolveIntersections = (
   points: Point[],
