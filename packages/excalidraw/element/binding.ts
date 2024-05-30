@@ -24,17 +24,26 @@ import type {
   PointBinding,
 } from "./types";
 
-import { getElementAbsoluteCoords } from "./bounds";
-import type { AppClassProperties, AppState, Point } from "../types";
 import { isPointOnShape } from "../../utils/collision";
 import { KEYS } from "../keys";
-import { rotatePoint } from "../math";
+import {
+  addVectors,
+  normalize,
+  pointToVector,
+  rotatePoint,
+  scaleVector,
+  toLocalSpace,
+  toWorldSpace,
+} from "../math";
 import { getElementAtPosition } from "../scene";
 import Scene from "../scene/Scene";
+import type { AppClassProperties, AppState, LocalPoint, Point } from "../types";
+import { getElementAbsoluteCoords } from "./bounds";
 
 import { arrayToMap, tupleToCoors } from "../utils";
 import { getElementBounds } from "./bounds";
 import { LinearElementEditor } from "./linearElementEditor";
+import type { ElementUpdate } from "./mutateElement";
 import { mutateElement } from "./mutateElement";
 import { getElementShape } from "./shape";
 import { getBoundTextElement, handleBindTextResize } from "./textElement";
@@ -46,12 +55,6 @@ import {
   isLinearElement,
   isTextElement,
 } from "./typeChecks";
-import type { ElementUpdate } from "./mutateElement";
-import {
-  debugDrawBoundingBox,
-  debugDrawBounds,
-  debugDrawPoint,
-} from "./arrow/debug";
 
 export type SuggestedBinding =
   | NonDeleted<ExcalidrawBindableElement>
@@ -383,6 +386,7 @@ const calculateRatioForElbowArrowBinding = (
     const bounds = getElementBounds(hoveredElement, elementsMap);
     const edgePointIndex =
       startOrEnd === "start" ? 0 : linearElement.points.length - 1;
+
     const globalPoint = LinearElementEditor.getPointAtIndexGlobalCoordinates(
       linearElement,
       edgePointIndex,
@@ -413,6 +417,32 @@ const calculateRatioForElbowArrowBinding = (
   return { ratio: [-1, -1] };
 };
 
+const updateBindPointToSnapToElementOutline = (
+  arrow: ExcalidrawArrowElement,
+  startOrEnd: "start" | "end",
+  points: Readonly<LocalPoint[]>,
+  hoveredElement: ExcalidrawBindableElement,
+  elementsMap: NonDeletedSceneElementsMap,
+) => {
+  const index = startOrEnd === "start" ? 0 : points.length - 1;
+  const globalPoint = toWorldSpace(arrow, points[index]);
+  const globalMidPoint = [
+    hoveredElement.x + hoveredElement.width / 2,
+    hoveredElement.y + hoveredElement.height / 2,
+  ] as Point;
+  const dist = distanceToBindableElement(
+    hoveredElement,
+    globalPoint,
+    elementsMap,
+  );
+  const vec = normalize(pointToVector(globalMidPoint, globalPoint));
+  const newPoint = addVectors(globalPoint, scaleVector(vec, dist - 5));
+
+  LinearElementEditor.movePoints(arrow, [
+    { index, point: toLocalSpace(arrow, newPoint) },
+  ]);
+};
+
 export const bindLinearElement = (
   linearElement: NonDeleted<ExcalidrawLinearElement>,
   hoveredElement: ExcalidrawBindableElement,
@@ -436,6 +466,16 @@ export const bindLinearElement = (
       ),
     } as PointBinding,
   });
+
+  if (linearElement.elbowed) {
+    updateBindPointToSnapToElementOutline(
+      linearElement as ExcalidrawArrowElement,
+      startOrEnd,
+      linearElement.points,
+      hoveredElement,
+      elementsMap,
+    );
+  }
 
   const boundElementsMap = arrayToMap(hoveredElement.boundElements || []);
   if (!boundElementsMap.has(linearElement.id)) {
