@@ -106,6 +106,10 @@ export const calculateElbowArrowJointPoints = (
   ];
   const avoidBounds = getStartEndBounds(arrow, firstPoint, target)
     .filter((bb): bb is Bounds => bb !== null)
+    .map((bb) => {
+      debugDrawBounds(bb, "green");
+      return bb;
+    })
     .filter(
       (bbox) =>
         !(
@@ -113,7 +117,6 @@ export const calculateElbowArrowJointPoints = (
           isPointInsideBoundingBox(endPoints[0], bbox)
         ),
     );
-
   // return simplifyElbowArrowPoints(
   //   calculateSegment(points, endPoints, avoidBounds).map((point) =>
   //     toLocalSpace(arrow, point),
@@ -427,6 +430,8 @@ const getCommonAABB = (a: Bounds, b: Bounds): Bounds => [
   Math.max(a[3], b[3]),
 ];
 
+// Returns the adjusted axis-aligned "frame" with equal distance between
+// start and end bound shapes if present.
 const getStartEndBounds = (
   arrow: ExcalidrawArrowElement,
   startPoint: Point,
@@ -482,46 +487,48 @@ const getStartEndBounds = (
   ) {
     const commonBbox = getCommonAABB(startBoundingBox, endBoundingBox);
     debugDrawBounds(commonBbox);
-    const vertical =
+    const verticalDistance =
       commonBbox[3] -
       commonBbox[1] -
       4 * BIAS -
       (startEndElements[0].height + startEndElements[1].height);
-    const horizontal =
+    const horizontalDistance =
       commonBbox[2] -
       commonBbox[0] -
       4 * BIAS -
       (startEndElements[0].width + startEndElements[1].width);
 
-    if (vertical > 0) {
+    if (verticalDistance > -2 * BIAS) {
       // Not overlapping vertically
+
       if (
         startEndElements[0].y + startEndElements[0].height <
         startEndElements[1].y
       ) {
-        // Start is higher
-        startBoundingBox[3] += vertical / 2 - 1;
-        endBoundingBox[1] -= vertical / 2 - 1;
+        // Start is higher than end
+        startBoundingBox[3] += verticalDistance / 2 - 1;
+        endBoundingBox[1] -= verticalDistance / 2 - 1;
       } else {
-        startBoundingBox[1] -= vertical / 2 - 1;
-        endBoundingBox[3] += vertical / 2 - 1;
+        // Start is lower than end
+        startBoundingBox[1] -= verticalDistance / 2 - 1;
+        endBoundingBox[3] += verticalDistance / 2 - 1;
       }
     }
-    if (horizontal > 0) {
+    if (horizontalDistance > -2 * BIAS) {
+      // Not overlapping horizontally
       if (
         startEndElements[0].x + startEndElements[0].width <
         startEndElements[1].x
       ) {
-        // Start is to the left
-        startBoundingBox[2] += horizontal / 2 - 1;
-        endBoundingBox[0] -= horizontal / 2 - 1;
+        // Start is to the left of end
+        startBoundingBox[2] += horizontalDistance / 2 - 1;
+        endBoundingBox[0] -= horizontalDistance / 2 - 1;
       } else {
-        startBoundingBox[0] -= horizontal / 2 - 1;
-        endBoundingBox[2] += horizontal / 2 - 1;
+        // Start is to the right of end
+        startBoundingBox[0] -= horizontalDistance / 2 - 1;
+        endBoundingBox[2] += horizontalDistance / 2 - 1;
       }
     }
-    debugDrawBounds(startBoundingBox, "cyan");
-    debugDrawBounds(endBoundingBox, "cyan");
   }
 
   // Finally we need to check somehow if the arrow endpoint is dragged out of
