@@ -68,7 +68,7 @@ export const calculateElbowArrowJointPoints = (
     firstPoint,
     target,
   );
-  const [startDongleBounds, endDongleBounds] = getStartEndBounds(
+  const [startDongleBounds, endDongleBounds] = getDynamicStartEndBounds(
     arrow,
     firstPoint,
     target,
@@ -109,7 +109,7 @@ export const calculateElbowArrowJointPoints = (
   ];
   debugDrawPoint(points[0], "green");
   debugDrawPoint(points[1], "green");
-  const avoidBounds = getStartEndBounds(
+  const avoidBounds = getDynamicStartEndBounds(
     arrow,
     firstPoint,
     target,
@@ -476,15 +476,11 @@ const getCommonAABB = (a: Bounds, b: Bounds): Bounds => [
   Math.max(a[3], b[3]),
 ];
 
-// Returns the adjusted axis-aligned "frame" with equal distance between
-// start and end bound shapes if present.
-const getStartEndBounds = (
+const getStartEndOrHoveredElements = (
   arrow: ExcalidrawArrowElement,
   startPoint: Point,
   endPoint: Point,
-  startHeading: Vector | null,
-  endHeading: Vector | null,
-): [Bounds | null, Bounds | null] => {
+) => {
   const scene = Scene.getScene(arrow);
   if (!scene) {
     return [null, null];
@@ -492,7 +488,7 @@ const getStartEndBounds = (
 
   const elementsMap = scene.getNonDeletedElementsMap();
 
-  const startEndElements = [
+  return [
     arrow.startBinding
       ? elementsMap.get(arrow.startBinding.elementId) ?? null
       : getHoveredElementForBinding(
@@ -507,25 +503,56 @@ const getStartEndBounds = (
           scene.getNonDeletedElements(),
           elementsMap,
         ),
-  ];
+  ] as (ExcalidrawBindableElement | null)[];
+};
 
-  const BIAS = 50;
-  const startBoundingBox =
+const getStartEndBounds = (
+  arrow: ExcalidrawArrowElement,
+  startPoint: Point,
+  endPoint: Point,
+  startEndElements: (ExcalidrawBindableElement | null)[],
+  offset: number = 0,
+) => {
+  return [
     startEndElements[0] &&
-    (extendedBoundingBoxForElement(startEndElements[0], BIAS) as [
-      number,
-      number,
-      number,
-      number,
-    ]);
-  const endBoundingBox =
+      (extendedBoundingBoxForElement(startEndElements[0], offset) as [
+        number,
+        number,
+        number,
+        number,
+      ]),
     startEndElements[1] &&
-    (extendedBoundingBoxForElement(startEndElements[1], BIAS) as [
-      number,
-      number,
-      number,
-      number,
-    ]);
+      (extendedBoundingBoxForElement(startEndElements[1], offset) as [
+        number,
+        number,
+        number,
+        number,
+      ]),
+  ];
+};
+
+// Returns the adjusted axis-aligned "frame" with equal distance between
+// start and end bound shapes if present.
+const getDynamicStartEndBounds = (
+  arrow: ExcalidrawArrowElement,
+  startPoint: Point,
+  endPoint: Point,
+  startHeading: Vector | null,
+  endHeading: Vector | null,
+): [Bounds | null, Bounds | null] => {
+  const startEndElements = getStartEndOrHoveredElements(
+    arrow,
+    startPoint,
+    endPoint,
+  );
+  const BIAS = 50;
+  const [startBoundingBox, endBoundingBox] = getStartEndBounds(
+    arrow,
+    startPoint,
+    endPoint,
+    startEndElements,
+    BIAS,
+  );
 
   if (
     startBoundingBox &&
