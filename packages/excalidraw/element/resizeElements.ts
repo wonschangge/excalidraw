@@ -6,7 +6,13 @@ import {
 import { rescalePoints } from "../points";
 
 import { isInGroup } from "../groups";
-import { centerPoint, normalizeAngle, rotate, rotatePoint } from "../math";
+import {
+  centerPoint,
+  normalizeAngle,
+  rotate,
+  rotatePoint,
+  toLocalSpace,
+} from "../math";
 import Scene from "../scene/Scene";
 import type { Point, PointerDownState } from "../types";
 import type { Mutable } from "../utility-types";
@@ -1002,15 +1008,85 @@ const rotateMultipleElements = (
         centerY,
         centerAngle + origAngle - element.angle,
       );
-      mutateElement(
-        element,
-        {
-          x: element.x + (rotatedCX - cx),
-          y: element.y + (rotatedCY - cy),
-          angle: normalizeAngle(centerAngle + origAngle),
-        },
-        false,
-      );
+      if (!(isArrowElement(element) && element.elbowed)) {
+        mutateElement(
+          element,
+          {
+            x: element.x + (rotatedCX - cx),
+            y: element.y + (rotatedCY - cy),
+            angle: normalizeAngle(centerAngle + origAngle),
+          },
+          false,
+        );
+      } else {
+        const startBindable =
+          element.startBinding &&
+          elementsMap.get(element.startBinding.elementId);
+        const endBindable =
+          element.endBinding && elementsMap.get(element.endBinding.elementId);
+        let startPoint = element.points[0];
+        let endPoint = element.points[element.points.length - 1];
+        if (element.startBinding && startBindable) {
+          const unrotatedBounds = [
+            startBindable.x,
+            startBindable.y,
+            startBindable.x + startBindable.width,
+            startBindable.y + startBindable.height,
+          ];
+          const localX =
+            (unrotatedBounds[2] - unrotatedBounds[0]) *
+            element.startBinding.ratio[0];
+          const localY =
+            (unrotatedBounds[3] - unrotatedBounds[1]) *
+            element.startBinding.ratio[1];
+          const globalX = unrotatedBounds[0] + localX;
+          const globalY = unrotatedBounds[1] + localY;
+          const globalMidPoint = [
+            unrotatedBounds[0] + (unrotatedBounds[2] - unrotatedBounds[0]) / 2,
+            unrotatedBounds[1] + (unrotatedBounds[3] - unrotatedBounds[1]) / 2,
+          ] as Point;
+          const [rotatedGlobalX, rotatedGlobalY] = rotatePoint(
+            [globalX, globalY],
+            globalMidPoint,
+            startBindable.angle,
+          );
+
+          startPoint = toLocalSpace(element, [rotatedGlobalX, rotatedGlobalY]);
+        }
+        if (element.endBinding && endBindable) {
+          const unrotatedBounds = [
+            endBindable.x,
+            endBindable.y,
+            endBindable.x + endBindable.width,
+            endBindable.y + endBindable.height,
+          ];
+          const localX =
+            (unrotatedBounds[2] - unrotatedBounds[0]) *
+            element.endBinding.ratio[0];
+          const localY =
+            (unrotatedBounds[3] - unrotatedBounds[1]) *
+            element.endBinding.ratio[1];
+          const globalX = unrotatedBounds[0] + localX;
+          const globalY = unrotatedBounds[1] + localY;
+          const globalMidPoint = [
+            unrotatedBounds[0] + (unrotatedBounds[2] - unrotatedBounds[0]) / 2,
+            unrotatedBounds[1] + (unrotatedBounds[3] - unrotatedBounds[1]) / 2,
+          ] as Point;
+          const [rotatedGlobalX, rotatedGlobalY] = rotatePoint(
+            [globalX, globalY],
+            globalMidPoint,
+            endBindable.angle,
+          );
+
+          endPoint = toLocalSpace(element, [rotatedGlobalX, rotatedGlobalY]);
+        }
+        LinearElementEditor.movePoints(element, [
+          { index: 0, point: startPoint },
+        ]);
+        LinearElementEditor.movePoints(element, [
+          { index: element.points.length - 1, point: endPoint },
+        ]);
+      }
       updateBoundElements(element, elementsMap, {
         simultaneouslyUpdated: elements,
       });

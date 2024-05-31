@@ -592,7 +592,7 @@ const getDynamicStartEndBounds = (
         // Start is higher than end
         const start = startHeading === DOWN ? startDongleMinSize : 0;
         const end = endHeading === UP ? endDongleMinSize : 0;
-        const distance = (verticalDistance - start - end) / 2 - 4;
+        const distance = (verticalDistance - start - end) / 2 - 1;
         startBoundingBox[3] =
           startBoundingBox[3] - BIAS + clamp(start + distance, start, Infinity);
         endBoundingBox[1] =
@@ -601,7 +601,7 @@ const getDynamicStartEndBounds = (
         // Start is lower than end
         const start = startHeading === UP ? startDongleMinSize : 0;
         const end = endHeading === DOWN ? endDongleMinSize : 0;
-        const distance = (verticalDistance - start - end) / 2 - 4;
+        const distance = (verticalDistance - start - end) / 2 - 1;
         startBoundingBox[1] =
           startBoundingBox[1] +
           BIAS -
@@ -619,7 +619,7 @@ const getDynamicStartEndBounds = (
         // Start is to the left of end
         const start = startHeading === RIGHT ? startDongleMinSize : 0;
         const end = endHeading === LEFT ? endDongleMinSize : 0;
-        const distance = (horizontalDistance - start - end) / 2 - 4;
+        const distance = (horizontalDistance - start - end) / 2 - 1;
         startBoundingBox[2] =
           startBoundingBox[2] - BIAS + clamp(start + distance, start, Infinity);
         endBoundingBox[0] =
@@ -628,7 +628,7 @@ const getDynamicStartEndBounds = (
         // Start is to the right of end
         const start = startHeading === LEFT ? startDongleMinSize : 0;
         const end = endHeading === RIGHT ? endDongleMinSize : 0;
-        const distance = (horizontalDistance - start - end) / 2 - 4;
+        const distance = (horizontalDistance - start - end) / 2 - 1;
         startBoundingBox[0] =
           startBoundingBox[0] + BIAS - clamp(start + distance, 0, Infinity);
         endBoundingBox[2] =
