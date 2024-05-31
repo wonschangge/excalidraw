@@ -41,7 +41,7 @@ import {
 } from "./debug";
 
 const STEP_COUNT_LIMIT = 50;
-const MIN_DONGLE_SIZE = 5;
+const MIN_DONGLE_SIZE = 6; // As long as snap distance is 5px this cannot go under 6!
 const ARROWHEAD_DONGLE_SIZE = 20;
 const DONGLE_EXTENSION_SIZE = 150;
 const HITBOX_EXTENSION_SIZE = 30;
@@ -79,7 +79,7 @@ export const calculateElbowArrowJointPoints = (
     firstPoint,
     target,
   );
-  const [startDongleBounds, endDongleBounds] = getDynamicStartEndBounds(
+  const [startBounds, endBounds] = getDynamicStartEndBounds(
     arrow,
     firstPoint,
     target,
@@ -94,7 +94,7 @@ export const calculateElbowArrowJointPoints = (
       ? extendSegmentToBoundingBoxEdge(
           [firstPoint, addVectors(firstPoint, startHeading)],
           true,
-          startDongleBounds !== null ? [startDongleBounds] : [],
+          startBounds !== null ? [startBounds] : [],
         )
       : addVectors(
           firstPoint,
@@ -109,7 +109,7 @@ export const calculateElbowArrowJointPoints = (
       ? extendSegmentToBoundingBoxEdge(
           [addVectors(target, endHeading), target],
           false,
-          endDongleBounds !== null ? [endDongleBounds] : [],
+          endBounds !== null ? [endBounds] : [],
         )
       : addVectors(
           target,
@@ -120,22 +120,16 @@ export const calculateElbowArrowJointPoints = (
         ),
     target,
   ];
+  debugDrawBounds(startBounds!);
   debugDrawPoint(points[0], "green");
   debugDrawPoint(points[1], "green");
-  const avoidBounds = getDynamicStartEndBounds(
-    arrow,
-    firstPoint,
-    target,
-    startHeading,
-    endHeading,
-    startDongleMinSize,
-    endDongleMinSize,
-  )
+
+  const avoidBounds = [startBounds, endBounds]
     .filter((bb): bb is Bounds => bb !== null)
-    .map((bb) => {
-      debugDrawBounds(bb, "green");
-      return bb;
-    })
+    // .map((bb) => {
+    //   debugDrawBounds(bb, "green");
+    //   return bb;
+    // })
     .filter(
       (bbox) =>
         !(
@@ -307,7 +301,7 @@ const kernel = (
     );
   }
 
-  //debugDrawPoint(next);
+  debugDrawPoint(next);
 
   return next;
 };
