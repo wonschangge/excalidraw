@@ -120,16 +120,13 @@ export const calculateElbowArrowJointPoints = (
         ),
     target,
   ];
-  //debugDrawBounds(startBounds!);
-  debugDrawPoint(points[0], "green");
-  debugDrawPoint(points[1], "green");
 
   const avoidBounds = [startBounds, endBounds]
     .filter((bb): bb is Bounds => bb !== null)
-    // .map((bb) => {
-    //   debugDrawBounds(bb, "green");
-    //   return bb;
-    // })
+    .map((bb) => {
+      debugDrawBounds(bb, "green");
+      return bb;
+    })
     .filter(
       (bbox) =>
         !(
@@ -222,6 +219,7 @@ const kernel = (
       ? [start[0], end[1]]
       : [end[0], start[1]]; // Turn left/right all the way to end
 
+  /*
   if (step === 0) {
     const intersections = boundingBoxes
       .map(bboxToClockwiseWoundingSegments)
@@ -257,6 +255,7 @@ const kernel = (
       //debugDrawPoint(start, "orange");
     }
   }
+  */
 
   // Phase 3: Do not go forward again if the previous segment we generated
   //          is continuing in the same direction, except the first step,
@@ -593,7 +592,7 @@ const getDynamicStartEndBounds = (
         // Start is higher than end
         const start = startHeading === DOWN ? startDongleMinSize : 0;
         const end = endHeading === UP ? endDongleMinSize : 0;
-        const distance = (verticalDistance - start - end) / 2 - 1;
+        const distance = (verticalDistance - start - end) / 2 - 4;
         startBoundingBox[3] =
           startBoundingBox[3] - BIAS + clamp(start + distance, start, Infinity);
         endBoundingBox[1] =
@@ -602,7 +601,7 @@ const getDynamicStartEndBounds = (
         // Start is lower than end
         const start = startHeading === UP ? startDongleMinSize : 0;
         const end = endHeading === DOWN ? endDongleMinSize : 0;
-        const distance = (verticalDistance - start - end) / 2 - 1;
+        const distance = (verticalDistance - start - end) / 2 - 4;
         startBoundingBox[1] =
           startBoundingBox[1] +
           BIAS -
@@ -620,7 +619,7 @@ const getDynamicStartEndBounds = (
         // Start is to the left of end
         const start = startHeading === RIGHT ? startDongleMinSize : 0;
         const end = endHeading === LEFT ? endDongleMinSize : 0;
-        const distance = (horizontalDistance - start - end) / 2 - 1;
+        const distance = (horizontalDistance - start - end) / 2 - 4;
         startBoundingBox[2] =
           startBoundingBox[2] - BIAS + clamp(start + distance, start, Infinity);
         endBoundingBox[0] =
@@ -629,7 +628,7 @@ const getDynamicStartEndBounds = (
         // Start is to the right of end
         const start = startHeading === LEFT ? startDongleMinSize : 0;
         const end = endHeading === RIGHT ? endDongleMinSize : 0;
-        const distance = (horizontalDistance - start - end) / 2 - 1;
+        const distance = (horizontalDistance - start - end) / 2 - 4;
         startBoundingBox[0] =
           startBoundingBox[0] + BIAS - clamp(start + distance, 0, Infinity);
         endBoundingBox[2] =
