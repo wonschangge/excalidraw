@@ -72,6 +72,8 @@ export const calculateElbowArrowJointPoints = (
     arrow,
     firstPoint,
     target,
+    startHeading,
+    endHeading,
   );
   const points = [
     firstPoint,
@@ -105,7 +107,15 @@ export const calculateElbowArrowJointPoints = (
         ),
     target,
   ];
-  const avoidBounds = getStartEndBounds(arrow, firstPoint, target)
+  debugDrawPoint(points[0], "green");
+  debugDrawPoint(points[1], "green");
+  const avoidBounds = getStartEndBounds(
+    arrow,
+    firstPoint,
+    target,
+    startHeading,
+    endHeading,
+  )
     .filter((bb): bb is Bounds => bb !== null)
     .map((bb) => {
       debugDrawBounds(bb, "green");
@@ -235,7 +245,7 @@ const kernel = (
       //   next = addVectors(start, scaleVector(oppositeVector, lenRight));
       // }
 
-      debugDrawPoint(start, "orange");
+      //debugDrawPoint(start, "orange");
     }
   }
 
@@ -282,7 +292,7 @@ const kernel = (
     );
   }
 
-  debugDrawPoint(next);
+  //debugDrawPoint(next);
 
   return next;
 };
@@ -438,8 +448,8 @@ const resolveIntersections = (
         ? null
         : nextRightCandidate;
 
-    nextLeft && debugDrawPoint(nextLeft, "red");
-    nextRight && debugDrawPoint(nextRight, "green");
+    // nextLeft && debugDrawPoint(nextLeft, "red");
+    // nextRight && debugDrawPoint(nextRight, "green");
 
     const nextLeftEndDistance = nextLeft
       ? Math.sqrt(distanceSq(nextLeft, target)) + offsetRight
@@ -472,6 +482,8 @@ const getStartEndBounds = (
   arrow: ExcalidrawArrowElement,
   startPoint: Point,
   endPoint: Point,
+  startHeading: Vector | null,
+  endHeading: Vector | null,
 ): [Bounds | null, Bounds | null] => {
   const scene = Scene.getScene(arrow);
   if (!scene) {
@@ -526,43 +538,54 @@ const getStartEndBounds = (
     const verticalDistance =
       commonBbox[3] -
       commonBbox[1] -
-      4 * BIAS -
+      2 * BIAS -
       (startEndElements[0].height + startEndElements[1].height);
     const horizontalDistance =
       commonBbox[2] -
       commonBbox[0] -
-      4 * BIAS -
+      2 * BIAS -
       (startEndElements[0].width + startEndElements[1].width);
 
-    if (verticalDistance > -2 * BIAS) {
+    if (verticalDistance > 0) {
       // Not overlapping vertically
-
       if (
         startEndElements[0].y + startEndElements[0].height <
         startEndElements[1].y
       ) {
         // Start is higher than end
-        startBoundingBox[3] += verticalDistance / 2 - 1;
-        endBoundingBox[1] -= verticalDistance / 2 - 1;
+        const start = startHeading === DOWN ? MIN_DONGLE_SIZE : 0;
+        const end = endHeading === UP ? MIN_DONGLE_SIZE : 0;
+        const distance = (verticalDistance - start - end) / 2 - 1;
+        startBoundingBox[3] = startBoundingBox[3] - BIAS + start + distance;
+        endBoundingBox[1] = endBoundingBox[1] + BIAS - end - distance;
       } else {
         // Start is lower than end
-        startBoundingBox[1] -= verticalDistance / 2 - 1;
-        endBoundingBox[3] += verticalDistance / 2 - 1;
+        const start = startHeading === UP ? MIN_DONGLE_SIZE : 0;
+        const end = endHeading === DOWN ? MIN_DONGLE_SIZE : 0;
+        const distance = (verticalDistance - start - end) / 2 - 1;
+        startBoundingBox[1] = startBoundingBox[1] + BIAS - start - distance;
+        endBoundingBox[3] = endBoundingBox[3] - BIAS + end + distance;
       }
     }
-    if (horizontalDistance > -2 * BIAS) {
+    if (horizontalDistance > 0) {
       // Not overlapping horizontally
       if (
         startEndElements[0].x + startEndElements[0].width <
         startEndElements[1].x
       ) {
         // Start is to the left of end
-        startBoundingBox[2] += horizontalDistance / 2 - 1;
-        endBoundingBox[0] -= horizontalDistance / 2 - 1;
+        const start = startHeading === RIGHT ? MIN_DONGLE_SIZE : 0;
+        const end = endHeading === LEFT ? MIN_DONGLE_SIZE : 0;
+        const distance = (horizontalDistance - start - end) / 2 - 1;
+        startBoundingBox[2] = startBoundingBox[2] - BIAS + start + distance;
+        endBoundingBox[0] = endBoundingBox[0] + BIAS - end - distance;
       } else {
         // Start is to the right of end
-        startBoundingBox[0] -= horizontalDistance / 2 - 1;
-        endBoundingBox[2] += horizontalDistance / 2 - 1;
+        const start = startHeading === LEFT ? MIN_DONGLE_SIZE : 0;
+        const end = endHeading === RIGHT ? MIN_DONGLE_SIZE : 0;
+        const distance = (horizontalDistance - start - end) / 2 - 1;
+        startBoundingBox[0] = startBoundingBox[0] + BIAS - start - distance;
+        endBoundingBox[2] = endBoundingBox[2] - BIAS + end + distance;
       }
     }
   }
