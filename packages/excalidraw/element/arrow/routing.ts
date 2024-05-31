@@ -120,7 +120,7 @@ export const calculateElbowArrowJointPoints = (
         ),
     target,
   ];
-  debugDrawBounds(startBounds!);
+  //debugDrawBounds(startBounds!);
   debugDrawPoint(points[0], "green");
   debugDrawPoint(points[1], "green");
 
