@@ -2,7 +2,7 @@ import {
   PointInTriangle,
   addVectors,
   arePointsEqual,
-  distance2d,
+  clamp,
   distanceSq,
   doBoundsIntersect,
   dotProduct,
@@ -41,7 +41,8 @@ import {
 } from "./debug";
 
 const STEP_COUNT_LIMIT = 50;
-const MIN_DONGLE_SIZE = 30;
+const MIN_DONGLE_SIZE = 5;
+const ARROWHEAD_DONGLE_SIZE = 20;
 const DONGLE_EXTENSION_SIZE = 150;
 const HITBOX_EXTENSION_SIZE = 30;
 
@@ -63,6 +64,16 @@ export const calculateElbowArrowJointPoints = (
 
   const target = toWorldSpace(arrow, arrow.points[arrow.points.length - 1]);
   const firstPoint = toWorldSpace(arrow, arrow.points[0]);
+  const startDongleMinSize = arrow.startBinding
+    ? arrow.startArrowhead
+      ? ARROWHEAD_DONGLE_SIZE
+      : MIN_DONGLE_SIZE
+    : ARROWHEAD_DONGLE_SIZE;
+  const endDongleMinSize = arrow.endBinding
+    ? arrow.endArrowhead
+      ? ARROWHEAD_DONGLE_SIZE
+      : MIN_DONGLE_SIZE
+    : ARROWHEAD_DONGLE_SIZE;
   const [startHeading, endHeading] = getHeadingForStartEndElements(
     arrow,
     firstPoint,
@@ -74,6 +85,8 @@ export const calculateElbowArrowJointPoints = (
     target,
     startHeading,
     endHeading,
+    startDongleMinSize,
+    endDongleMinSize,
   );
   const points = [
     firstPoint,
@@ -87,7 +100,7 @@ export const calculateElbowArrowJointPoints = (
           firstPoint,
           scaleVector(
             vectorToHeading(pointToVector(target, firstPoint)),
-            MIN_DONGLE_SIZE,
+            startDongleMinSize,
           ),
         ),
   ];
@@ -102,7 +115,7 @@ export const calculateElbowArrowJointPoints = (
           target,
           scaleVector(
             vectorToHeading(pointToVector(firstPoint, target)),
-            MIN_DONGLE_SIZE,
+            endDongleMinSize,
           ),
         ),
     target,
@@ -115,6 +128,8 @@ export const calculateElbowArrowJointPoints = (
     target,
     startHeading,
     endHeading,
+    startDongleMinSize,
+    endDongleMinSize,
   )
     .filter((bb): bb is Bounds => bb !== null)
     .map((bb) => {
@@ -539,6 +554,8 @@ const getDynamicStartEndBounds = (
   endPoint: Point,
   startHeading: Vector | null,
   endHeading: Vector | null,
+  startDongleMinSize: number,
+  endDongleMinSize: number,
 ): [Bounds | null, Bounds | null] => {
   const startEndElements = getStartEndOrHoveredElements(
     arrow,
@@ -580,18 +597,24 @@ const getDynamicStartEndBounds = (
         startEndElements[1].y
       ) {
         // Start is higher than end
-        const start = startHeading === DOWN ? MIN_DONGLE_SIZE : 0;
-        const end = endHeading === UP ? MIN_DONGLE_SIZE : 0;
+        const start = startHeading === DOWN ? startDongleMinSize : 0;
+        const end = endHeading === UP ? endDongleMinSize : 0;
         const distance = (verticalDistance - start - end) / 2 - 1;
-        startBoundingBox[3] = startBoundingBox[3] - BIAS + start + distance;
-        endBoundingBox[1] = endBoundingBox[1] + BIAS - end - distance;
+        startBoundingBox[3] =
+          startBoundingBox[3] - BIAS + clamp(start + distance, start, Infinity);
+        endBoundingBox[1] =
+          endBoundingBox[1] + BIAS - clamp(end + distance, end, Infinity);
       } else {
         // Start is lower than end
-        const start = startHeading === UP ? MIN_DONGLE_SIZE : 0;
-        const end = endHeading === DOWN ? MIN_DONGLE_SIZE : 0;
+        const start = startHeading === UP ? startDongleMinSize : 0;
+        const end = endHeading === DOWN ? endDongleMinSize : 0;
         const distance = (verticalDistance - start - end) / 2 - 1;
-        startBoundingBox[1] = startBoundingBox[1] + BIAS - start - distance;
-        endBoundingBox[3] = endBoundingBox[3] - BIAS + end + distance;
+        startBoundingBox[1] =
+          startBoundingBox[1] +
+          BIAS -
+          clamp(start + distance, -Infinity, BIAS + start);
+        endBoundingBox[3] =
+          endBoundingBox[3] - BIAS + clamp(end + distance, end, Infinity);
       }
     }
     if (horizontalDistance > 0) {
@@ -601,18 +624,22 @@ const getDynamicStartEndBounds = (
         startEndElements[1].x
       ) {
         // Start is to the left of end
-        const start = startHeading === RIGHT ? MIN_DONGLE_SIZE : 0;
-        const end = endHeading === LEFT ? MIN_DONGLE_SIZE : 0;
+        const start = startHeading === RIGHT ? startDongleMinSize : 0;
+        const end = endHeading === LEFT ? endDongleMinSize : 0;
         const distance = (horizontalDistance - start - end) / 2 - 1;
-        startBoundingBox[2] = startBoundingBox[2] - BIAS + start + distance;
-        endBoundingBox[0] = endBoundingBox[0] + BIAS - end - distance;
+        startBoundingBox[2] =
+          startBoundingBox[2] - BIAS + clamp(start + distance, start, Infinity);
+        endBoundingBox[0] =
+          endBoundingBox[0] + BIAS - clamp(end + distance, end, Infinity);
       } else {
         // Start is to the right of end
-        const start = startHeading === LEFT ? MIN_DONGLE_SIZE : 0;
-        const end = endHeading === RIGHT ? MIN_DONGLE_SIZE : 0;
+        const start = startHeading === LEFT ? startDongleMinSize : 0;
+        const end = endHeading === RIGHT ? endDongleMinSize : 0;
         const distance = (horizontalDistance - start - end) / 2 - 1;
-        startBoundingBox[0] = startBoundingBox[0] + BIAS - start - distance;
-        endBoundingBox[2] = endBoundingBox[2] - BIAS + end + distance;
+        startBoundingBox[0] =
+          startBoundingBox[0] + BIAS - clamp(start + distance, 0, Infinity);
+        endBoundingBox[2] =
+          endBoundingBox[2] - BIAS + clamp(end + distance, -Infinity, BIAS);
       }
     }
   }
