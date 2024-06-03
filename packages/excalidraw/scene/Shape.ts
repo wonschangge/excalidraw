@@ -400,13 +400,9 @@ export const _generateElementShape = (
 
       // points array can be empty in the beginning, so it is important to add
       // initial position to it
-      let points = element.points.length
+      const points = element.points.length
         ? element.points
         : ([[0, 0]] as LocalPoint[]);
-
-      if (isArrowElement(element) && element.elbowed) {
-        points = calculateElbowArrowJointPoints(element);
-      }
 
       // curve is always the first element
       // this simplifies finding the curve for an element

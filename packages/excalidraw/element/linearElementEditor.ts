@@ -43,13 +43,14 @@ import {
   isBindingEnabled,
 } from "./binding";
 import { tupleToCoors } from "../utils";
-import { isBindingElement } from "./typeChecks";
+import { isArrowElement, isBindingElement } from "./typeChecks";
 import { KEYS, shouldRotateWithDiscreteAngle } from "../keys";
 import { getBoundTextElement, handleBindTextResize } from "./textElement";
 import { DRAGGING_THRESHOLD } from "../constants";
 import type { Mutable } from "../utility-types";
 import { ShapeCache } from "../scene/ShapeCache";
 import type { Store } from "../store";
+import { calculateElbowArrowJointPoints } from "./arrow/routing";
 
 const editorMidPointsCache: {
   version: number | null;
@@ -281,6 +282,13 @@ export class LinearElementEditor {
             };
           }),
         );
+      }
+
+      // Update elbow arrow points to match
+      if (element.elbowed && isArrowElement(element)) {
+        mutateElement(element, {
+          points: calculateElbowArrowJointPoints(element),
+        });
       }
 
       const boundTextElement = getBoundTextElement(element, elementsMap);
