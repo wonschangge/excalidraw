@@ -556,6 +556,22 @@ const getDynamicStartEndBounds = (
     endPoint,
   );
   const BIAS = 50;
+  const [startAABB, endAABB] = getStartEndBounds(
+    arrow,
+    startPoint,
+    endPoint,
+    startEndElements,
+    0,
+  ).map(
+    (bounds) =>
+      bounds && {
+        x: bounds[0],
+        y: bounds[1],
+        width: bounds[2] - bounds[0],
+        height: bounds[3] - bounds[1],
+      },
+  );
+
   const [startBoundingBox, endBoundingBox] = getStartEndBounds(
     arrow,
     startPoint,
@@ -564,31 +580,23 @@ const getDynamicStartEndBounds = (
     BIAS,
   );
 
-  if (
-    startBoundingBox &&
-    endBoundingBox &&
-    startEndElements[0] &&
-    startEndElements[1]
-  ) {
+  if (startBoundingBox && endBoundingBox && startAABB && endAABB) {
     const commonBbox = getCommonAABB(startBoundingBox, endBoundingBox);
     debugDrawBounds(commonBbox);
     const verticalDistance =
       commonBbox[3] -
       commonBbox[1] -
       2 * BIAS -
-      (startEndElements[0].height + startEndElements[1].height);
+      (startAABB.height + endAABB.height);
     const horizontalDistance =
       commonBbox[2] -
       commonBbox[0] -
       2 * BIAS -
-      (startEndElements[0].width + startEndElements[1].width);
+      (startAABB.width + endAABB.width);
 
     if (verticalDistance > 0) {
       // Not overlapping vertically
-      if (
-        startEndElements[0].y + startEndElements[0].height <
-        startEndElements[1].y
-      ) {
+      if (startAABB.y + startAABB.height < endAABB.y) {
         // Start is higher than end
         const start = startHeading === DOWN ? startDongleMinSize : 0;
         const end = endHeading === UP ? endDongleMinSize : 0;
@@ -612,10 +620,7 @@ const getDynamicStartEndBounds = (
     }
     if (horizontalDistance > 0) {
       // Not overlapping horizontally
-      if (
-        startEndElements[0].x + startEndElements[0].width <
-        startEndElements[1].x
-      ) {
+      if (startAABB.x + startAABB.width < endAABB.x) {
         // Start is to the left of end
         const start = startHeading === RIGHT ? startDongleMinSize : 0;
         const end = endHeading === LEFT ? endDongleMinSize : 0;
