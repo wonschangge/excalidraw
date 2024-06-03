@@ -32,13 +32,7 @@ import type {
   ExcalidrawBindableElement,
   ExcalidrawElement,
 } from "../types";
-import {
-  debugClear,
-  debugDrawBounds,
-  debugDrawPoint,
-  debugDrawSegments,
-  debugNewFrame,
-} from "./debug";
+import { debugClear, debugDrawPoint, debugNewFrame } from "./debug";
 
 const STEP_COUNT_LIMIT = 50;
 const MIN_DONGLE_SIZE = 6; // As long as snap distance is 5px this cannot go under 6!
@@ -61,7 +55,7 @@ export const calculateElbowArrowJointPoints = (
   }
 
   debugClear();
-
+  arrow.points.forEach((point) => debugDrawPoint(toWorldSpace(arrow, point)));
   const target = toWorldSpace(arrow, arrow.points[arrow.points.length - 1]);
   const firstPoint = toWorldSpace(arrow, arrow.points[0]);
   const startDongleMinSize = arrow.startBinding
@@ -123,10 +117,10 @@ export const calculateElbowArrowJointPoints = (
 
   const avoidBounds = [startBounds, endBounds]
     .filter((bb): bb is Bounds => bb !== null)
-    .map((bb) => {
-      debugDrawBounds(bb, "green");
-      return bb;
-    })
+    // .map((bb) => {
+    //   debugDrawBounds(bb, "green");
+    //   return bb;
+    // })
     .filter(
       (bbox) =>
         !(
@@ -300,7 +294,7 @@ const kernel = (
     );
   }
 
-  debugDrawPoint(next);
+  //debugDrawPoint(next);
 
   return next;
 };
@@ -377,7 +371,7 @@ const getHitOffset = (start: Point, next: Point, boundingBoxes: Bounds[]) =>
 
         if (p) {
           // We can use the p -> segment[1] because all bbox segments are in winding order
-          debugDrawSegments(segment, "red");
+          //debugDrawSegments(segment, "red");
 
           return [
             Math.sqrt(distanceSq(start, p)),
@@ -582,7 +576,7 @@ const getDynamicStartEndBounds = (
 
   if (startBoundingBox && endBoundingBox && startAABB && endAABB) {
     const commonBbox = getCommonAABB(startBoundingBox, endBoundingBox);
-    debugDrawBounds(commonBbox);
+    // debugDrawBounds(commonBbox);
     const verticalDistance =
       commonBbox[3] -
       commonBbox[1] -

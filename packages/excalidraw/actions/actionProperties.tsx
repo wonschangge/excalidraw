@@ -101,6 +101,7 @@ import { hasStrokeColor } from "../scene/comparisons";
 import { arrayToMap, getShortcutKey } from "../utils";
 import { register } from "./register";
 import { StoreAction } from "../store";
+import { calculateElbowArrowJointPoints } from "../element/arrow/routing";
 
 const FONT_SIZE_RELATIVE_INCREASE_STEP = 0.1;
 
@@ -1251,6 +1252,10 @@ export const actionChangeArrowType = register({
         }
 
         return newElementWith(el, {
+          points:
+            value === "elbowed"
+              ? calculateElbowArrowJointPoints(el)
+              : el.points,
           roundness:
             value === "round"
               ? {
