@@ -129,15 +129,15 @@ export const calculateElbowArrowJointPoints = (
         ),
     );
 
-  // return simplifyElbowArrowPoints(
-  //   calculateSegment(points, endPoints, avoidBounds).map((point) =>
-  //     toLocalSpace(arrow, point),
-  //   ),
-  // );
-
-  return calculateSegment(points, endPoints, avoidBounds).map((point) =>
-    toLocalSpace(arrow, point),
+  return simplifyElbowArrowPoints(
+    calculateSegment(points, endPoints, avoidBounds).map((point) =>
+      toLocalSpace(arrow, point),
+    ),
   );
+
+  // return calculateSegment(points, endPoints, avoidBounds).map((point) =>
+  //   toLocalSpace(arrow, point),
+  // );
 };
 
 // Calculates the points between a start segment and an end segment with elbows

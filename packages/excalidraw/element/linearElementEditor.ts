@@ -286,9 +286,22 @@ export class LinearElementEditor {
 
       // Update elbow arrow points to match
       if (element.elbowed && isArrowElement(element)) {
-        mutateElement(element, {
-          points: calculateElbowArrowJointPoints(element),
+        const points = calculateElbowArrowJointPoints(element);
+        points.forEach((point, index) => {
+          LinearElementEditor.movePoints(element, [
+            {
+              index,
+              point,
+            },
+          ]);
         });
+        LinearElementEditor.movePoints(
+          element,
+          points.map((point, index) => ({
+            index,
+            point,
+          })),
+        );
       }
 
       const boundTextElement = getBoundTextElement(element, elementsMap);
