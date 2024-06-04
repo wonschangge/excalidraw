@@ -295,13 +295,6 @@ export class LinearElementEditor {
             },
           ]);
         });
-        LinearElementEditor.movePoints(
-          element,
-          points.map((point, index) => ({
-            index,
-            point,
-          })),
-        );
       }
 
       const boundTextElement = getBoundTextElement(element, elementsMap);
@@ -707,7 +700,10 @@ export class LinearElementEditor {
       );
     }
     if (event.altKey && appState.editingLinearElement) {
-      if (linearElementEditor.lastUncommittedPoint == null) {
+      if (
+        linearElementEditor.lastUncommittedPoint == null &&
+        !element.elbowed
+      ) {
         mutateElement(element, {
           points: [
             ...element.points,
@@ -1332,6 +1328,14 @@ export class LinearElementEditor {
       x: element.x + rotated[0],
       y: element.y + rotated[1],
     });
+    if (element.elbowed && isArrowElement(element)) {
+      // TODO(mtolmacs): Elbow routing now uses the element to get accurate data
+      // we should refactor to receive needed arrow metadata as paramters and
+      // don't call mutateElement again
+      // mutateElement(element, {
+      //   points: calculateElbowArrowJointPoints(element),
+      // });
+    }
   }
 
   private static _getShiftLockedDelta(
