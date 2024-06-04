@@ -1305,7 +1305,7 @@ export class LinearElementEditor {
     otherUpdates?: { startBinding?: PointBinding; endBinding?: PointBinding },
   ) {
     if (element.elbowed && isArrowElement(element)) {
-      mutateElbowArrow(element, nextPoints);
+      mutateElbowArrow(element, nextPoints, offsetX, offsetY);
     } else {
       const nextCoords = getElementPointsCoords(element, nextPoints);
       const prevCoords = getElementPointsCoords(element, element.points);

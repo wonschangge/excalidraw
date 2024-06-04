@@ -15,7 +15,6 @@ import {
   scaleVector,
   segmentsIntersectAt,
   segmentsOverlap,
-  toLocalSpace,
   toWorldSpace,
   vectorToHeading,
 } from "../../math";
@@ -50,8 +49,10 @@ const LEFT = [-1, 0] as Heading;
 export const mutateElbowArrow = (
   arrow: ExcalidrawArrowElement,
   newPoints: Readonly<LocalPoint[]>,
+  externalOffsetX: number,
+  externalOffsetY: number,
 ) => {
-  //console.log("-------");
+  console.log("-------");
   debugClear();
 
   if (newPoints.length < 2) {
@@ -78,10 +79,10 @@ export const mutateElbowArrow = (
     points: points.map((point, _idx) => {
       return [point[0] - offsetX, point[1] - offsetY] as const;
     }),
-    x: offsetX,
-    y: offsetY,
-    width: farthestX - offsetX,
-    height: farthestY - offsetY,
+    x: offsetX + externalOffsetX,
+    y: offsetY + externalOffsetY,
+    width: farthestX - offsetX + externalOffsetX,
+    height: farthestY - offsetY + externalOffsetY,
   });
   arrow.points.forEach((point) =>
     debugDrawPoint(toWorldSpace(arrow, point), "green", true),

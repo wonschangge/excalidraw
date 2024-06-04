@@ -1262,7 +1262,7 @@ export const actionChangeArrowType = register({
         });
 
         if (value === "elbowed") {
-          mutateElbowArrow(newElement, newElement.points);
+          mutateElbowArrow(newElement, newElement.points, 0, 0);
         }
 
         return newElement;
