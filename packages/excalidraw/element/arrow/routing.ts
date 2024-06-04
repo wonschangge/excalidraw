@@ -15,6 +15,7 @@ import {
   scaleVector,
   segmentsIntersectAt,
   segmentsOverlap,
+  toLocalSpace,
   toWorldSpace,
   vectorToHeading,
 } from "../../math";
@@ -52,7 +53,7 @@ export const mutateElbowArrow = (
   externalOffsetX: number,
   externalOffsetY: number,
 ) => {
-  console.log("-------");
+  //console.log("-------");
   debugClear();
 
   if (newPoints.length < 2) {
@@ -164,10 +165,6 @@ const calculateElbowArrowJointPoints = (
 
   const avoidBounds = [startBounds, endBounds]
     .filter((bb): bb is Bounds => bb !== null)
-    // .map((bb) => {
-    //   debugDrawBounds(bb, "green");
-    //   return bb;
-    // })
     .filter(
       (bbox) =>
         !(
@@ -176,13 +173,33 @@ const calculateElbowArrowJointPoints = (
         ),
     );
 
+  let newPoints = calculateSegment(points, endPoints, avoidBounds);
+
+  const [startElement, endElement] = getStartEndOrHoveredElements(
+    arrow,
+    newPoints[0],
+    newPoints[newPoints.length - 1],
+  );
+  if (startElement) {
+    newPoints = updateBindPointToSnapToElementOutline(
+      arrow,
+      "start",
+      newPoints,
+      startElement,
+    );
+  }
+  if (endElement) {
+    newPoints = updateBindPointToSnapToElementOutline(
+      arrow,
+      "end",
+      newPoints,
+      endElement,
+    );
+  }
+
   return simplifyElbowArrowPoints(
     calculateSegment(points, endPoints, avoidBounds),
   );
-
-  // return calculateSegment(points, endPoints, avoidBounds).map((point) =>
-  //   toLocalSpace(arrow, point),
-  // );
 };
 
 // Calculates the points between a start segment and an end segment with elbows
@@ -944,3 +961,35 @@ const simplifyElbowArrowPoints = (points: Point[]): Point[] =>
           : [...result, point],
       [points[0] ?? [0, 0], points[1] ?? [1, 0]],
     );
+
+const updateBindPointToSnapToElementOutline = (
+  arrow: ExcalidrawArrowElement,
+  startOrEnd: "start" | "end",
+  points: Readonly<LocalPoint[]>,
+  hoveredElement: ExcalidrawBindableElement,
+): LocalPoint[] => {
+  const elementsMap = Scene.getScene(arrow)?.getNonDeletedElementsMap();
+  if (!elementsMap) {
+    return points.slice();
+  }
+
+  const index = startOrEnd === "start" ? 0 : points.length - 1;
+  const globalPoint = toWorldSpace(arrow, points[index]);
+  const globalMidPoint = [
+    hoveredElement.x + hoveredElement.width / 2,
+    hoveredElement.y + hoveredElement.height / 2,
+  ] as Point;
+  const dist = distanceToBindableElement(
+    hoveredElement,
+    globalPoint,
+    elementsMap,
+  );
+  const vec = normalize(pointToVector(globalMidPoint, globalPoint));
+  const updatedPoints = points.slice();
+  updatedPoints[index] = toLocalSpace(
+    arrow,
+    addVectors(globalPoint, scaleVector(vec, dist - 5)),
+  );
+
+  return updatedPoints;
+};
