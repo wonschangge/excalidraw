@@ -19,7 +19,6 @@ import {
   toWorldSpace,
   vectorToHeading,
 } from "../../math";
-import Scene from "../../scene/Scene";
 import type { LocalPoint, Point, Segment, Vector } from "../../types";
 import {
   distanceToBindableElement,
@@ -32,6 +31,8 @@ import type {
   ExcalidrawArrowElement,
   ExcalidrawBindableElement,
   ExcalidrawElement,
+  NonDeletedExcalidrawElement,
+  NonDeletedSceneElementsMap,
 } from "../types";
 import { debugClear, debugDrawPoint, debugNewFrame } from "./debug";
 
@@ -52,6 +53,8 @@ export const mutateElbowArrow = (
   newPoints: Readonly<LocalPoint[]>,
   externalOffsetX: number,
   externalOffsetY: number,
+  elementsMap: NonDeletedSceneElementsMap,
+  elements: Readonly<NonDeletedExcalidrawElement[]>,
 ) => {
   //console.log("-------");
   debugClear();
@@ -66,6 +69,8 @@ export const mutateElbowArrow = (
     arrow,
     toWorldSpace(arrow, newPoints[0]),
     toWorldSpace(arrow, newPoints[newPoints.length - 1]),
+    elementsMap,
+    elements,
   );
   const offsetX = points[0][0];
   const offsetY = points[0][1];
@@ -76,7 +81,7 @@ export const mutateElbowArrow = (
     ],
     points[0],
   );
-  mutateElement(arrow, {
+  const update = {
     points: points.map((point, _idx) => {
       return [point[0] - offsetX, point[1] - offsetY] as const;
     }),
@@ -84,22 +89,52 @@ export const mutateElbowArrow = (
     y: offsetY + externalOffsetY,
     width: farthestX - offsetX + externalOffsetX,
     height: farthestY - offsetY + externalOffsetY,
-  });
+  };
+  const [startElement, endElement] = getStartEndOrHoveredElements(
+    arrow,
+    update.points[0],
+    update.points[update.points.length - 1],
+    elementsMap,
+    elements,
+  );
+  if (startElement) {
+    update.points = updateBindPointToSnapToElementOutline(
+      {
+        ...arrow,
+        ...update,
+      },
+      "start",
+      update.points,
+      startElement,
+      elementsMap,
+    );
+  }
+  if (endElement) {
+    update.points = updateBindPointToSnapToElementOutline(
+      {
+        ...arrow,
+        ...update,
+      },
+      "end",
+      update.points,
+      endElement,
+      elementsMap,
+    );
+  }
+
+  mutateElement(arrow, update);
+
   arrow.points.forEach((point) =>
     debugDrawPoint(toWorldSpace(arrow, point), "green", true),
   );
-  // console.log(
-  //   `[${Math.round(arrow.x)}, ${Math.round(arrow.y)}] -> `,
-  //   arrow.points
-  //     .map((p) => `[${Math.round(p[0])},${Math.round(p[1])}]`)
-  //     .join(","),
-  // );
 };
 
 const calculateElbowArrowJointPoints = (
   arrow: ExcalidrawArrowElement,
   startPoint: Point,
   endPoint: Point,
+  elementsMap: NonDeletedSceneElementsMap,
+  elements: Readonly<NonDeletedExcalidrawElement[]>,
 ): readonly Point[] => {
   if (arrow.points.length < 2) {
     // Arrow being created
@@ -120,6 +155,8 @@ const calculateElbowArrowJointPoints = (
     arrow,
     startPoint,
     endPoint,
+    elementsMap,
+    elements,
   );
   const [startBounds, endBounds] = getDynamicStartEndBounds(
     arrow,
@@ -129,6 +166,8 @@ const calculateElbowArrowJointPoints = (
     endHeading,
     startDongleMinSize,
     endDongleMinSize,
+    elementsMap,
+    elements,
   );
   const points = [
     startPoint,
@@ -172,30 +211,6 @@ const calculateElbowArrowJointPoints = (
           isPointInsideBoundingBox(endPoints[0], bbox)
         ),
     );
-
-  let newPoints = calculateSegment(points, endPoints, avoidBounds);
-
-  const [startElement, endElement] = getStartEndOrHoveredElements(
-    arrow,
-    newPoints[0],
-    newPoints[newPoints.length - 1],
-  );
-  if (startElement) {
-    newPoints = updateBindPointToSnapToElementOutline(
-      arrow,
-      "start",
-      newPoints,
-      startElement,
-    );
-  }
-  if (endElement) {
-    newPoints = updateBindPointToSnapToElementOutline(
-      arrow,
-      "end",
-      newPoints,
-      endElement,
-    );
-  }
 
   return simplifyElbowArrowPoints(
     calculateSegment(points, endPoints, avoidBounds),
@@ -544,27 +559,22 @@ const getStartEndOrHoveredElements = (
   arrow: ExcalidrawArrowElement,
   startPoint: Point,
   endPoint: Point,
+  elementsMap: NonDeletedSceneElementsMap,
+  elements: Readonly<NonDeletedExcalidrawElement[]>,
 ) => {
-  const scene = Scene.getScene(arrow);
-  if (!scene) {
-    return [null, null];
-  }
-
-  const elementsMap = scene.getNonDeletedElementsMap();
-
   return [
     arrow.startBinding
       ? elementsMap.get(arrow.startBinding.elementId) ?? null
       : getHoveredElementForBinding(
           { x: startPoint[0], y: startPoint[1] },
-          scene.getNonDeletedElements(),
+          elements,
           elementsMap,
         ),
     arrow.endBinding
       ? elementsMap.get(arrow.endBinding.elementId) ?? null
       : getHoveredElementForBinding(
           { x: endPoint[0], y: endPoint[1] },
-          scene.getNonDeletedElements(),
+          elements,
           elementsMap,
         ),
   ] as (ExcalidrawBindableElement | null)[];
@@ -605,11 +615,15 @@ const getDynamicStartEndBounds = (
   endHeading: Vector | null,
   startDongleMinSize: number,
   endDongleMinSize: number,
+  elementsMap: NonDeletedSceneElementsMap,
+  elements: Readonly<NonDeletedExcalidrawElement[]>,
 ): [Bounds | null, Bounds | null] => {
   const startEndElements = getStartEndOrHoveredElements(
     arrow,
     startPoint,
     endPoint,
+    elementsMap,
+    elements,
   );
   const BIAS = 50;
   const [startAABB, endAABB] = getStartEndBounds(
@@ -781,45 +795,40 @@ const getHeadingForStartEndElements = (
   arrow: ExcalidrawArrowElement,
   startPoint: Point,
   endPoint: Point,
+  elementsMap: NonDeletedSceneElementsMap,
+  elements: Readonly<NonDeletedExcalidrawElement[]>,
 ): [Vector | null, Vector | null] => {
-  const scene = Scene.getScene(arrow);
-  if (scene) {
-    const elements = scene.getNonDeletedElements();
-    const elementsMap = scene.getNonDeletedElementsMap();
-    const start =
-      arrow.startBinding === null
-        ? getHoveredElementForBinding(
-            { x: startPoint[0], y: startPoint[1] },
-            elements,
-            elementsMap,
-          )
-        : elementsMap.get(arrow.startBinding.elementId) ?? null;
-    const end =
-      arrow.endBinding === null
-        ? getHoveredElementForBinding(
-            { x: endPoint[0], y: endPoint[1] },
-            elements,
-            elementsMap,
-          )
-        : elementsMap.get(arrow.endBinding.elementId) ?? null;
+  const start =
+    arrow.startBinding === null
+      ? getHoveredElementForBinding(
+          { x: startPoint[0], y: startPoint[1] },
+          elements,
+          elementsMap,
+        )
+      : elementsMap.get(arrow.startBinding.elementId) ?? null;
+  const end =
+    arrow.endBinding === null
+      ? getHoveredElementForBinding(
+          { x: endPoint[0], y: endPoint[1] },
+          elements,
+          elementsMap,
+        )
+      : elementsMap.get(arrow.endBinding.elementId) ?? null;
 
-    return [
-      start &&
-        getHeadingForWorldPointFromElement(
-          start,
-          startPoint,
-          maxBindingGap(start, start.width, start.height),
-        ),
-      end &&
-        getHeadingForWorldPointFromElement(
-          end,
-          endPoint,
-          maxBindingGap(end, end.width, end.height),
-        ),
-    ];
-  }
-
-  return [null, null];
+  return [
+    start &&
+      getHeadingForWorldPointFromElement(
+        start,
+        startPoint,
+        maxBindingGap(start, start.width, start.height),
+      ),
+    end &&
+      getHeadingForWorldPointFromElement(
+        end,
+        endPoint,
+        maxBindingGap(end, end.width, end.height),
+      ),
+  ];
 };
 
 // Gets the heading for the point by creating a bounding box around the rotated
@@ -907,13 +916,10 @@ const getCenterWorldCoordsForBounds = (bounds: Bounds): Point => [
   bounds[1] + (bounds[3] - bounds[1]) / 2,
 ];
 
-const distanceBetweenStartEndBinds = (arrow: ExcalidrawArrowElement) => {
-  const scene = Scene.getScene(arrow);
-  if (scene === null) {
-    return null;
-  }
-
-  const elementsMap = scene.getNonDeletedElementsMap();
+export const distanceBetweenStartEndBinds = (
+  arrow: ExcalidrawArrowElement,
+  elementsMap: NonDeletedSceneElementsMap,
+) => {
   const startEl = ((arrow.startBinding &&
     elementsMap.get(arrow.startBinding.elementId)) ??
     null) as ExcalidrawBindableElement | null;
@@ -967,12 +973,8 @@ const updateBindPointToSnapToElementOutline = (
   startOrEnd: "start" | "end",
   points: Readonly<LocalPoint[]>,
   hoveredElement: ExcalidrawBindableElement,
+  elementsMap: NonDeletedSceneElementsMap,
 ): LocalPoint[] => {
-  const elementsMap = Scene.getScene(arrow)?.getNonDeletedElementsMap();
-  if (!elementsMap) {
-    return points.slice();
-  }
-
   const index = startOrEnd === "start" ? 0 : points.length - 1;
   const globalPoint = toWorldSpace(arrow, points[index]);
   const globalMidPoint = [

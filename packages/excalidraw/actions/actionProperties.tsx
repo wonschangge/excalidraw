@@ -84,6 +84,7 @@ import type {
   ExcalidrawLinearElement,
   ExcalidrawTextElement,
   FontFamilyValues,
+  NonDeletedSceneElementsMap,
   TextAlign,
   VerticalAlign,
 } from "../element/types";
@@ -102,6 +103,7 @@ import { arrayToMap, getShortcutKey } from "../utils";
 import { register } from "./register";
 import { StoreAction } from "../store";
 import { mutateElbowArrow } from "../element/arrow/routing";
+import Scene from "../scene/Scene";
 
 const FONT_SIZE_RELATIVE_INCREASE_STEP = 0.1;
 
@@ -1250,7 +1252,6 @@ export const actionChangeArrowType = register({
         if (!isArrowElement(el)) {
           return el;
         }
-
         const newElement = newElementWith(el, {
           roundness:
             value === "round"
@@ -1262,7 +1263,15 @@ export const actionChangeArrowType = register({
         });
 
         if (value === "elbowed") {
-          mutateElbowArrow(newElement, newElement.points, 0, 0);
+          const scene = Scene.getScene(el);
+          mutateElbowArrow(
+            newElement,
+            newElement.points,
+            0,
+            0,
+            scene!.getNonDeletedElementsMap() as NonDeletedSceneElementsMap,
+            scene!.getNonDeletedElements(),
+          );
         }
 
         return newElement;

@@ -51,6 +51,7 @@ import type { Mutable } from "../utility-types";
 import { ShapeCache } from "../scene/ShapeCache";
 import type { Store } from "../store";
 import { mutateElbowArrow } from "./arrow/routing";
+import Scene from "../scene/Scene";
 
 const editorMidPointsCache: {
   version: number | null;
@@ -1305,7 +1306,15 @@ export class LinearElementEditor {
     otherUpdates?: { startBinding?: PointBinding; endBinding?: PointBinding },
   ) {
     if (element.elbowed && isArrowElement(element)) {
-      mutateElbowArrow(element, nextPoints, offsetX, offsetY);
+      const scene = Scene.getScene(element);
+      mutateElbowArrow(
+        element,
+        nextPoints,
+        offsetX,
+        offsetY,
+        scene!.getNonDeletedElementsMap() as NonDeletedSceneElementsMap,
+        scene!.getNonDeletedElements(),
+      );
     } else {
       const nextCoords = getElementPointsCoords(element, nextPoints);
       const prevCoords = getElementPointsCoords(element, element.points);
