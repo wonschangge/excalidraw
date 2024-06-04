@@ -1,29 +1,27 @@
+import { simplify } from "points-on-curve";
 import type { Drawable, Options } from "roughjs/bin/core";
 import type { RoughGenerator } from "roughjs/bin/generator";
-import { getDiamondPoints, getArrowheadPoints } from "../element";
-import type { ElementShapes } from "./types";
-import type {
-  ExcalidrawElement,
-  NonDeletedExcalidrawElement,
-  ExcalidrawSelectionElement,
-  ExcalidrawLinearElement,
-  Arrowhead,
-} from "../element/types";
-import { isPathALoop, getCornerRadius } from "../math";
-import { generateFreeDrawShape } from "../renderer/renderElement";
-import { isTransparent, assertNever } from "../utils";
-import { simplify } from "points-on-curve";
 import { ROUGHNESS } from "../constants";
+import { getArrowheadPoints, getDiamondPoints } from "../element";
 import {
-  isArrowElement,
   isEmbeddableElement,
   isIframeElement,
   isIframeLikeElement,
   isLinearElement,
 } from "../element/typeChecks";
-import { canChangeRoundness } from "./comparisons";
+import type {
+  Arrowhead,
+  ExcalidrawElement,
+  ExcalidrawLinearElement,
+  ExcalidrawSelectionElement,
+  NonDeletedExcalidrawElement,
+} from "../element/types";
+import { getCornerRadius, isPathALoop } from "../math";
+import { generateFreeDrawShape } from "../renderer/renderElement";
 import type { EmbedsValidationStatus, LocalPoint } from "../types";
-import { calculateElbowArrowJointPoints } from "../element/arrow/routing";
+import { assertNever, isTransparent } from "../utils";
+import { canChangeRoundness } from "./comparisons";
+import type { ElementShapes } from "./types";
 
 const getDashArrayDashed = (strokeWidth: number) => [8, 8 + strokeWidth];
 

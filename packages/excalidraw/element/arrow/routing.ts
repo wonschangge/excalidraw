@@ -27,6 +27,7 @@ import {
   maxBindingGap,
 } from "../binding";
 import { type BoundingBox, type Bounds } from "../bounds";
+import { mutateElement } from "../mutateElement";
 import type {
   ExcalidrawArrowElement,
   ExcalidrawBindableElement,
@@ -46,18 +47,63 @@ const RIGHT = [1, 0] as Heading;
 const DOWN = [0, 1] as Heading;
 const LEFT = [-1, 0] as Heading;
 
-export const calculateElbowArrowJointPoints = (
+export const mutateElbowArrow = (
   arrow: ExcalidrawArrowElement,
-): readonly LocalPoint[] => {
+  newPoints: Readonly<LocalPoint[]>,
+) => {
+  //console.log("-------");
+  debugClear();
+
+  if (newPoints.length < 2) {
+    // Arrow being created
+    return;
+  }
+  newPoints.forEach((point) => debugDrawPoint(toWorldSpace(arrow, point)));
+
+  const points = calculateElbowArrowJointPoints(
+    arrow,
+    toWorldSpace(arrow, newPoints[0]),
+    toWorldSpace(arrow, newPoints[newPoints.length - 1]),
+  );
+  const offsetX = points[0][0];
+  const offsetY = points[0][1];
+  const [farthestX, farthestY] = points.reduce(
+    (farthest, point) => [
+      farthest[0] < point[0] ? point[0] : farthest[0],
+      farthest[1] < point[1] ? point[1] : farthest[1],
+    ],
+    points[0],
+  );
+  mutateElement(arrow, {
+    points: points.map((point, _idx) => {
+      return [point[0] - offsetX, point[1] - offsetY] as const;
+    }),
+    x: offsetX,
+    y: offsetY,
+    width: farthestX - offsetX,
+    height: farthestY - offsetY,
+  });
+  arrow.points.forEach((point) =>
+    debugDrawPoint(toWorldSpace(arrow, point), "green", true),
+  );
+  // console.log(
+  //   `[${Math.round(arrow.x)}, ${Math.round(arrow.y)}] -> `,
+  //   arrow.points
+  //     .map((p) => `[${Math.round(p[0])},${Math.round(p[1])}]`)
+  //     .join(","),
+  // );
+};
+
+const calculateElbowArrowJointPoints = (
+  arrow: ExcalidrawArrowElement,
+  startPoint: Point,
+  endPoint: Point,
+): readonly Point[] => {
   if (arrow.points.length < 2) {
     // Arrow being created
     return arrow.points;
   }
 
-  debugClear();
-  arrow.points.forEach((point) => debugDrawPoint(toWorldSpace(arrow, point)));
-  const target = toWorldSpace(arrow, arrow.points[arrow.points.length - 1]);
-  const firstPoint = toWorldSpace(arrow, arrow.points[0]);
   const startDongleMinSize = arrow.startBinding
     ? arrow.startArrowhead
       ? ARROWHEAD_DONGLE_SIZE
@@ -70,30 +116,30 @@ export const calculateElbowArrowJointPoints = (
     : ARROWHEAD_DONGLE_SIZE;
   const [startHeading, endHeading] = getHeadingForStartEndElements(
     arrow,
-    firstPoint,
-    target,
+    startPoint,
+    endPoint,
   );
   const [startBounds, endBounds] = getDynamicStartEndBounds(
     arrow,
-    firstPoint,
-    target,
+    startPoint,
+    endPoint,
     startHeading,
     endHeading,
     startDongleMinSize,
     endDongleMinSize,
   );
   const points = [
-    firstPoint,
+    startPoint,
     startHeading
       ? extendSegmentToBoundingBoxEdge(
-          [firstPoint, addVectors(firstPoint, startHeading)],
+          [startPoint, addVectors(startPoint, startHeading)],
           true,
           startBounds !== null ? [startBounds] : [],
         )
       : addVectors(
-          firstPoint,
+          startPoint,
           scaleVector(
-            vectorToHeading(pointToVector(target, firstPoint)),
+            vectorToHeading(pointToVector(endPoint, startPoint)),
             startDongleMinSize,
           ),
         ),
@@ -101,18 +147,18 @@ export const calculateElbowArrowJointPoints = (
   const endPoints = [
     endHeading
       ? extendSegmentToBoundingBoxEdge(
-          [addVectors(target, endHeading), target],
+          [addVectors(endPoint, endHeading), endPoint],
           false,
           endBounds !== null ? [endBounds] : [],
         )
       : addVectors(
-          target,
+          endPoint,
           scaleVector(
-            vectorToHeading(pointToVector(firstPoint, target)),
+            vectorToHeading(pointToVector(startPoint, endPoint)),
             endDongleMinSize,
           ),
         ),
-    target,
+    endPoint,
   ];
 
   const avoidBounds = [startBounds, endBounds]
@@ -130,9 +176,7 @@ export const calculateElbowArrowJointPoints = (
     );
 
   return simplifyElbowArrowPoints(
-    calculateSegment(points, endPoints, avoidBounds).map((point) =>
-      toLocalSpace(arrow, point),
-    ),
+    calculateSegment(points, endPoints, avoidBounds),
   );
 
   // return calculateSegment(points, endPoints, avoidBounds).map((point) =>

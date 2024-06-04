@@ -50,7 +50,7 @@ import { DRAGGING_THRESHOLD } from "../constants";
 import type { Mutable } from "../utility-types";
 import { ShapeCache } from "../scene/ShapeCache";
 import type { Store } from "../store";
-import { calculateElbowArrowJointPoints } from "./arrow/routing";
+import { mutateElbowArrow } from "./arrow/routing";
 
 const editorMidPointsCache: {
   version: number | null;
@@ -206,16 +206,25 @@ export class LinearElementEditor {
     if (!linearElementEditor) {
       return false;
     }
-    const { selectedPointsIndices, elementId } = linearElementEditor;
+    const { elementId } = linearElementEditor;
     const element = LinearElementEditor.getElement(elementId, elementsMap);
     if (!element) {
       return false;
     }
 
+    const selectedPointsIndices =
+      linearElementEditor.selectedPointsIndices &&
+      linearElementEditor.selectedPointsIndices.map((index) =>
+        Math.min(element.points.length - 1, index),
+      );
+    const lastClickedPoint = Math.min(
+      element.points.length - 1,
+      linearElementEditor.pointerDownState.lastClickedPoint,
+    );
     // point that's being dragged (out of all selected points)
-    const draggingPoint = element.points[
-      linearElementEditor.pointerDownState.lastClickedPoint
-    ] as [number, number] | undefined;
+    const draggingPoint = element.points[lastClickedPoint] as
+      | [number, number]
+      | undefined;
 
     if (selectedPointsIndices && draggingPoint) {
       if (
@@ -239,9 +248,7 @@ export class LinearElementEditor {
           {
             index: selectedIndex,
             point: [width + referencePoint[0], height + referencePoint[1]],
-            isDragging:
-              selectedIndex ===
-              linearElementEditor.pointerDownState.lastClickedPoint,
+            isDragging: selectedIndex === lastClickedPoint,
           },
         ]);
       } else {
@@ -260,8 +267,7 @@ export class LinearElementEditor {
           element,
           selectedPointsIndices.map((pointIndex) => {
             const newPointPosition =
-              pointIndex ===
-              linearElementEditor.pointerDownState.lastClickedPoint
+              pointIndex === lastClickedPoint
                 ? LinearElementEditor.createPointAt(
                     element,
                     elementsMap,
@@ -276,25 +282,10 @@ export class LinearElementEditor {
             return {
               index: pointIndex,
               point: newPointPosition,
-              isDragging:
-                pointIndex ===
-                linearElementEditor.pointerDownState.lastClickedPoint,
+              isDragging: pointIndex === lastClickedPoint,
             };
           }),
         );
-      }
-
-      // Update elbow arrow points to match
-      if (element.elbowed && isArrowElement(element)) {
-        const points = calculateElbowArrowJointPoints(element);
-        points.forEach((point, index) => {
-          LinearElementEditor.movePoints(element, [
-            {
-              index,
-              point,
-            },
-          ]);
-        });
       }
 
       const boundTextElement = getBoundTextElement(element, elementsMap);
@@ -1313,28 +1304,24 @@ export class LinearElementEditor {
     offsetY: number,
     otherUpdates?: { startBinding?: PointBinding; endBinding?: PointBinding },
   ) {
-    const nextCoords = getElementPointsCoords(element, nextPoints);
-    const prevCoords = getElementPointsCoords(element, element.points);
-    const nextCenterX = (nextCoords[0] + nextCoords[2]) / 2;
-    const nextCenterY = (nextCoords[1] + nextCoords[3]) / 2;
-    const prevCenterX = (prevCoords[0] + prevCoords[2]) / 2;
-    const prevCenterY = (prevCoords[1] + prevCoords[3]) / 2;
-    const dX = prevCenterX - nextCenterX;
-    const dY = prevCenterY - nextCenterY;
-    const rotated = rotate(offsetX, offsetY, dX, dY, element.angle);
-    mutateElement(element, {
-      ...otherUpdates,
-      points: nextPoints,
-      x: element.x + rotated[0],
-      y: element.y + rotated[1],
-    });
     if (element.elbowed && isArrowElement(element)) {
-      // TODO(mtolmacs): Elbow routing now uses the element to get accurate data
-      // we should refactor to receive needed arrow metadata as paramters and
-      // don't call mutateElement again
-      // mutateElement(element, {
-      //   points: calculateElbowArrowJointPoints(element),
-      // });
+      mutateElbowArrow(element, nextPoints);
+    } else {
+      const nextCoords = getElementPointsCoords(element, nextPoints);
+      const prevCoords = getElementPointsCoords(element, element.points);
+      const nextCenterX = (nextCoords[0] + nextCoords[2]) / 2;
+      const nextCenterY = (nextCoords[1] + nextCoords[3]) / 2;
+      const prevCenterX = (prevCoords[0] + prevCoords[2]) / 2;
+      const prevCenterY = (prevCoords[1] + prevCoords[3]) / 2;
+      const dX = prevCenterX - nextCenterX;
+      const dY = prevCenterY - nextCenterY;
+      const rotated = rotate(offsetX, offsetY, dX, dY, element.angle);
+      mutateElement(element, {
+        ...otherUpdates,
+        points: nextPoints,
+        x: element.x + rotated[0],
+        y: element.y + rotated[1],
+      });
     }
   }
 
