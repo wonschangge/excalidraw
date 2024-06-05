@@ -213,20 +213,31 @@ export class LinearElementEditor {
       return false;
     }
 
-    const selectedPointsIndices =
-      linearElementEditor.selectedPointsIndices &&
-      linearElementEditor.selectedPointsIndices.map((index) =>
-        Math.min(element.points.length - 1, index),
-      );
-    const lastClickedPoint = Math.min(
-      element.points.length - 1,
-      linearElementEditor.pointerDownState.lastClickedPoint,
-    );
+    const selectedPointsIndices = element.elbowed
+      ? linearElementEditor.selectedPointsIndices
+          ?.reduce(
+            (startEnd, index) =>
+              (index === 0
+                ? [0, startEnd[1]]
+                : [startEnd[0], element.points.length - 1]) as [
+                boolean | number,
+                boolean | number,
+              ],
+            [false, false] as [number | boolean, number | boolean],
+          )
+          .filter(
+            (idx: number | boolean): idx is number => typeof idx === "number",
+          )
+      : linearElementEditor.selectedPointsIndices;
+    const lastClickedPoint = element.elbowed
+      ? linearElementEditor.pointerDownState.lastClickedPoint > 0
+        ? element.points.length - 1
+        : 0
+      : linearElementEditor.pointerDownState.lastClickedPoint;
     // point that's being dragged (out of all selected points)
     const draggingPoint = element.points[lastClickedPoint] as
       | [number, number]
       | undefined;
-
     if (selectedPointsIndices && draggingPoint) {
       if (
         shouldRotateWithDiscreteAngle(event) &&
@@ -1314,6 +1325,7 @@ export class LinearElementEditor {
         offsetY,
         scene!.getNonDeletedElementsMap() as NonDeletedSceneElementsMap,
         scene!.getNonDeletedElements(),
+        otherUpdates,
       );
     } else {
       const nextCoords = getElementPointsCoords(element, nextPoints);

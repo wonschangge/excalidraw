@@ -26,6 +26,7 @@ import {
   maxBindingGap,
 } from "../binding";
 import { type BoundingBox, type Bounds } from "../bounds";
+import type { ElementUpdate } from "../mutateElement";
 import { mutateElement } from "../mutateElement";
 import type {
   ExcalidrawArrowElement,
@@ -55,6 +56,7 @@ export const mutateElbowArrow = (
   externalOffsetY: number,
   elementsMap: NonDeletedSceneElementsMap,
   elements: Readonly<NonDeletedExcalidrawElement[]>,
+  otherUpdates?: ElementUpdate<ExcalidrawArrowElement>,
 ) => {
   //console.log("-------");
   debugClear();

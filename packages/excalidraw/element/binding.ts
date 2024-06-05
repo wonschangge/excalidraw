@@ -417,32 +417,6 @@ const calculateRatioForElbowArrowBinding = (
   return { ratio: [-1, -1] };
 };
 
-const updateBindPointToSnapToElementOutline = (
-  arrow: ExcalidrawArrowElement,
-  startOrEnd: "start" | "end",
-  points: Readonly<LocalPoint[]>,
-  hoveredElement: ExcalidrawBindableElement,
-  elementsMap: NonDeletedSceneElementsMap,
-) => {
-  const index = startOrEnd === "start" ? 0 : points.length - 1;
-  const globalPoint = toWorldSpace(arrow, points[index]);
-  const globalMidPoint = [
-    hoveredElement.x + hoveredElement.width / 2,
-    hoveredElement.y + hoveredElement.height / 2,
-  ] as Point;
-  const dist = distanceToBindableElement(
-    hoveredElement,
-    globalPoint,
-    elementsMap,
-  );
-  const vec = normalize(pointToVector(globalMidPoint, globalPoint));
-  const newPoint = addVectors(globalPoint, scaleVector(vec, dist - 5));
-
-  LinearElementEditor.movePoints(arrow, [
-    { index, point: toLocalSpace(arrow, newPoint) },
-  ]);
-};
-
 export const bindLinearElement = (
   linearElement: NonDeleted<ExcalidrawLinearElement>,
   hoveredElement: ExcalidrawBindableElement,
@@ -466,16 +440,6 @@ export const bindLinearElement = (
       ),
     } as PointBinding,
   });
-
-  if (linearElement.elbowed) {
-    updateBindPointToSnapToElementOutline(
-      linearElement as ExcalidrawArrowElement,
-      startOrEnd,
-      linearElement.points,
-      hoveredElement,
-      elementsMap,
-    );
-  }
 
   const boundElementsMap = arrayToMap(hoveredElement.boundElements || []);
   if (!boundElementsMap.has(linearElement.id)) {
