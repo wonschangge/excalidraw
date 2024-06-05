@@ -107,6 +107,8 @@ import { hasStrokeColor } from "../scene/comparisons";
 import { StoreAction } from "../store";
 import { arrayToMap, getShortcutKey } from "../utils";
 import { register } from "./register";
+import { LinearElementEditor } from "../element/linearElementEditor";
+import { toLocalSpace, toWorldSpace } from "../math";
 
 const FONT_SIZE_RELATIVE_INCREASE_STEP = 0.1;
 
@@ -1267,41 +1269,53 @@ export const actionChangeArrowType = register({
 
         if (value === "elbowed") {
           const scene = Scene.getScene(el);
-          mutateElbowArrow(
-            newElement,
-            newElement.points,
-            0,
-            0,
-            scene!.getNonDeletedElementsMap() as NonDeletedSceneElementsMap,
-            scene!.getNonDeletedElements(),
-          );
-          // if (newElement.startBinding) {
-          //   newElement.points[0] = updateBindPointToSnapToElementOutline(
-          //     newElement.points[0],
-          //     "startBinding",
-          //     newElement as ExcalidrawArrowElement,
-          //     scene!
-          //       .getNonDeletedElementsMap()
-          //       .get(
-          //         newElement.startBinding.elementId,
-          //       )! as ExcalidrawBindableElement,
-          //     scene!.getNonDeletedElementsMap(),
-          //   );
-          // }
-          // if (newElement.endBinding) {
-          //   newElement.points[newElement.points.length - 1] =
-          //     updateBindPointToSnapToElementOutline(
-          //       newElement.points[newElement.points.length - 1],
-          //       "endBinding",
-          //       newElement as ExcalidrawArrowElement,
-          //       scene!
-          //         .getNonDeletedElementsMap()
-          //         .get(
-          //           newElement.endBinding.elementId,
-          //         )! as ExcalidrawBindableElement,
-          //       scene!.getNonDeletedElementsMap(),
-          //     );
-          // }
+          if (scene) {
+            const elementsMap =
+              scene.getNonDeletedElementsMap() as NonDeletedSceneElementsMap;
+            const elements = scene.getNonDeletedElements();
+            mutateElbowArrow(
+              newElement,
+              newElement.points,
+              0,
+              0,
+              elementsMap,
+              elements,
+            );
+
+            const points = newElement.points.slice();
+            points[0] = newElement.startBinding
+              ? toLocalSpace(
+                  newElement,
+                  updateBindPointToSnapToElementOutline(
+                    toWorldSpace(newElement, points[0]),
+                    "startBinding",
+                    newElement as ExcalidrawArrowElement,
+                    elementsMap.get(
+                      newElement.startBinding.elementId,
+                    )! as ExcalidrawBindableElement,
+                    elementsMap,
+                  ),
+                )
+              : newElement.points[0];
+            points[points.length - 1] = newElement.endBinding
+              ? toLocalSpace(
+                  newElement,
+                  updateBindPointToSnapToElementOutline(
+                    toWorldSpace(newElement, points[points.length - 1]),
+                    "endBinding",
+                    newElement as ExcalidrawArrowElement,
+                    elementsMap.get(
+                      newElement.endBinding.elementId,
+                    )! as ExcalidrawBindableElement,
+                    elementsMap,
+                  ),
+                )
+              : points[points.length - 1];
+            mutateElement(newElement, {
+              points,
+            });
+            LinearElementEditor.normalizePoints(newElement);
+          }
         }
 
         return newElement;

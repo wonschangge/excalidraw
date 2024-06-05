@@ -31,6 +31,7 @@ import {
   pointToVector,
   rotatePoint,
   scaleVector,
+  toWorldSpace,
   vectorToHeading,
 } from "../math";
 import { getElementAtPosition } from "../scene";
@@ -640,18 +641,24 @@ export const updateBindPointToSnapToElementOutline = (
   arrow: ExcalidrawArrowElement,
   bindableElement: ExcalidrawBindableElement,
   elementsMap: ElementsMap,
-) =>
-  addVectors(
+): Point => {
+  return addVectors(
     point,
     scaleVector(
       startOrEnd === "startBinding"
-        ? vectorToHeading(pointToVector(point, arrow.points[1]))
+        ? vectorToHeading(
+            pointToVector(point, toWorldSpace(arrow, arrow.points[1])),
+          )
         : vectorToHeading(
-            pointToVector(arrow.points[arrow.points.length - 2], point),
+            pointToVector(
+              point,
+              toWorldSpace(arrow, arrow.points[arrow.points.length - 2]),
+            ),
           ),
       distanceToBindableElement(bindableElement, point, elementsMap) - 5,
     ),
   );
+};
 
 const updateBoundPoint = (
   linearElement: NonDeleted<ExcalidrawLinearElement>,

@@ -64,7 +64,7 @@ export const mutateElbowArrow = (
     // Arrow being created
     return;
   }
-  newPoints.forEach((point) => debugDrawPoint(toWorldSpace(arrow, point)));
+  //newPoints.forEach((point) => debugDrawPoint(toWorldSpace(arrow, point)));
   const startPoint = toWorldSpace(arrow, newPoints[0]);
   const endPoint = toWorldSpace(arrow, newPoints[newPoints.length - 1]);
   const [startHeading, endHeading] = getHeadingForStartEndElements(
@@ -101,45 +101,12 @@ export const mutateElbowArrow = (
     width: farthestX - offsetX + externalOffsetX,
     height: farthestY - offsetY + externalOffsetY,
   };
-  // const [startElement, endElement] = getStartEndOrHoveredElements(
-  //   arrow,
-  //   update.points[0],
-  //   update.points[update.points.length - 1],
-  //   elementsMap,
-  //   elements,
-  // );
-  // if (startElement && startHeading) {
-  //   update.points = updateBindPointToSnapToElementOutline(
-  //     {
-  //       ...arrow,
-  //       ...update,
-  //     },
-  //     "start",
-  //     update.points,
-  //     scaleVector(startHeading, -1) as Heading,
-  //     startElement,
-  //     elementsMap,
-  //   );
-  // }
-  // if (endElement && endHeading) {
-  //   update.points = updateBindPointToSnapToElementOutline(
-  //     {
-  //       ...arrow,
-  //       ...update,
-  //     },
-  //     "end",
-  //     update.points,
-  //     scaleVector(endHeading, -1) as Heading,
-  //     endElement,
-  //     elementsMap,
-  //   );
-  // }
 
   mutateElement(arrow, update);
 
-  arrow.points.forEach((point) =>
-    debugDrawPoint(toWorldSpace(arrow, point), "green", true),
-  );
+  // arrow.points.forEach((point) =>
+  //   debugDrawPoint(toWorldSpace(arrow, point), "green", true),
+  // );
 };
 
 const calculateElbowArrowJointPoints = (
