@@ -1,14 +1,14 @@
-import type { AppClassProperties, AppState, Primitive } from "../types";
+import { trackEvent } from "../analytics";
 import {
   DEFAULT_ELEMENT_BACKGROUND_COLOR_PALETTE,
   DEFAULT_ELEMENT_BACKGROUND_PICKS,
   DEFAULT_ELEMENT_STROKE_COLOR_PALETTE,
   DEFAULT_ELEMENT_STROKE_PICKS,
 } from "../colors";
-import { trackEvent } from "../analytics";
 import { ButtonIconSelect } from "../components/ButtonIconSelect";
 import { ColorPicker } from "../components/ColorPicker/ColorPicker";
 import { IconPicker } from "../components/IconPicker";
+import type { AppClassProperties, AppState, Primitive } from "../types";
 // TODO barnabasmolnar/editor-redesign
 // TextAlignTopIcon, TextAlignBottomIcon,TextAlignMiddleIcon,
 // ArrowHead icons
@@ -16,43 +16,43 @@ import {
   ArrowheadArrowIcon,
   ArrowheadBarIcon,
   ArrowheadCircleIcon,
-  ArrowheadTriangleIcon,
-  ArrowheadNoneIcon,
-  StrokeStyleDashedIcon,
-  StrokeStyleDottedIcon,
-  TextAlignTopIcon,
-  TextAlignBottomIcon,
-  TextAlignMiddleIcon,
-  FillHachureIcon,
-  FillCrossHatchIcon,
-  FillSolidIcon,
-  SloppinessArchitectIcon,
-  SloppinessArtistIcon,
-  SloppinessCartoonistIcon,
-  StrokeWidthBaseIcon,
-  StrokeWidthBoldIcon,
-  StrokeWidthExtraBoldIcon,
-  FontSizeSmallIcon,
-  FontSizeMediumIcon,
-  FontSizeLargeIcon,
-  FontSizeExtraLargeIcon,
-  EdgeSharpIcon,
-  EdgeRoundIcon,
-  FreedrawIcon,
-  FontFamilyNormalIcon,
-  FontFamilyCodeIcon,
-  TextAlignLeftIcon,
-  TextAlignCenterIcon,
-  TextAlignRightIcon,
-  FillZigZagIcon,
-  ArrowheadTriangleOutlineIcon,
   ArrowheadCircleOutlineIcon,
   ArrowheadDiamondIcon,
   ArrowheadDiamondOutlineIcon,
-  fontSizeIcon,
-  arrowUpRightIcon,
-  arrowGuideIcon,
+  ArrowheadNoneIcon,
+  ArrowheadTriangleIcon,
+  ArrowheadTriangleOutlineIcon,
+  EdgeRoundIcon,
+  EdgeSharpIcon,
+  FillCrossHatchIcon,
+  FillHachureIcon,
+  FillSolidIcon,
+  FillZigZagIcon,
+  FontFamilyCodeIcon,
+  FontFamilyNormalIcon,
+  FontSizeExtraLargeIcon,
+  FontSizeLargeIcon,
+  FontSizeMediumIcon,
+  FontSizeSmallIcon,
+  FreedrawIcon,
+  SloppinessArchitectIcon,
+  SloppinessArtistIcon,
+  SloppinessCartoonistIcon,
+  StrokeStyleDashedIcon,
+  StrokeStyleDottedIcon,
+  StrokeWidthBaseIcon,
+  StrokeWidthBoldIcon,
+  StrokeWidthExtraBoldIcon,
+  TextAlignBottomIcon,
+  TextAlignCenterIcon,
+  TextAlignLeftIcon,
+  TextAlignMiddleIcon,
+  TextAlignRightIcon,
+  TextAlignTopIcon,
   arrowCurveRight,
+  arrowGuideIcon,
+  arrowUpRightIcon,
+  fontSizeIcon,
 } from "../components/icons";
 import {
   DEFAULT_FONT_FAMILY,
@@ -67,6 +67,8 @@ import {
   isTextElement,
   redrawTextBoundingBox,
 } from "../element";
+import { mutateElbowArrow } from "../element/arrow/routing";
+import { updateBindPointToSnapToElementOutline } from "../element/binding";
 import { mutateElement, newElementWith } from "../element/mutateElement";
 import {
   getBoundTextElement,
@@ -80,6 +82,8 @@ import {
 } from "../element/typeChecks";
 import type {
   Arrowhead,
+  ExcalidrawArrowElement,
+  ExcalidrawBindableElement,
   ExcalidrawElement,
   ExcalidrawLinearElement,
   ExcalidrawTextElement,
@@ -98,12 +102,11 @@ import {
   getTargetElements,
   isSomeElementSelected,
 } from "../scene";
+import Scene from "../scene/Scene";
 import { hasStrokeColor } from "../scene/comparisons";
+import { StoreAction } from "../store";
 import { arrayToMap, getShortcutKey } from "../utils";
 import { register } from "./register";
-import { StoreAction } from "../store";
-import { mutateElbowArrow } from "../element/arrow/routing";
-import Scene from "../scene/Scene";
 
 const FONT_SIZE_RELATIVE_INCREASE_STEP = 0.1;
 
@@ -1272,12 +1275,35 @@ export const actionChangeArrowType = register({
             scene!.getNonDeletedElementsMap() as NonDeletedSceneElementsMap,
             scene!.getNonDeletedElements(),
           );
+          // if (newElement.startBinding) {
+          //   newElement.points[0] = updateBindPointToSnapToElementOutline(
+          //     newElement.points[0],
+          //     "startBinding",
+          //     newElement as ExcalidrawArrowElement,
+          //     scene!
+          //       .getNonDeletedElementsMap()
+          //       .get(
+          //         newElement.startBinding.elementId,
+          //       )! as ExcalidrawBindableElement,
+          //     scene!.getNonDeletedElementsMap(),
+          //   );
+          // }
+          // if (newElement.endBinding) {
+          //   newElement.points[newElement.points.length - 1] =
+          //     updateBindPointToSnapToElementOutline(
+          //       newElement.points[newElement.points.length - 1],
+          //       "endBinding",
+          //       newElement as ExcalidrawArrowElement,
+          //       scene!
+          //         .getNonDeletedElementsMap()
+          //         .get(
+          //           newElement.endBinding.elementId,
+          //         )! as ExcalidrawBindableElement,
+          //       scene!.getNonDeletedElementsMap(),
+          //     );
+          // }
         }
-        console.log(
-          "actionProperties",
-          [newElement.x, newElement.y],
-          newElement.points,
-        );
+
         return newElement;
       }),
       appState: {

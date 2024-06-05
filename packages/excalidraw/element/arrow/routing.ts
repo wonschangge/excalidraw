@@ -15,7 +15,6 @@ import {
   scaleVector,
   segmentsIntersectAt,
   segmentsOverlap,
-  toLocalSpace,
   toWorldSpace,
   vectorToHeading,
 } from "../../math";
@@ -43,7 +42,7 @@ const ARROWHEAD_DONGLE_SIZE = 20;
 const DONGLE_EXTENSION_SIZE = 150;
 const HITBOX_EXTENSION_SIZE = 30;
 
-type Heading = [1, 0] | [-1, 0] | [0, 1] | [0, -1];
+export type Heading = [1, 0] | [-1, 0] | [0, 1] | [0, -1];
 const UP = [0, -1] as Heading;
 const RIGHT = [1, 0] as Heading;
 const DOWN = [0, 1] as Heading;
@@ -58,7 +57,7 @@ export const mutateElbowArrow = (
   elements: Readonly<NonDeletedExcalidrawElement[]>,
   otherUpdates?: ElementUpdate<ExcalidrawArrowElement>,
 ) => {
-  console.log("-------");
+  //console.log("-------");
   debugClear();
 
   if (newPoints.length < 2) {
@@ -978,30 +977,26 @@ const simplifyElbowArrowPoints = (points: Point[]): Point[] =>
       [points[0] ?? [0, 0], points[1] ?? [1, 0]],
     );
 
-const updateBindPointToSnapToElementOutline = (
-  arrow: ExcalidrawArrowElement,
-  startOrEnd: "start" | "end",
-  points: Readonly<LocalPoint[]>,
-  heading: Heading,
-  hoveredElement: ExcalidrawBindableElement,
-  elementsMap: NonDeletedSceneElementsMap,
-): LocalPoint[] => {
-  const index = startOrEnd === "start" ? 0 : points.length - 1;
-  const globalPoint = toWorldSpace(arrow, points[index]);
-  // const globalMidPoint = [
-  //   hoveredElement.x + hoveredElement.width / 2,
-  //   hoveredElement.y + hoveredElement.height / 2,
-  // ] as Point;
-  const dist = distanceToBindableElement(
-    hoveredElement,
-    globalPoint,
-    elementsMap,
-  );
-  const updatedPoints = points.slice();
-  updatedPoints[index] = toLocalSpace(
-    arrow,
-    addVectors(globalPoint, scaleVector(heading, dist - 5)),
-  );
+// const updateBindPointToSnapToElementOutline = (
+//   arrow: ExcalidrawArrowElement,
+//   startOrEnd: "start" | "end",
+//   points: Readonly<LocalPoint[]>,
+//   heading: Heading,
+//   hoveredElement: ExcalidrawBindableElement,
+//   elementsMap: NonDeletedSceneElementsMap,
+// ): LocalPoint[] => {
+//   const index = startOrEnd === "start" ? 0 : points.length - 1;
+//   const globalPoint = toWorldSpace(arrow, points[index]);
+//   const dist = distanceToBindableElement(
+//     hoveredElement,
+//     globalPoint,
+//     elementsMap,
+//   );
+//   const updatedPoints = points.slice();
+//   updatedPoints[index] = toLocalSpace(
+//     arrow,
+//     addVectors(globalPoint, scaleVector(heading, dist - 5)),
+//   );
 
-  return updatedPoints;
-};
+//   return updatedPoints;
+// };

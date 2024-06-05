@@ -28,16 +28,14 @@ import { isPointOnShape } from "../../utils/collision";
 import { KEYS } from "../keys";
 import {
   addVectors,
-  normalize,
   pointToVector,
   rotatePoint,
   scaleVector,
-  toLocalSpace,
-  toWorldSpace,
+  vectorToHeading,
 } from "../math";
 import { getElementAtPosition } from "../scene";
 import Scene from "../scene/Scene";
-import type { AppClassProperties, AppState, LocalPoint, Point } from "../types";
+import type { AppClassProperties, AppState, Point } from "../types";
 import { getElementAbsoluteCoords } from "./bounds";
 
 import { arrayToMap, tupleToCoors } from "../utils";
@@ -636,6 +634,25 @@ const getSimultaneouslyUpdatedElementIds = (
   return new Set((simultaneouslyUpdated || []).map((element) => element.id));
 };
 
+export const updateBindPointToSnapToElementOutline = (
+  point: Point,
+  startOrEnd: "startBinding" | "endBinding",
+  arrow: ExcalidrawArrowElement,
+  bindableElement: ExcalidrawBindableElement,
+  elementsMap: ElementsMap,
+) =>
+  addVectors(
+    point,
+    scaleVector(
+      startOrEnd === "startBinding"
+        ? vectorToHeading(pointToVector(point, arrow.points[1]))
+        : vectorToHeading(
+            pointToVector(arrow.points[arrow.points.length - 2], point),
+          ),
+      distanceToBindableElement(bindableElement, point, elementsMap) - 5,
+    ),
+  );
+
 const updateBoundPoint = (
   linearElement: NonDeleted<ExcalidrawLinearElement>,
   startOrEnd: "startBinding" | "endBinding",
@@ -687,7 +704,13 @@ const updateBoundPoint = (
       bindableElement.angle,
     );
 
-    newEdgePoint = [rotatedGlobalX, rotatedGlobalY];
+    newEdgePoint = updateBindPointToSnapToElementOutline(
+      [rotatedGlobalX, rotatedGlobalY],
+      startOrEnd,
+      linearElement as ExcalidrawArrowElement,
+      bindableElement,
+      elementsMap,
+    );
   } else {
     const adjacentPointIndex = edgePointIndex - direction;
     const adjacentPoint = LinearElementEditor.getPointAtIndexGlobalCoordinates(
