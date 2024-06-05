@@ -382,39 +382,35 @@ const calculateRatioForElbowArrowBinding = (
   startOrEnd: "start" | "end",
   elementsMap: ElementsMap,
 ) => {
-  if (linearElement.elbowed) {
-    const bounds = getElementBounds(hoveredElement, elementsMap);
-    const edgePointIndex =
-      startOrEnd === "start" ? 0 : linearElement.points.length - 1;
+  const bounds = getElementBounds(hoveredElement, elementsMap);
+  const edgePointIndex =
+    startOrEnd === "start" ? 0 : linearElement.points.length - 1;
 
-    const globalPoint = LinearElementEditor.getPointAtIndexGlobalCoordinates(
-      linearElement,
-      edgePointIndex,
-      elementsMap,
-    );
-    const globalMidPoint = [
-      bounds[0] + (bounds[2] - bounds[0]) / 2,
-      bounds[1] + (bounds[3] - bounds[1]) / 2,
-    ] as Point;
-    const nonRotatedGlobalPoint = rotatePoint(
-      globalPoint,
-      globalMidPoint,
-      -hoveredElement.angle,
-    );
-    const localPoint = [
-      nonRotatedGlobalPoint[0] - bounds[0],
-      nonRotatedGlobalPoint[1] - bounds[1],
-    ] as Point;
+  const globalPoint = LinearElementEditor.getPointAtIndexGlobalCoordinates(
+    linearElement,
+    edgePointIndex,
+    elementsMap,
+  );
+  const globalMidPoint = [
+    bounds[0] + (bounds[2] - bounds[0]) / 2,
+    bounds[1] + (bounds[3] - bounds[1]) / 2,
+  ] as Point;
+  const nonRotatedGlobalPoint = rotatePoint(
+    globalPoint,
+    globalMidPoint,
+    -hoveredElement.angle,
+  );
+  const localPoint = [
+    nonRotatedGlobalPoint[0] - bounds[0],
+    nonRotatedGlobalPoint[1] - bounds[1],
+  ] as Point;
 
-    const ratio = [
-      localPoint[0] / (bounds[2] - bounds[0]),
-      localPoint[1] / (bounds[3] - bounds[1]),
-    ];
+  const ratio = [
+    localPoint[0] / (bounds[2] - bounds[0]),
+    localPoint[1] / (bounds[3] - bounds[1]),
+  ];
 
-    return { ratio };
-  }
-
-  return { ratio: [-1, -1] };
+  return { ratio };
 };
 
 export const bindLinearElement = (

@@ -1273,7 +1273,11 @@ export const actionChangeArrowType = register({
             scene!.getNonDeletedElements(),
           );
         }
-
+        console.log(
+          "actionProperties",
+          [newElement.x, newElement.y],
+          newElement.points,
+        );
         return newElement;
       }),
       appState: {

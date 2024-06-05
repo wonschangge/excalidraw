@@ -20,6 +20,7 @@ import {
   getBezierCurveLength,
   mapIntervalToBezierT,
   arePointsEqual,
+  toLocalSpace,
 } from "../math";
 import { getElementAbsoluteCoords, getLockedLinearCursorAlignSize } from ".";
 import type { Bounds } from "./bounds";
@@ -960,6 +961,10 @@ export class LinearElementEditor {
     absoluteCoords: Point,
     elementsMap: ElementsMap,
   ): Point {
+    if (element.elbowed) {
+      return toLocalSpace(element, absoluteCoords);
+    }
+
     const [x1, y1, x2, y2] = getElementAbsoluteCoords(element, elementsMap);
     const cx = (x1 + x2) / 2;
     const cy = (y1 + y2) / 2;
