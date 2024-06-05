@@ -34,11 +34,15 @@ import type {
   NonDeletedExcalidrawElement,
   NonDeletedSceneElementsMap,
 } from "../types";
-import { debugClear, debugDrawPoint, debugNewFrame } from "./debug";
+import {
+  debugClear,
+  debugDrawBounds,
+  debugDrawPoint,
+  debugNewFrame,
+} from "./debug";
 
 const STEP_COUNT_LIMIT = 50;
-const MIN_DONGLE_SIZE = 6; // As long as snap distance is 5px this cannot go under 6!
-const ARROWHEAD_DONGLE_SIZE = 20;
+const MIN_DONGLE_SIZE = 9; // As long as snap distance is 5px this cannot go under 9!
 const DONGLE_EXTENSION_SIZE = 150;
 const HITBOX_EXTENSION_SIZE = 30;
 
@@ -104,6 +108,7 @@ export const mutateElbowArrow = (
 
   mutateElement(arrow, update);
 
+  //debugDrawPoint(toWorldSpace(arrow, arrow.points[0]));
   // arrow.points.forEach((point) =>
   //   debugDrawPoint(toWorldSpace(arrow, point), "green", true),
   // );
@@ -123,25 +128,14 @@ const calculateElbowArrowJointPoints = (
     return arrow.points;
   }
 
-  const startDongleMinSize = arrow.startBinding
-    ? arrow.startArrowhead
-      ? ARROWHEAD_DONGLE_SIZE
-      : MIN_DONGLE_SIZE
-    : ARROWHEAD_DONGLE_SIZE;
-  const endDongleMinSize = arrow.endBinding
-    ? arrow.endArrowhead
-      ? ARROWHEAD_DONGLE_SIZE
-      : MIN_DONGLE_SIZE
-    : ARROWHEAD_DONGLE_SIZE;
-
   const [startBounds, endBounds] = getDynamicStartEndBounds(
     arrow,
     startPoint,
     endPoint,
     startHeading,
     endHeading,
-    startDongleMinSize,
-    endDongleMinSize,
+    MIN_DONGLE_SIZE,
+    MIN_DONGLE_SIZE,
     elementsMap,
     elements,
   );
@@ -157,7 +151,7 @@ const calculateElbowArrowJointPoints = (
           startPoint,
           scaleVector(
             vectorToHeading(pointToVector(endPoint, startPoint)),
-            startDongleMinSize,
+            MIN_DONGLE_SIZE,
           ),
         ),
   ];
@@ -172,7 +166,7 @@ const calculateElbowArrowJointPoints = (
           endPoint,
           scaleVector(
             vectorToHeading(pointToVector(startPoint, endPoint)),
-            endDongleMinSize,
+            MIN_DONGLE_SIZE,
           ),
         ),
     endPoint,
@@ -180,6 +174,10 @@ const calculateElbowArrowJointPoints = (
 
   const avoidBounds = [startBounds, endBounds]
     .filter((bb): bb is Bounds => bb !== null)
+    // .map((bbox) => {
+    //   debugDrawBounds(bbox);
+    //   return bbox;
+    // })
     .filter(
       (bbox) =>
         !(
@@ -943,27 +941,3 @@ const simplifyElbowArrowPoints = (points: Point[]): Point[] =>
           : [...result, point],
       [points[0] ?? [0, 0], points[1] ?? [1, 0]],
     );
-
-// const updateBindPointToSnapToElementOutline = (
-//   arrow: ExcalidrawArrowElement,
-//   startOrEnd: "start" | "end",
-//   points: Readonly<LocalPoint[]>,
-//   heading: Heading,
-//   hoveredElement: ExcalidrawBindableElement,
-//   elementsMap: NonDeletedSceneElementsMap,
-// ): LocalPoint[] => {
-//   const index = startOrEnd === "start" ? 0 : points.length - 1;
-//   const globalPoint = toWorldSpace(arrow, points[index]);
-//   const dist = distanceToBindableElement(
-//     hoveredElement,
-//     globalPoint,
-//     elementsMap,
-//   );
-//   const updatedPoints = points.slice();
-//   updatedPoints[index] = toLocalSpace(
-//     arrow,
-//     addVectors(globalPoint, scaleVector(heading, dist - 5)),
-//   );
-
-//   return updatedPoints;
-// };
