@@ -64,11 +64,21 @@ export const mutateElbowArrow = (
     return;
   }
   newPoints.forEach((point) => debugDrawPoint(toWorldSpace(arrow, point)));
-
+  const startPoint = toWorldSpace(arrow, newPoints[0]);
+  const endPoint = toWorldSpace(arrow, newPoints[newPoints.length - 1]);
+  const [startHeading, endHeading] = getHeadingForStartEndElements(
+    arrow,
+    startPoint,
+    endPoint,
+    elementsMap,
+    elements,
+  );
   const points = calculateElbowArrowJointPoints(
     arrow,
-    toWorldSpace(arrow, newPoints[0]),
-    toWorldSpace(arrow, newPoints[newPoints.length - 1]),
+    startPoint,
+    endPoint,
+    startHeading,
+    endHeading,
     elementsMap,
     elements,
   );
@@ -97,7 +107,7 @@ export const mutateElbowArrow = (
     elementsMap,
     elements,
   );
-  if (startElement) {
+  if (startElement && startHeading) {
     update.points = updateBindPointToSnapToElementOutline(
       {
         ...arrow,
@@ -105,11 +115,12 @@ export const mutateElbowArrow = (
       },
       "start",
       update.points,
+      scaleVector(startHeading, -1) as Heading,
       startElement,
       elementsMap,
     );
   }
-  if (endElement) {
+  if (endElement && endHeading) {
     update.points = updateBindPointToSnapToElementOutline(
       {
         ...arrow,
@@ -117,6 +128,7 @@ export const mutateElbowArrow = (
       },
       "end",
       update.points,
+      scaleVector(endHeading, -1) as Heading,
       endElement,
       elementsMap,
     );
@@ -133,6 +145,8 @@ const calculateElbowArrowJointPoints = (
   arrow: ExcalidrawArrowElement,
   startPoint: Point,
   endPoint: Point,
+  startHeading: Heading | null,
+  endHeading: Heading | null,
   elementsMap: NonDeletedSceneElementsMap,
   elements: Readonly<NonDeletedExcalidrawElement[]>,
 ): readonly Point[] => {
@@ -151,13 +165,7 @@ const calculateElbowArrowJointPoints = (
       ? ARROWHEAD_DONGLE_SIZE
       : MIN_DONGLE_SIZE
     : ARROWHEAD_DONGLE_SIZE;
-  const [startHeading, endHeading] = getHeadingForStartEndElements(
-    arrow,
-    startPoint,
-    endPoint,
-    elementsMap,
-    elements,
-  );
+
   const [startBounds, endBounds] = getDynamicStartEndBounds(
     arrow,
     startPoint,
@@ -797,7 +805,7 @@ const getHeadingForStartEndElements = (
   endPoint: Point,
   elementsMap: NonDeletedSceneElementsMap,
   elements: Readonly<NonDeletedExcalidrawElement[]>,
-): [Vector | null, Vector | null] => {
+): [Heading | null, Heading | null] => {
   const start =
     arrow.startBinding === null
       ? getHoveredElementForBinding(
@@ -972,25 +980,25 @@ const updateBindPointToSnapToElementOutline = (
   arrow: ExcalidrawArrowElement,
   startOrEnd: "start" | "end",
   points: Readonly<LocalPoint[]>,
+  heading: Heading,
   hoveredElement: ExcalidrawBindableElement,
   elementsMap: NonDeletedSceneElementsMap,
 ): LocalPoint[] => {
   const index = startOrEnd === "start" ? 0 : points.length - 1;
   const globalPoint = toWorldSpace(arrow, points[index]);
-  const globalMidPoint = [
-    hoveredElement.x + hoveredElement.width / 2,
-    hoveredElement.y + hoveredElement.height / 2,
-  ] as Point;
+  // const globalMidPoint = [
+  //   hoveredElement.x + hoveredElement.width / 2,
+  //   hoveredElement.y + hoveredElement.height / 2,
+  // ] as Point;
   const dist = distanceToBindableElement(
     hoveredElement,
     globalPoint,
     elementsMap,
   );
-  const vec = normalize(pointToVector(globalMidPoint, globalPoint));
   const updatedPoints = points.slice();
   updatedPoints[index] = toLocalSpace(
     arrow,
-    addVectors(globalPoint, scaleVector(vec, dist - 5)),
+    addVectors(globalPoint, scaleVector(heading, dist - 5)),
   );
 
   return updatedPoints;
