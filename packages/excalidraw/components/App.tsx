@@ -666,7 +666,7 @@ class App extends React.Component<AppProps, AppState> {
     this.renderer = new Renderer(this.scene);
 
     this.store = new Store();
-    this.history = new History();
+    this.history = new History(this);
 
     if (excalidrawAPI) {
       const api: ExcalidrawImperativeAPI = {
@@ -713,7 +713,7 @@ class App extends React.Component<AppProps, AppState> {
     };
 
     this.fonts = new Fonts({ scene: this.scene });
-    this.history = new History();
+    this.history = new History(this);
 
     this.actionManager.registerAll(actions);
     this.actionManager.registerAction(
@@ -3957,9 +3957,14 @@ class App extends React.Component<AppProps, AppState> {
             y: element.y + offsetY,
           });
 
-          updateBoundElements(element, this.scene.getNonDeletedElementsMap(), {
-            simultaneouslyUpdated: selectedElements,
-          });
+          updateBoundElements(
+            element,
+            this.scene.getNonDeletedElementsMap(),
+            this,
+            {
+              simultaneouslyUpdated: selectedElements,
+            },
+          );
         });
 
         this.setState({
@@ -4368,7 +4373,7 @@ class App extends React.Component<AppProps, AppState> {
       onChange: withBatchedUpdates((nextOriginalText) => {
         updateElement(nextOriginalText, false);
         if (isNonDeletedElement(element)) {
-          updateBoundElements(element, elementsMap);
+          updateBoundElements(element, elementsMap, this);
         }
       }),
       onSubmit: withBatchedUpdates(({ viaKeyboard, nextOriginalText }) => {
@@ -5181,7 +5186,7 @@ class App extends React.Component<AppProps, AppState> {
         scenePointerX,
         scenePointerY,
         this.state,
-        this.scene.getNonDeletedElementsMap(),
+        this,
       );
 
       if (
@@ -7327,6 +7332,7 @@ class App extends React.Component<AppProps, AppState> {
         const didDrag = LinearElementEditor.handlePointDragging(
           event,
           this.state,
+          this,
           pointerCoords.x,
           pointerCoords.y,
           (element, pointsSceneCoords) => {
@@ -7336,7 +7342,6 @@ class App extends React.Component<AppProps, AppState> {
             );
           },
           linearElementEditor,
-          this.scene.getNonDeletedElementsMap(),
         );
         if (didDrag) {
           pointerDownState.lastCoords.x = pointerCoords.x;
@@ -7460,7 +7465,7 @@ class App extends React.Component<AppProps, AppState> {
               pointerDownState,
               selectedElements,
               dragOffset,
-              this.state,
+              this,
               this.scene,
               snapOffset,
               event[KEYS.CTRL_OR_CMD] ? null : this.state.gridSize,
@@ -9563,6 +9568,7 @@ class App extends React.Component<AppProps, AppState> {
         transformHandleType,
         selectedElements,
         this.scene.getElementsMapIncludingDeleted(),
+        this,
         shouldRotateWithDiscreteAngle(event),
         shouldResizeFromCenter(event),
         selectedElements.some((element) => isImageElement(element))

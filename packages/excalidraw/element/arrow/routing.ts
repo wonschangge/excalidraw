@@ -18,7 +18,13 @@ import {
   toWorldSpace,
   vectorToHeading,
 } from "../../math";
-import type { LocalPoint, Point, Segment, Vector } from "../../types";
+import type {
+  AppClassProperties,
+  LocalPoint,
+  Point,
+  Segment,
+  Vector,
+} from "../../types";
 import {
   distanceToBindableElement,
   getHoveredElementForBinding,
@@ -34,12 +40,7 @@ import type {
   NonDeletedExcalidrawElement,
   NonDeletedSceneElementsMap,
 } from "../types";
-import {
-  debugClear,
-  debugDrawBounds,
-  debugDrawPoint,
-  debugNewFrame,
-} from "./debug";
+import { debugClear, debugDrawBounds, debugNewFrame } from "./debug";
 
 const STEP_COUNT_LIMIT = 50;
 const MIN_DONGLE_SIZE = 20; // As long as snap distance is 5px this cannot go under 9!
@@ -57,11 +58,9 @@ export const mutateElbowArrow = (
   newPoints: Readonly<LocalPoint[]>,
   externalOffsetX: number,
   externalOffsetY: number,
-  elementsMap: NonDeletedSceneElementsMap,
-  elements: Readonly<NonDeletedExcalidrawElement[]>,
+  app: AppClassProperties,
   otherUpdates?: ElementUpdate<ExcalidrawArrowElement>,
 ) => {
-  console.log("-------");
   debugClear();
 
   if (newPoints.length < 2) {
@@ -69,14 +68,14 @@ export const mutateElbowArrow = (
     return;
   }
   //newPoints.forEach((point) => debugDrawPoint(toWorldSpace(arrow, point)));
+
   const startPoint = toWorldSpace(arrow, newPoints[0]);
   const endPoint = toWorldSpace(arrow, newPoints[newPoints.length - 1]);
   const [startHeading, endHeading] = getHeadingForStartEndElements(
     arrow,
     startPoint,
     endPoint,
-    elementsMap,
-    elements,
+    app,
   );
   const points = calculateElbowArrowJointPoints(
     arrow,
@@ -84,8 +83,7 @@ export const mutateElbowArrow = (
     endPoint,
     startHeading,
     endHeading,
-    elementsMap,
-    elements,
+    app,
   );
   const offsetX = points[0][0];
   const offsetY = points[0][1];
@@ -120,8 +118,7 @@ const calculateElbowArrowJointPoints = (
   endPoint: Point,
   startHeading: Heading | null,
   endHeading: Heading | null,
-  elementsMap: NonDeletedSceneElementsMap,
-  elements: Readonly<NonDeletedExcalidrawElement[]>,
+  app: AppClassProperties,
 ): readonly Point[] => {
   if (arrow.points.length < 2) {
     // Arrow being created
@@ -136,8 +133,7 @@ const calculateElbowArrowJointPoints = (
     endHeading,
     MIN_DONGLE_SIZE,
     MIN_DONGLE_SIZE,
-    elementsMap,
-    elements,
+    app,
   );
   const points = [
     startPoint,
@@ -586,9 +582,10 @@ const getDynamicStartEndBounds = (
   endHeading: Vector | null,
   startDongleMinSize: number,
   endDongleMinSize: number,
-  elementsMap: NonDeletedSceneElementsMap,
-  elements: Readonly<NonDeletedExcalidrawElement[]>,
+  app: AppClassProperties,
 ): [Bounds | null, Bounds | null] => {
+  const elementsMap = app.scene.getNonDeletedElementsMap();
+  const elements = app.scene.getNonDeletedElements();
   const startEndElements = getStartEndOrHoveredElements(
     arrow,
     startPoint,
@@ -761,9 +758,10 @@ const getHeadingForStartEndElements = (
   arrow: ExcalidrawArrowElement,
   startPoint: Point,
   endPoint: Point,
-  elementsMap: NonDeletedSceneElementsMap,
-  elements: Readonly<NonDeletedExcalidrawElement[]>,
+  app: AppClassProperties,
 ): [Heading | null, Heading | null] => {
+  const elementsMap = app.scene.getNonDeletedElementsMap();
+  const elements = app.scene.getNonDeletedElements();
   const start =
     arrow.startBinding === null
       ? getHoveredElementForBinding(

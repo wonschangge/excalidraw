@@ -115,6 +115,7 @@ const flipElements = (
     elementsMap,
     selectedElements,
     elementsMap,
+    app,
     "nw",
     true,
     true,

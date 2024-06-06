@@ -40,13 +40,9 @@ export const actionDuplicateSelection = register({
   icon: DuplicateIcon,
   trackEvent: { category: "element" },
   perform: (elements, appState, formData, app) => {
-    const elementsMap = app.scene.getNonDeletedElementsMap();
     // duplicate selected point(s) if editing a line
     if (appState.editingLinearElement) {
-      const ret = LinearElementEditor.duplicateSelectedPoints(
-        appState,
-        elementsMap,
-      );
+      const ret = LinearElementEditor.duplicateSelectedPoints(app, appState);
 
       if (!ret) {
         return false;

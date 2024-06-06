@@ -1251,7 +1251,7 @@ export const actionChangeArrowType = register({
   name: "changeArrowType",
   label: "Change arrow types",
   trackEvent: false,
-  perform: (elements, appState, value) => {
+  perform: (elements, appState, value, app) => {
     return {
       elements: changeProperty(elements, appState, (el) => {
         if (!isArrowElement(el)) {
@@ -1268,54 +1268,41 @@ export const actionChangeArrowType = register({
         });
 
         if (value === "elbowed") {
-          const scene = Scene.getScene(el);
-          if (scene) {
-            const elementsMap =
-              scene.getNonDeletedElementsMap() as NonDeletedSceneElementsMap;
-            const elements = scene.getNonDeletedElements();
-            mutateElbowArrow(
-              newElement,
-              newElement.points,
-              0,
-              0,
-              elementsMap,
-              elements,
-            );
-
-            const points = newElement.points.slice();
-            points[0] = newElement.startBinding
-              ? toLocalSpace(
-                  newElement,
-                  updateBindPointToSnapToElementOutline(
-                    toWorldSpace(newElement, points[0]),
-                    "startBinding",
-                    newElement as ExcalidrawArrowElement,
-                    elementsMap.get(
-                      newElement.startBinding.elementId,
-                    )! as ExcalidrawBindableElement,
-                    elementsMap,
-                  ),
-                )
-              : newElement.points[0];
-            points[points.length - 1] = newElement.endBinding
-              ? toLocalSpace(
-                  newElement,
-                  updateBindPointToSnapToElementOutline(
-                    toWorldSpace(newElement, points[points.length - 1]),
-                    "endBinding",
-                    newElement as ExcalidrawArrowElement,
-                    elementsMap.get(
-                      newElement.endBinding.elementId,
-                    )! as ExcalidrawBindableElement,
-                    elementsMap,
-                  ),
-                )
-              : points[points.length - 1];
-            mutateElement(newElement, {
-              points,
-            });
-            LinearElementEditor.normalizePoints(newElement);
-          }
+          mutateElbowArrow(newElement, newElement.points, 0, 0, app);
+          const elementsMap = app.scene.getNonDeletedElementsMap();
+          const points = newElement.points.slice();
+          points[0] = newElement.startBinding
+            ? toLocalSpace(
+                newElement,
+                updateBindPointToSnapToElementOutline(
+                  toWorldSpace(newElement, points[0]),
+                  "startBinding",
+                  newElement as ExcalidrawArrowElement,
+                  elementsMap.get(
+                    newElement.startBinding.elementId,
+                  )! as ExcalidrawBindableElement,
+                  elementsMap,
+                ),
+              )
+            : newElement.points[0];
+          points[points.length - 1] = newElement.endBinding
+            ? toLocalSpace(
+                newElement,
+                updateBindPointToSnapToElementOutline(
+                  toWorldSpace(newElement, points[points.length - 1]),
+                  "endBinding",
+                  newElement as ExcalidrawArrowElement,
+                  elementsMap.get(
+                    newElement.endBinding.elementId,
+                  )! as ExcalidrawBindableElement,
+                  elementsMap,
+                ),
+              )
+            : points[points.length - 1];
+          mutateElement(newElement, {
+            points,
+          });
+          LinearElementEditor.normalizePoints(newElement);
         }
 
         return newElement;

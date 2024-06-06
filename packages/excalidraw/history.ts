@@ -2,7 +2,7 @@ import type { AppStateChange, ElementsChange } from "./change";
 import type { SceneElementsMap } from "./element/types";
 import { Emitter } from "./emitter";
 import type { Snapshot } from "./store";
-import type { AppState } from "./types";
+import type { AppClassProperties, AppState } from "./types";
 
 type HistoryStack = HistoryEntry[];
 
@@ -14,6 +14,8 @@ export class HistoryChangedEvent {
 }
 
 export class History {
+  public constructor(private app: AppClassProperties) {}
+
   public readonly onHistoryChangedEmitter = new Emitter<
     [HistoryChangedEvent]
   >();
@@ -110,7 +112,12 @@ export class History {
       while (historyEntry) {
         try {
           [nextElements, nextAppState, containsVisibleChange] =
-            historyEntry.applyTo(nextElements, nextAppState, snapshot);
+            historyEntry.applyTo(
+              nextElements,
+              nextAppState,
+              snapshot,
+              this.app,
+            );
         } finally {
           // make sure to always push / pop, even if the increment is corrupted
           push(historyEntry);
@@ -181,9 +188,10 @@ export class HistoryEntry {
     elements: SceneElementsMap,
     appState: AppState,
     snapshot: Readonly<Snapshot>,
+    app: AppClassProperties,
   ): [SceneElementsMap, AppState, boolean] {
     const [nextElements, elementsContainVisibleChange] =
-      this.elementsChange.applyTo(elements, snapshot.elements);
+      this.elementsChange.applyTo(elements, snapshot.elements, app);
 
     const [nextAppState, appStateContainsVisibleChange] =
       this.appStateChange.applyTo(appState, nextElements);

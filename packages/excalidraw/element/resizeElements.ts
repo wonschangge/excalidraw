@@ -14,7 +14,7 @@ import {
   toLocalSpace,
 } from "../math";
 import Scene from "../scene/Scene";
-import type { Point, PointerDownState } from "../types";
+import type { AppClassProperties, Point, PointerDownState } from "../types";
 import type { Mutable } from "../utility-types";
 import { getFontString } from "../utils";
 import { updateBoundElements } from "./binding";
@@ -68,6 +68,7 @@ export const transformElements = (
   transformHandleType: MaybeTransformHandleType,
   selectedElements: readonly NonDeletedExcalidrawElement[],
   elementsMap: ElementsMap,
+  app: AppClassProperties,
   shouldRotateWithDiscreteAngle: boolean,
   shouldResizeFromCenter: boolean,
   shouldMaintainAspectRatio: boolean,
@@ -86,7 +87,7 @@ export const transformElements = (
         pointerY,
         shouldRotateWithDiscreteAngle,
       );
-      updateBoundElements(element, elementsMap);
+      updateBoundElements(element, elementsMap, app);
     } else if (isTextElement(element) && transformHandleType) {
       resizeSingleTextElement(
         originalElements,
@@ -97,13 +98,14 @@ export const transformElements = (
         pointerX,
         pointerY,
       );
-      updateBoundElements(element, elementsMap);
+      updateBoundElements(element, elementsMap, app);
     } else if (transformHandleType) {
       resizeSingleElement(
         originalElements,
         shouldMaintainAspectRatio,
         element,
         elementsMap,
+        app,
         transformHandleType,
         shouldResizeFromCenter,
         pointerX,
@@ -118,6 +120,7 @@ export const transformElements = (
         originalElements,
         selectedElements,
         elementsMap,
+        app,
         pointerX,
         pointerY,
         shouldRotateWithDiscreteAngle,
@@ -130,6 +133,7 @@ export const transformElements = (
         originalElements,
         selectedElements,
         elementsMap,
+        app,
         transformHandleType,
         shouldResizeFromCenter,
         shouldMaintainAspectRatio,
@@ -422,6 +426,7 @@ export const resizeSingleElement = (
   shouldMaintainAspectRatio: boolean,
   element: NonDeletedExcalidrawElement,
   elementsMap: ElementsMap,
+  app: AppClassProperties,
   transformHandleDirection: TransformHandleDirection,
   shouldResizeFromCenter: boolean,
   pointerX: number,
@@ -696,7 +701,7 @@ export const resizeSingleElement = (
   ) {
     mutateElement(element, resizedElement);
 
-    updateBoundElements(element, elementsMap, {
+    updateBoundElements(element, elementsMap, app, {
       newSize: { width: resizedElement.width, height: resizedElement.height },
     });
 
@@ -718,6 +723,7 @@ export const resizeMultipleElements = (
   originalElements: PointerDownState["originalElements"],
   selectedElements: readonly NonDeletedExcalidrawElement[],
   elementsMap: ElementsMap,
+  app: AppClassProperties,
   transformHandleType: TransformHandleDirection,
   shouldResizeFromCenter: boolean,
   shouldMaintainAspectRatio: boolean,
@@ -954,7 +960,7 @@ export const resizeMultipleElements = (
 
     mutateElement(element, update, false);
 
-    updateBoundElements(element, elementsMap, {
+    updateBoundElements(element, elementsMap, app, {
       simultaneouslyUpdated: elementsToUpdate,
       newSize: { width, height },
     });
@@ -980,6 +986,7 @@ const rotateMultipleElements = (
   originalElements: PointerDownState["originalElements"],
   elements: readonly NonDeletedExcalidrawElement[],
   elementsMap: ElementsMap,
+  app: AppClassProperties,
   pointerX: number,
   pointerY: number,
   shouldRotateWithDiscreteAngle: boolean,
@@ -1080,14 +1087,14 @@ const rotateMultipleElements = (
 
           endPoint = toLocalSpace(element, [rotatedGlobalX, rotatedGlobalY]);
         }
-        LinearElementEditor.movePoints(element, [
+        LinearElementEditor.movePoints(app, element, [
           { index: 0, point: startPoint },
         ]);
-        LinearElementEditor.movePoints(element, [
+        LinearElementEditor.movePoints(app, element, [
           { index: element.points.length - 1, point: endPoint },
         ]);
       }
-      updateBoundElements(element, elementsMap, {
+      updateBoundElements(element, elementsMap, app, {
         simultaneouslyUpdated: elements,
       });
 

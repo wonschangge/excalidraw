@@ -549,6 +549,7 @@ const calculateFocusAndGap = (
 export const updateBoundElements = (
   changedElement: NonDeletedExcalidrawElement,
   elementsMap: ElementsMap,
+  app: AppClassProperties,
   options?: {
     simultaneouslyUpdated?: readonly ExcalidrawElement[];
     newSize?: { width: number; height: number };
@@ -607,6 +608,7 @@ export const updateBoundElements = (
             bindings[bindingProp],
             bindableElement,
             elementsMap,
+            app,
           );
         }
       },
@@ -666,6 +668,7 @@ const updateBoundPoint = (
   binding: PointBinding | null | undefined,
   bindableElement: ExcalidrawBindableElement,
   elementsMap: ElementsMap,
+  app: AppClassProperties,
 ): void => {
   if (
     binding == null ||
@@ -757,6 +760,7 @@ const updateBoundPoint = (
   }
 
   LinearElementEditor.movePoints(
+    app,
     linearElement,
     [
       {
