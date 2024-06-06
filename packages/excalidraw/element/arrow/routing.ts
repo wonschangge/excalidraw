@@ -42,7 +42,7 @@ import {
 } from "./debug";
 
 const STEP_COUNT_LIMIT = 50;
-const MIN_DONGLE_SIZE = 9; // As long as snap distance is 5px this cannot go under 9!
+const MIN_DONGLE_SIZE = 20; // As long as snap distance is 5px this cannot go under 9!
 const DONGLE_EXTENSION_SIZE = 150;
 const HITBOX_EXTENSION_SIZE = 30;
 
@@ -61,7 +61,7 @@ export const mutateElbowArrow = (
   elements: Readonly<NonDeletedExcalidrawElement[]>,
   otherUpdates?: ElementUpdate<ExcalidrawArrowElement>,
 ) => {
-  //console.log("-------");
+  console.log("-------");
   debugClear();
 
   if (newPoints.length < 2) {
@@ -174,17 +174,17 @@ const calculateElbowArrowJointPoints = (
 
   const avoidBounds = [startBounds, endBounds]
     .filter((bb): bb is Bounds => bb !== null)
-    // .map((bbox) => {
-    //   debugDrawBounds(bbox);
-    //   return bbox;
-    // })
     .filter(
       (bbox) =>
         !(
           isPointInsideBoundingBox(points[1], bbox) ||
           isPointInsideBoundingBox(endPoints[0], bbox)
         ),
-    );
+    )
+    .map((bbox) => {
+      debugDrawBounds(bbox);
+      return bbox;
+    });
 
   return simplifyElbowArrowPoints(
     calculateSegment(points, endPoints, avoidBounds),
@@ -555,9 +555,6 @@ const getStartEndOrHoveredElements = (
 };
 
 const getStartEndBounds = (
-  arrow: ExcalidrawArrowElement,
-  startPoint: Point,
-  endPoint: Point,
   startEndElements: (ExcalidrawBindableElement | null)[],
   offset: number = 0,
 ) => {
@@ -600,13 +597,7 @@ const getDynamicStartEndBounds = (
     elements,
   );
   const BIAS = 50;
-  const [startAABB, endAABB] = getStartEndBounds(
-    arrow,
-    startPoint,
-    endPoint,
-    startEndElements,
-    0,
-  ).map(
+  const [startAABB, endAABB] = getStartEndBounds(startEndElements, 0).map(
     (bounds) =>
       bounds && {
         x: bounds[0],
@@ -617,16 +608,13 @@ const getDynamicStartEndBounds = (
   );
 
   const [startBoundingBox, endBoundingBox] = getStartEndBounds(
-    arrow,
-    startPoint,
-    endPoint,
     startEndElements,
     BIAS,
   );
 
   if (startBoundingBox && endBoundingBox && startAABB && endAABB) {
     const commonBbox = getCommonAABB(startBoundingBox, endBoundingBox);
-    // debugDrawBounds(commonBbox);
+    debugDrawBounds(commonBbox);
     const verticalDistance =
       commonBbox[3] -
       commonBbox[1] -
@@ -637,22 +625,28 @@ const getDynamicStartEndBounds = (
       commonBbox[0] -
       2 * BIAS -
       (startAABB.width + endAABB.width);
+    const startIsHigherThanEnd = startAABB.y + startAABB.height < endAABB.y;
+    const startIsLeftToEnd = startAABB.x + startAABB.width < endAABB.x;
+    const elementsAdjacent =
+      !!(verticalDistance > 0) === !!(horizontalDistance > 0);
+    const startDongleMinSizeOrBias = elementsAdjacent
+      ? BIAS
+      : startDongleMinSize;
+    const endDongleMinSizeOrBias = elementsAdjacent ? BIAS : endDongleMinSize;
 
     if (verticalDistance > 0) {
       // Not overlapping vertically
-      if (startAABB.y + startAABB.height < endAABB.y) {
-        // Start is higher than end
-        const start = startHeading === DOWN ? startDongleMinSize : 0;
-        const end = endHeading === UP ? endDongleMinSize : 0;
+      if (startIsHigherThanEnd) {
+        const start = startHeading === DOWN ? startDongleMinSizeOrBias : 0;
+        const end = endHeading === UP ? endDongleMinSizeOrBias : 0;
         const distance = (verticalDistance - start - end) / 2 - 1;
         startBoundingBox[3] =
           startBoundingBox[3] - BIAS + clamp(start + distance, start, Infinity);
         endBoundingBox[1] =
           endBoundingBox[1] + BIAS - clamp(end + distance, end, Infinity);
-      } else {
-        // Start is lower than end
-        const start = startHeading === UP ? startDongleMinSize : 0;
-        const end = endHeading === DOWN ? endDongleMinSize : 0;
+      } else if (!startIsHigherThanEnd) {
+        const start = startHeading === UP ? startDongleMinSizeOrBias : 0;
+        const end = endHeading === DOWN ? endDongleMinSizeOrBias : 0;
         const distance = (verticalDistance - start - end) / 2 - 1;
         startBoundingBox[1] =
           startBoundingBox[1] +
@@ -664,19 +658,17 @@ const getDynamicStartEndBounds = (
     }
     if (horizontalDistance > 0) {
       // Not overlapping horizontally
-      if (startAABB.x + startAABB.width < endAABB.x) {
-        // Start is to the left of end
-        const start = startHeading === RIGHT ? startDongleMinSize : 0;
-        const end = endHeading === LEFT ? endDongleMinSize : 0;
+      if (startIsLeftToEnd) {
+        const start = startHeading === RIGHT ? startDongleMinSizeOrBias : 0;
+        const end = endHeading === LEFT ? endDongleMinSizeOrBias : 0;
         const distance = (horizontalDistance - start - end) / 2 - 1;
         startBoundingBox[2] =
           startBoundingBox[2] - BIAS + clamp(start + distance, start, Infinity);
         endBoundingBox[0] =
           endBoundingBox[0] + BIAS - clamp(end + distance, end, Infinity);
-      } else {
-        // Start is to the right of end
-        const start = startHeading === LEFT ? startDongleMinSize : 0;
-        const end = endHeading === RIGHT ? endDongleMinSize : 0;
+      } else if (!startIsLeftToEnd) {
+        const start = startHeading === LEFT ? startDongleMinSizeOrBias : 0;
+        const end = endHeading === RIGHT ? endDongleMinSizeOrBias : 0;
         const distance = (horizontalDistance - start - end) / 2 - 1;
         startBoundingBox[0] =
           startBoundingBox[0] + BIAS - clamp(start + distance, 0, Infinity);
@@ -877,13 +869,14 @@ const getHeadingForWorldPointFromElement = (
 };
 
 // Turn a bounding box into 4 clockwise wounding segments
-const bboxToClockwiseWoundingSegments = (b: Bounds | null) =>
-  b && [
-    [[b[0], b[1]] as Point, [b[2], b[1]] as Point] as Segment,
-    [[b[2], b[1]] as Point, [b[2], b[3]] as Point] as Segment,
-    [[b[2], b[3]] as Point, [b[0], b[3]] as Point] as Segment,
-    [[b[0], b[3]] as Point, [b[0], b[1]] as Point] as Segment,
-  ];
+const bboxToClockwiseWoundingSegments = (
+  b: Bounds,
+): [Segment, Segment, Segment, Segment] => [
+  [[b[0], b[1]] as Point, [b[2], b[1]] as Point] as Segment,
+  [[b[2], b[1]] as Point, [b[2], b[3]] as Point] as Segment,
+  [[b[2], b[3]] as Point, [b[0], b[3]] as Point] as Segment,
+  [[b[0], b[3]] as Point, [b[0], b[1]] as Point] as Segment,
+];
 
 const getCenterWorldCoordsForBounds = (bounds: Bounds): Point => [
   bounds[0] + (bounds[2] - bounds[0]) / 2,
