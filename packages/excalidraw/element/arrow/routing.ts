@@ -139,8 +139,8 @@ const calculateElbowArrowJointPoints = (
     endPoint,
     startHeading,
     endHeading,
-    MIN_DONGLE_SIZE,
-    MIN_DONGLE_SIZE,
+    arrow.startBinding ? MIN_DONGLE_SIZE : 2,
+    arrow.endBinding ? MIN_DONGLE_SIZE : 2,
     app,
   );
   const points = [
