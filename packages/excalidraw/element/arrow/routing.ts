@@ -48,7 +48,7 @@ import {
 } from "./debug";
 
 const STEP_COUNT_LIMIT = 50;
-const MIN_DONGLE_SIZE = 20; // As long as snap distance is 5px this cannot go under 9!
+const MIN_DONGLE_SIZE = 6; // As long as snap distance is 5px this cannot go under 6!
 const DONGLE_EXTENSION_SIZE = 150;
 const HITBOX_EXTENSION_SIZE = 30;
 
@@ -348,7 +348,9 @@ const kernel = (
       dotProduct(endVector, startNextVector) === -1,
     );
   }
-  debugDrawPoint(target[1]);
+  // debugDrawPoint(target[1]);
+  debugDrawPoint(next);
+  // debugDrawPoint(points[0]);
   return next;
 };
 
@@ -600,7 +602,7 @@ const getDynamicStartEndBounds = (
     elements,
   );
   const BIAS = 50;
-  const [startAABB, endAABB] = getStartEndBounds(startEndElements, 0).map(
+  const [startAABB, endAABB] = getStartEndBounds(startEndElements, 1).map(
     (bounds) =>
       bounds && {
         x: bounds[0],
