@@ -251,6 +251,7 @@ import {
   isUsingAdaptiveRadius,
 } from "../element/typeChecks";
 import type {
+  ExcalidrawArrowElement,
   ExcalidrawBindableElement,
   ExcalidrawElement,
   ExcalidrawEmbeddableElement,
@@ -427,6 +428,7 @@ import {
 } from "./hyperlink/helpers";
 import { MagicIcon, copyIcon, fullscreenIcon } from "./icons";
 import { getElementShape } from "../element/shape";
+import { mutateElbowArrow } from "../element/arrow/routing";
 
 const AppContext = React.createContext<AppClassProperties>(null!);
 const AppPropsContext = React.createContext<AppProps>(null!);
@@ -7616,10 +7618,23 @@ class App extends React.Component<AppProps, AppState> {
           mutateElement(draggingElement, {
             points: [...points, [dx, dy]],
           });
-        } else if (points.length === 2) {
-          mutateElement(draggingElement, {
-            points: [...points.slice(0, -1), [dx, dy]],
-          });
+        } else if (
+          points.length === 2 ||
+          (draggingElement.elbowed && points.length > 2)
+        ) {
+          if (draggingElement.elbowed) {
+            mutateElbowArrow(
+              draggingElement as ExcalidrawArrowElement,
+              [...points.slice(0, -1), [dx, dy]],
+              0,
+              0,
+              this,
+            );
+          } else {
+            mutateElement(draggingElement, {
+              points: [...points.slice(0, -1), [dx, dy]],
+            });
+          }
         }
 
         if (isBindingElement(draggingElement, false)) {
