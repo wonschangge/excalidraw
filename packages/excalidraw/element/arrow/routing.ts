@@ -40,7 +40,12 @@ import type {
   NonDeletedExcalidrawElement,
   NonDeletedSceneElementsMap,
 } from "../types";
-import { debugClear, debugDrawBounds, debugNewFrame } from "./debug";
+import {
+  debugClear,
+  debugDrawBounds,
+  debugDrawPoint,
+  debugNewFrame,
+} from "./debug";
 
 const STEP_COUNT_LIMIT = 50;
 const MIN_DONGLE_SIZE = 20; // As long as snap distance is 5px this cannot go under 9!
@@ -104,7 +109,10 @@ export const mutateElbowArrow = (
     height: farthestY - offsetY + externalOffsetY,
   };
 
-  mutateElement(arrow, update);
+  mutateElement(arrow, {
+    ...update,
+    ...otherUpdates,
+  });
 
   //debugDrawPoint(toWorldSpace(arrow, arrow.points[0]));
   // arrow.points.forEach((point) =>
@@ -340,9 +348,7 @@ const kernel = (
       dotProduct(endVector, startNextVector) === -1,
     );
   }
-
-  //debugDrawPoint(next);
-
+  debugDrawPoint(target[1]);
   return next;
 };
 
