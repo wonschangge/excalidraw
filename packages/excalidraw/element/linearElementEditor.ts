@@ -773,6 +773,7 @@ export class LinearElementEditor {
           startBindingElement,
           endBindingElement,
           elementsMap,
+          app,
         );
       }
     }

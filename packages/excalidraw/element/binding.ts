@@ -94,6 +94,7 @@ export const bindOrUnbindLinearElement = (
   startBindingElement: ExcalidrawBindableElement | null | "keep",
   endBindingElement: ExcalidrawBindableElement | null | "keep",
   elementsMap: NonDeletedSceneElementsMap,
+  app: AppClassProperties,
 ): void => {
   const boundToElementIds: Set<ExcalidrawBindableElement["id"]> = new Set();
   const unboundFromElementIds: Set<ExcalidrawBindableElement["id"]> = new Set();
@@ -106,6 +107,14 @@ export const bindOrUnbindLinearElement = (
     unboundFromElementIds,
     elementsMap,
   );
+  if (
+    linearElement.elbowed &&
+    startBindingElement !== null &&
+    startBindingElement !== "keep"
+  ) {
+    updateBoundElements(startBindingElement, elementsMap, app);
+  }
+
   bindOrUnbindLinearElementEdge(
     linearElement,
     endBindingElement,
@@ -115,6 +124,13 @@ export const bindOrUnbindLinearElement = (
     unboundFromElementIds,
     elementsMap,
   );
+  if (
+    linearElement.elbowed &&
+    endBindingElement !== null &&
+    endBindingElement !== "keep"
+  ) {
+    updateBoundElements(endBindingElement, elementsMap, app);
+  }
 
   const onlyUnbound = Array.from(unboundFromElementIds).filter(
     (id) => !boundToElementIds.has(id),
@@ -304,6 +320,7 @@ export const bindOrUnbindLinearElements = (
       start,
       end,
       app.scene.getNonDeletedElementsMap(),
+      app,
     );
   });
 };
@@ -444,6 +461,9 @@ export const bindLinearElement = (
         type: "arrow",
       }),
     });
+  }
+
+  if (linearElement.elbowed) {
   }
 };
 
