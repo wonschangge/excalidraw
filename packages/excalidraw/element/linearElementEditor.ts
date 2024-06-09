@@ -88,8 +88,10 @@ export class LinearElementEditor {
   public readonly endBindingElement: ExcalidrawBindableElement | null | "keep";
   public readonly hoverPointIndex: number;
   public readonly segmentMidPointHoveredCoords: Point | null;
+  public readonly elbowed: boolean;
 
   constructor(element: NonDeleted<ExcalidrawLinearElement>) {
+    this.elbowed = !!element.elbowed;
     this.elementId = element.id as string & {
       _brand: "excalidrawLinearElementId";
     };
