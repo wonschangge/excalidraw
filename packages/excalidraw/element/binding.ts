@@ -668,13 +668,11 @@ export const updateBindPointToSnapToElementOutline = (
     point,
     scaleVector(
       startOrEnd === "startBinding"
-        ? vectorToHeading(
-            pointToVector(point, toWorldSpace(arrow, arrow.points[1])),
-          )
+        ? vectorToHeading(pointToVector(arrow.points[0], arrow.points[1]))
         : vectorToHeading(
             pointToVector(
-              point,
-              toWorldSpace(arrow, arrow.points[arrow.points.length - 2]),
+              arrow.points[arrow.points.length - 1],
+              arrow.points[arrow.points.length - 2],
             ),
           ),
       distanceToBindableElement(bindableElement, point, elementsMap) - 5,
