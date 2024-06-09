@@ -5303,15 +5303,31 @@ class App extends React.Component<AppProps, AppState> {
           setCursor(this.interactiveCanvas, CURSOR_TYPE.POINTER);
         }
         // update last uncommitted point
-        mutateElement(multiElement, {
-          points: [
-            ...points.slice(0, -1),
+        if (multiElement.elbowed) {
+          mutateElbowArrow(
+            multiElement as ExcalidrawArrowElement,
             [
-              lastCommittedX + dxFromLastCommitted,
-              lastCommittedY + dyFromLastCommitted,
+              ...points.slice(0, -1),
+              [
+                lastCommittedX + dxFromLastCommitted,
+                lastCommittedY + dyFromLastCommitted,
+              ],
             ],
-          ],
-        });
+            0,
+            0,
+            this,
+          );
+        } else {
+          mutateElement(multiElement, {
+            points: [
+              ...points.slice(0, -1),
+              [
+                lastCommittedX + dxFromLastCommitted,
+                lastCommittedY + dyFromLastCommitted,
+              ],
+            ],
+          });
+        }
       }
 
       return;
