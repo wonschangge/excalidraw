@@ -7295,10 +7295,6 @@ class App extends React.Component<AppProps, AppState> {
         const linearElementEditor =
           this.state.editingLinearElement || this.state.selectedLinearElement;
 
-        if (this.state.selectedLinearElement.elbowed) {
-          return;
-        }
-
         if (
           LinearElementEditor.shouldAddMidpoint(
             this.state.selectedLinearElement,
@@ -7390,6 +7386,15 @@ class App extends React.Component<AppProps, AppState> {
           }
           return;
         }
+      }
+
+      if (
+        this.state.selectedLinearElement?.elbowed &&
+        (this.state.selectedLinearElement?.startBindingElement ||
+          this.state.selectedLinearElement?.endBindingElement)
+      ) {
+        // No dragging elbow arrows if they are bound
+        return;
       }
 
       const hasHitASelectedElement = pointerDownState.hit.allHitElements.some(
