@@ -7295,6 +7295,10 @@ class App extends React.Component<AppProps, AppState> {
         const linearElementEditor =
           this.state.editingLinearElement || this.state.selectedLinearElement;
 
+        if (this.state.selectedLinearElement.elbowed) {
+          return;
+        }
+
         if (
           LinearElementEditor.shouldAddMidpoint(
             this.state.selectedLinearElement,
