@@ -5362,8 +5362,13 @@ class App extends React.Component<AppProps, AppState> {
       }
 
       if (
-        !this.state.selectedLinearElement ||
-        this.state.selectedLinearElement.hoverPointIndex === -1
+        (!this.state.selectedLinearElement ||
+          this.state.selectedLinearElement.hoverPointIndex === -1) &&
+        !(
+          this.state.selectedLinearElement?.elbowed &&
+          (this.state.selectedLinearElement?.startBindingElement ||
+            this.state.selectedLinearElement?.endBindingElement)
+        )
       ) {
         const elementWithTransformHandleType =
           getElementWithTransformHandleType(
@@ -5648,10 +5653,20 @@ class App extends React.Component<AppProps, AppState> {
         if (hoverPointIndex >= 0 || segmentMidPointHoveredCoords) {
           setCursor(this.interactiveCanvas, CURSOR_TYPE.POINTER);
         } else if (this.hitElement(scenePointerX, scenePointerY, element)) {
-          setCursor(this.interactiveCanvas, CURSOR_TYPE.MOVE);
+          if (
+            !isArrowElement(element) ||
+            !(element.elbowed && (element.startBinding || element.endBinding))
+          ) {
+            setCursor(this.interactiveCanvas, CURSOR_TYPE.MOVE);
+          }
         }
       } else if (this.hitElement(scenePointerX, scenePointerY, element)) {
-        setCursor(this.interactiveCanvas, CURSOR_TYPE.MOVE);
+        if (
+          !isArrowElement(element) ||
+          !(element.elbowed && (element.startBinding || element.endBinding))
+        ) {
+          setCursor(this.interactiveCanvas, CURSOR_TYPE.MOVE);
+        }
       }
 
       if (

@@ -432,6 +432,10 @@ export const resizeSingleElement = (
   pointerX: number,
   pointerY: number,
 ) => {
+  if (isArrowElement(element) && element.elbowed) {
+    return;
+  }
+
   const stateAtResizeStart = originalElements.get(element.id)!;
   // Gets bounds corners
   const [x1, y1, x2, y2] = getResizedElementAbsoluteCoords(
