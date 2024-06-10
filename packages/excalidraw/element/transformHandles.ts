@@ -266,12 +266,7 @@ export const getTransformHandles = (
   // so that when locked element is selected (especially when you toggle lock
   // via keyboard) the locked element is visually distinct, indicating
   // you can't move/resize
-  if (
-    element.locked ||
-    (isArrowElement(element) &&
-      element.elbowed &&
-      (element.startBinding || element.endBinding))
-  ) {
+  if (element.locked || (isArrowElement(element) && element.elbowed)) {
     return {};
   }
 
