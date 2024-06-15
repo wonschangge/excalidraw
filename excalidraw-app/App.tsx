@@ -1098,14 +1098,14 @@ const ExcalidrawWrapper = () => {
                 );
               },
             },
-            ...(isExcalidrawPlusSignedUser
-              ? [
-                  {
-                    ...ExcalidrawPlusAppCommand,
-                    label: "Sign in / Go to Excalidraw+",
-                  },
-                ]
-              : [ExcalidrawPlusCommand, ExcalidrawPlusAppCommand]),
+            // ...(isExcalidrawPlusSignedUser
+            //   ? [
+            //       {
+            //         ...ExcalidrawPlusAppCommand,
+            //         label: "Sign in / Go to Excalidraw+",
+            //       },
+            //     ]
+            //   : [ExcalidrawPlusCommand, ExcalidrawPlusAppCommand]),
 
             {
               label: t("overwriteConfirm.action.excalidrawPlus.button"),

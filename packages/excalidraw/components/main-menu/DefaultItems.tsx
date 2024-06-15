@@ -322,11 +322,11 @@ export const Socials = () => {
 
   return (
     <>
-      <DropdownMenuItemLink
+      {/* <DropdownMenuItemLink
         icon={GithubIcon}
         href="https://github.com/excalidraw/excalidraw"
         aria-label="GitHub"
-      >
+      >Export
         GitHub
       </DropdownMenuItemLink>
       <DropdownMenuItemLink
@@ -342,7 +342,7 @@ export const Socials = () => {
         aria-label="Discord"
       >
         {t("labels.discordChat")}
-      </DropdownMenuItemLink>
+      </DropdownMenuItemLink> */}
     </>
   );
 };

@@ -438,6 +438,8 @@ import { actionTextAutoResize } from "../actions/actionTextAutoResize";
 import { getVisibleSceneBounds } from "../element/bounds";
 import { isMaybeMermaidDefinition } from "../mermaid";
 
+import { Camera, CameraResultType } from '@capacitor/camera';
+
 const AppContext = React.createContext<AppClassProperties>(null!);
 const AppPropsContext = React.createContext<AppProps>(null!);
 
@@ -8911,12 +8913,27 @@ class App extends React.Component<AppProps, AppState> {
         this.state,
       );
 
-      const imageFile = await fileOpen({
-        description: "Image",
-        extensions: Object.keys(
-          IMAGE_MIME_TYPES,
-        ) as (keyof typeof IMAGE_MIME_TYPES)[],
+
+      // Capacitor Camera
+      const image = await Camera.getPhoto({
+        quality: 90,
+        allowEditing: true,
+        resultType: CameraResultType.Uri
       });
+      const arraybuffer = (await (await fetch(image.webPath as string)).arrayBuffer())
+      const imageFile = new File([arraybuffer], "test.img", {
+        type: 'image/' + image.format,
+      });
+
+      console.log(imageFile)
+
+      // RAW
+      // const imageFile = await fileOpen({
+      //   description: "Image",
+      //   extensions: Object.keys(
+      //     IMAGE_MIME_TYPES,
+      //   ) as (keyof typeof IMAGE_MIME_TYPES)[],
+      // });
 
       const imageElement = this.createImageElement({
         sceneX: x,

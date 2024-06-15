@@ -136,7 +136,7 @@ const ExcalidrawBase = (props: ExcalidrawProps) => {
           onScrollChange={onScrollChange}
           validateEmbeddable={validateEmbeddable}
           renderEmbeddable={renderEmbeddable}
-          aiEnabled={aiEnabled !== false}
+          aiEnabled={aiEnabled === true}
         >
           {children}
         </App>
