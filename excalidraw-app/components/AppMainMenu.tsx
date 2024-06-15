@@ -17,27 +17,27 @@ export const AppMainMenu: React.FC<{
 }> = React.memo((props) => {
   return (
     <MainMenu>
-      <MainMenu.DefaultItems.LoadScene />
+      {/* <MainMenu.DefaultItems.LoadScene /> */}
       <MainMenu.DefaultItems.SaveToActiveFile />
       <MainMenu.DefaultItems.Export />
-      <MainMenu.DefaultItems.SaveAsImage />
-      {props.isCollabEnabled && (
+      {/* <MainMenu.DefaultItems.SaveAsImage /> */}
+      {/* {props.isCollabEnabled && ( */}
         <MainMenu.DefaultItems.LiveCollaborationTrigger
           isCollaborating={props.isCollaborating}
           onSelect={() => props.onCollabDialogOpen()}
         />
-      )}
+      {/* )} */}
       <MainMenu.DefaultItems.CommandPalette className="highlighted" />
-      <MainMenu.DefaultItems.Help />
+      {/* <MainMenu.DefaultItems.Help /> */}
       <MainMenu.DefaultItems.ClearCanvas />
-      <MainMenu.Separator />
+      {/* <MainMenu.Separator /> */}
       <MainMenu.ItemLink
         icon={ExcalLogo}
         href={`${
           import.meta.env.VITE_APP_PLUS_LP
         }/plus?utm_source=excalidraw&utm_medium=app&utm_content=hamburger`}
         className=""
-      >
+      > 
         Excalidraw+
       </MainMenu.ItemLink>
       <MainMenu.DefaultItems.Socials />
@@ -50,7 +50,7 @@ export const AppMainMenu: React.FC<{
       >
         {isExcalidrawPlusSignedUser ? "Sign in" : "Sign up"}
       </MainMenu.ItemLink>
-      <MainMenu.Separator />
+      {/* <MainMenu.Separator /> */}
       <MainMenu.DefaultItems.ToggleTheme
         allowSystemTheme
         theme={props.theme}
